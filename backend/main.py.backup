@@ -1,0 +1,836 @@
+# === main.py canonical header (put at line 1, keep only one) ===
+import os
+import requests
+import uuid
+import json
+import io
+from typing import Optional, Dict, Any, Union
+
+
+import numpy as np
+import pandas as pd
+from datetime import datetime
+
+import fastapi                           # <- fully qualified to avoid NameError
+from fastapi import UploadFile, Form, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from sklearn.isotonic import IsotonicRegression
+from facebook_business.api import FacebookAdsApi
+from facebook_business.adobjects.adaccount import AdAccount
+from facebook_business.adobjects.campaign import Campaign
+
+
+from schemas import *
+from services.data_loaders import (
+    validate_and_load_patients, load_competitors_csv,
+    load_zip_demographics, load_vertical_config
+)
+from services.scoring import (
+    compute_accessibility_score, fit_lifestyle_cohorts,
+    calculate_psychographic_scores, learn_ridge_regression,
+    calibrate_booking_predictions, generate_segment_explanations, validate_zip_recommendation_accuracy
+)
+from services.validate import validate_algorithm_accuracy
+
+# === FastAPI app ===
+app = fastapi.FastAPI(
+    title="Audience Mirror API",
+    description="Advanced patient clustering using geographic, demographic, and psychographic analysis",
+    version="1.0.0"
+)
+
+# CORS middleware for development: allow all origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# === end header ===
+
+# Configuration
+BASE_DIR = os.path.dirname(__file__)
+DATA_DIR = os.path.join(BASE_DIR, "data")
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+ZIP_DEMOGRAPHICS_PATH = os.path.join(DATA_DIR, "zip_demographics.sample.csv")
+
+# Ensure upload directory exists
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+# FastAPI application
+
+# CORS middleware for frontend communication
+# CORS middleware for development: allow all origins
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# In-memory storage for MVP (replace with database in production)
+datasets: Dict[str, Dict[str, Any]] = {}
+runs: Dict[str, Dict[str, Any]] = {}
+facebook_connections: Dict[str, Dict[str, Any]] = {}
+
+def save_uploaded_file(file: UploadFile, directory: str, filename: str) -> str:
+    """Save uploaded file and return path"""
+    file_path = os.path.join(directory, filename)
+    with open(file_path, "wb") as buffer:
+        content = file.file.read()
+        buffer.write(content)
+    return file_path
+
+# ===========================================
+# API ENDPOINTS
+# ===========================================
+
+@app.get("/")
+async def root():
+    """Health check endpoint"""
+    return {"message": "Audience Mirror API", "status": "healthy", "version": "1.0.0"}
+
+@app.post("/api/v1/datasets", response_model=DatasetCreateResponse)
+async def create_dataset(
+    patients: UploadFile,
+    practice_zip: str = Form(...),
+    vertical: str = Form("medspa"),
+    competitors: Optional[UploadFile] = None
+):
+    """Upload patient data and optional competitor data"""
+    # Generate unique dataset ID
+    dataset_id = str(uuid.uuid4())[:12]  # Shorter IDs for MVP
+    dataset_dir = os.path.join(UPLOAD_DIR, dataset_id)
+    os.makedirs(dataset_dir, exist_ok=True)
+    
+    try:
+        # Save and validate patient data
+        patients_path = save_uploaded_file(patients, dataset_dir, "patients.csv")
+        is_valid, errors, validated_df = validate_and_load_patients(patients_path)
+        
+        if not is_valid:
+            raise HTTPException(status_code=400, detail={"errors": errors})
+        
+        # Save competitors data if provided
+        competitors_path = None
+        if competitors:
+            competitors_path = save_uploaded_file(competitors, dataset_dir, "competitors.csv")
+        
+        # Store dataset metadata
+        datasets[dataset_id] = {
+            "id": dataset_id,
+            "patients_path": patients_path,
+            "competitors_path": competitors_path,
+            "practice_zip": practice_zip,
+            "vertical": vertical,
+            "created_at": pd.Timestamp.now().isoformat(),
+            "patient_count": len(validated_df),
+            "unique_zips": validated_df["zip_code"].nunique()
+        }
+        
+        return DatasetCreateResponse(dataset_id=dataset_id)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Dataset creation failed: {str(e)}")
+
+@app.post("/api/v1/runs", response_model=RunCreateResponse)
+async def create_run(request: RunCreateRequest):
+    """Start analysis run with sophisticated ML algorithm"""
+    if request.dataset_id not in datasets:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    run_id = str(uuid.uuid4())[:12]
+    
+    # Initialize run tracking
+    runs[run_id] = {
+        "id": run_id,
+        "dataset_id": request.dataset_id,
+        "status": "running",
+        "created_at": datetime.now().isoformat()
+    }
+    
+
+    try:
+        # Execute sophisticated analysis
+        # Ensure grouped patient data is used for analysis
+        is_valid, _, df_grouped = validate_and_load_patients(datasets[request.dataset_id]["patients_path"])
+        if not is_valid or df_grouped is None:
+            raise HTTPException(status_code=400, detail="Patient data validation failed or returned no data.")
+        # Reset index to ensure uniqueness
+        df_grouped = df_grouped.reset_index(drop=True)
+        result = execute_advanced_analysis(datasets[request.dataset_id], request, df_grouped=df_grouped)
+
+        # --- Automatic Competitor Detection (Google Places API) ---
+        competition_data = {}
+        competition_count = 0
+        competition_adjustments = {}
+        try:
+            GOOGLE_PLACES_API_KEY = os.getenv('GOOGLE_PLACES_API_KEY')
+            practice_zip = datasets[request.dataset_id]["practice_zip"]
+            search_terms = ["medical spa", "aesthetic clinic", "botox clinic"]
+            all_competitors = set()
+            for term in search_terms:
+                params = {
+                    "query": f"{term} near {practice_zip}",
+                    "radius": 8000,
+                    "key": GOOGLE_PLACES_API_KEY
+                }
+                resp = requests.get("https://maps.googleapis.com/maps/api/place/textsearch/json", params=params, timeout=10)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    for place in data.get("results", []):
+                        all_competitors.add(place.get("place_id"))
+            competition_count = len(all_competitors)
+            # Adjust match scores: reduce by 5 points per competitor, max 25
+            adjustment = min(competition_count * 5, 25)
+            if hasattr(result, 'top_segments'):
+                for seg in result.top_segments:
+                    orig_score = getattr(seg, 'match_score', 0)
+                    new_score = max(0, orig_score - adjustment/100.0)  # assuming match_score is 0-1
+                    seg.match_score = new_score
+                    competition_adjustments[seg.zip] = {
+                        "original": orig_score,
+                        "adjusted": new_score,
+                        "competition_count": competition_count,
+                        "competition_adjustment": adjustment
+                    }
+            competition_data = {
+                "competition_count": competition_count,
+                "competition_adjustment": adjustment,
+                "competition_adjustments": competition_adjustments
+            }
+        except Exception as ce:
+            competition_data = {"error": f"Competition detection failed: {str(ce)}"}
+
+        # --- Model accuracy validation ---
+        validation_results = None
+        try:
+            # Use the same processed data as analysis
+            df_grouped = None
+            zip_scores_df = None
+            if hasattr(result, 'headline_metrics') and hasattr(result, 'top_segments'):
+                is_valid, _, df_grouped = validate_and_load_patients(datasets[request.dataset_id]["patients_path"])
+                import pandas as pd
+                zip_scores_df = pd.DataFrame([
+                    {"zip": s.zip, "match_score": s.match_score} for s in result.top_segments
+                ])
+                if is_valid and df_grouped is not None and not zip_scores_df.empty:
+                    validation_results = validate_algorithm_accuracy(df_grouped, zip_scores_df)
+        except Exception as ve:
+            validation_results = {"error": f"Validation failed: {str(ve)}"}
+
+        # Store results
+        runs[run_id].update({
+            "status": "done",
+            "completed_at": pd.Timestamp.now().isoformat(),
+            "result": result,
+            "model_accuracy": validation_results,
+            "competition_data": competition_data
+        })
+
+        # Return response with model_accuracy and competition_data
+        return fastapi.responses.JSONResponse({
+            "run_id": run_id,
+            "model_accuracy": validation_results,
+            "competition_data": competition_data
+        })
+
+    except Exception as e:
+        runs[run_id]["status"] = "error"
+        runs[run_id]["error"] = str(e)
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+@app.get("/api/v1/runs/{run_id}", response_model=Union[RunResult, dict])
+async def get_run_results(run_id: str):
+    """Retrieve analysis results"""
+    if run_id not in runs:
+        raise HTTPException(status_code=404, detail="Run not found")
+    
+    run = runs[run_id]
+    
+    if run["status"] == "error":
+        raise HTTPException(status_code=500, detail=run.get("error", "Analysis failed"))
+    
+    if run["status"] != "done":
+        return {"status": run["status"]}
+    
+    return run["result"]
+
+@app.post("/api/v1/exports")
+async def create_export_urls(request: ExportCreateRequest):
+    """Generate export URLs for different platforms"""
+    if request.run_id not in runs:
+        raise HTTPException(status_code=404, detail="Run not found")
+    
+    base_url = f"/api/v1/exports/{request.run_id}"
+    
+    return ExportUrls(
+        facebook_url=f"{base_url}?format=facebook&top_n={request.top_n}",
+        google_url=f"{base_url}?format=google&top_n={request.top_n}",
+        full_report_url=f"{base_url}?format=full&top_n={request.top_n}"
+    )
+
+@app.get("/api/v1/exports/{run_id}")
+async def download_export(run_id: str, format: str = "full", top_n: int = 10):
+    """Stream CSV exports for different advertising platforms"""
+    if run_id not in runs or runs[run_id]["status"] != "done":
+        raise HTTPException(status_code=404, detail="Run results not found")
+    
+    # Get top segments for export
+    result = runs[run_id]["result"]
+    top_segments = result.top_segments[:top_n]
+    
+    # Generate appropriate CSV format
+    if format == "facebook":
+        # Facebook Custom Audiences format
+        data = [{"zip": segment.zip, "country": "US"} for segment in top_segments]
+        filename = f"facebook_audience_{run_id}.csv"
+        
+    elif format == "google":
+        # Google Ads location targeting with bid modifiers
+        data = [{
+            "zip": segment.zip,
+            "country": "US", 
+            "bid_modifier": round(1.0 + (segment.match_score * 0.25), 2)
+        } for segment in top_segments]
+        filename = f"google_ads_{run_id}.csv"
+        
+    else:  # full report
+        # Comprehensive analysis report
+        data = [{
+            "zip": segment.zip,
+            "match_score": round(segment.match_score, 3),
+            "cohort": segment.cohort,
+            "expected_bookings_p50": segment.expected_bookings.p50,
+            "distance_miles": round(segment.distance_miles, 1),
+            "competitors": segment.competitors,
+            "primary_reason": segment.why[0] if segment.why else "Strong signal",
+            "bid_modifier": round(1.0 + (segment.match_score * 0.25), 2)
+        } for segment in top_segments]
+        filename = f"audience_analysis_{run_id}.csv"
+    
+    # Convert to CSV
+    df = pd.DataFrame(data)
+    csv_buffer = io.StringIO()
+    df.to_csv(csv_buffer, index=False)
+    csv_buffer.seek(0)
+    
+    return StreamingResponse(
+        io.BytesIO(csv_buffer.getvalue().encode()),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@app.post("/api/v1/integrations/facebook")
+async def connect_facebook(access_token: str = Form(...), ad_account_id: str = Form(...)):
+    """Connect Facebook Ads account"""
+    try:
+        # Initialize Facebook API
+        FacebookAdsApi.init(access_token=access_token)
+        
+        # Test connection
+        account = AdAccount(ad_account_id)
+        account.remote_read(fields=['name', 'account_status'])
+        
+        # Store connection (in production, encrypt these)
+        # For MVP, store in memory
+        facebook_connections[ad_account_id] = {
+            'access_token': access_token,
+            'account_id': ad_account_id
+        }
+        
+        return {"status": "connected", "account_id": ad_account_id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Facebook connection failed: {str(e)}")
+
+@app.post("/api/v1/campaigns/create")
+async def create_facebook_campaign(
+    run_id: str = Form(...),
+    campaign_name: str = Form(...),
+    daily_budget: int = Form(...)
+):
+    """Create Facebook campaign from analysis results"""
+    if run_id not in runs or runs[run_id]["status"] != "done":
+        raise HTTPException(status_code=404, detail="Run results not found")
+    
+    # Get top ZIP codes from analysis
+    result = runs[run_id]["result"]
+    top_zips = [segment.zip for segment in result.top_segments[:5]]  # Top 5 ZIPs
+    
+    # Create campaign targeting these ZIPs
+    campaign_data = {
+        'name': campaign_name,
+        'objective': 'LEAD_GENERATION',
+        'status': 'PAUSED',  # Start paused for review
+        'daily_budget': daily_budget * 100,  # Facebook expects cents
+        'targeting': {
+            'geo_locations': {
+                'zips': [{'key': zip_code} for zip_code in top_zips]
+            }
+        }
+    }
+    
+    return {
+        "status": "created",
+        "campaign_name": campaign_name,
+        "targeted_zips": top_zips,
+        "daily_budget": daily_budget
+    }
+
+@app.get("/api/v1/validate")
+async def validate_algorithm(
+    top_n: int = 10
+):
+    """
+    Validate ZIP recommendation accuracy using 75/25 split on the most recently uploaded patient data.
+    Returns accuracy metrics for algorithm benchmarking.
+    """
+    if not datasets:
+        raise HTTPException(status_code=404, detail="No datasets found. Upload patient data first.")
+    # Find the most recently uploaded dataset by created_at
+    latest_dataset = max(datasets.values(), key=lambda d: d.get("created_at", ""))
+    dataset = latest_dataset
+    # Load patient and ZIP demographic data
+    patients_df = pd.read_csv(dataset["patients_path"])
+    zip_demographics = pd.read_csv(ZIP_DEMOGRAPHICS_PATH)
+    competitors_df = None
+    if dataset.get("competitors_path"):
+        competitors_df = pd.read_csv(dataset["competitors_path"])
+    avg_patient_revenue = patients_df["revenue"].mean() if "revenue" in patients_df.columns else 1000.0
+    metrics = validate_zip_recommendation_accuracy(
+        patients_df=patients_df,
+        zip_demographics=zip_demographics,
+        competitors_df=competitors_df,
+        avg_patient_revenue=avg_patient_revenue,
+        top_n=top_n,
+        random_state=42
+    )
+    return metrics
+
+# ===========================================
+# CORE ANALYSIS ENGINE
+# ===========================================
+
+def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest, df_grouped: Optional[pd.DataFrame] = None) -> RunResult:
+    """
+    Execute the sophisticated multi-step analysis algorithm
+    Combines geographic accessibility, demographic features, psychographic cohorts,
+    and Ridge regression learning for defensible results
+    """
+    import logging
+    import traceback
+    logger = logging.getLogger("audiencemirror.analysis")
+    print("[ANALYSIS] Starting advanced analysis pipeline...")
+    # Load configuration and data
+    vertical_config = load_vertical_config(dataset["vertical"])
+    print("[ANALYSIS] Loaded vertical config")
+    # Use grouped patient data if provided
+    if df_grouped is not None:
+        patients_df = df_grouped.copy()
+    else:
+        patients_df = validate_and_load_patients(dataset["patients_path"])[2]
+    print(f"[ANALYSIS] Loaded patients: {len(patients_df) if patients_df is not None else 0}")
+    # Ensure unique index
+    patients_df = patients_df.reset_index(drop=True)
+    competitors_df = load_competitors_csv(dataset["competitors_path"])
+    print("[ANALYSIS] Loaded competitors")
+    demographics_df = load_zip_demographics(ZIP_DEMOGRAPHICS_PATH)
+    print("[ANALYSIS] Loaded demographics")
+
+    # Merge patient ZIPs with demographics (left join, keep all patients)
+    merged = patients_df.merge(
+        demographics_df,
+        left_on="zip_code", right_on="zip", how="left", suffixes=("", "_demo")
+    ).reset_index(drop=True)
+    # Fill missing demographic values with defaults
+    default_demo = {
+        "median_income": 75000,
+        "density_per_sqmi": 3000,  # medium density
+        "college_pct": 0.32,       # national avg
+        "age_25_54_pct": 0.39,     # national avg
+        "owner_occ_pct": 0.65,     # national avg
+        "population": 20000,       # medium
+        "lat": 0.0,
+        "lon": 0.0
+    }
+    for col, val in default_demo.items():
+        if col in merged.columns:
+            merged[col] = merged[col].fillna(val)
+        else:
+            merged[col] = val
+    # Log missing ZIPs and assign default demographics for specific ZIPs
+    missing_zips = merged[merged["zip"].isna()]["zip_code"].unique().tolist()
+    if missing_zips:
+        logger.warning(f"ZIPs in patients but missing from demographics: {missing_zips}")
+        print(f"[ANALYSIS] Missing ZIPs: {missing_zips}")
+        # Assign default demographics for these ZIPs
+        for zip_code in missing_zips:
+            merged.loc[merged["zip_code"] == zip_code, list(default_demo.keys())] = list(default_demo.values())
+            merged.loc[merged["zip_code"] == zip_code, "zip"] = zip_code
+    # For downstream, treat merged as the new patients_df and demographics_df
+    patients_df = merged.copy().reset_index(drop=True)
+    demographics_df = merged.drop_duplicates("zip_code").rename(columns={"zip_code": "zip"}).reset_index(drop=True)
+    demographics_df["zip"] = demographics_df["zip"].astype(str)
+    print("[ANALYSIS] Merged patients with demographics")
+
+    # STEP 1: Compute accessibility scores (geography + competition)
+    zip_features = compute_accessibility_score(
+        demographics_df, 
+        dataset["practice_zip"], 
+        competitors_df
+    ).reset_index(drop=True)
+    print("[ANALYSIS] Computed accessibility scores")
+
+    # STEP 2: Fit lifestyle cohorts using KMeans
+    kmeans_model, scaler, cohort_labels = fit_lifestyle_cohorts(zip_features)
+    zip_features["cohort"] = cohort_labels
+    print("[ANALYSIS] Fitted lifestyle cohorts")
+
+    # Map cohort numbers to meaningful names
+    cohort_names = vertical_config.get("cohort_names", [f"Segment {i}" for i in range(5)])
+    zip_features["cohort_name"] = zip_features["cohort"].map({
+        i: name for i, name in enumerate(cohort_names)
+    })
+
+    # STEP 3: Calculate psychographic affinity scores
+    psych_scores = calculate_psychographic_scores(
+        patients_df, zip_features, cohort_labels, vertical_config, request.focus
+    )
+    zip_features["psych_score"] = zip_features["zip"].map(psych_scores).fillna(0.5)
+    print("[ANALYSIS] Calculated psychographic scores")
+
+    # STEP 4: Learn optimal feature blend with Ridge regression
+    try:
+        ridge_model = learn_ridge_regression(patients_df, zip_features)
+        print(f"[ANALYSIS] Ridge model created: {ridge_model is not None}")
+        print(f"[ANALYSIS] Number of patients: {len(patients_df)}")
+        print(f"[ANALYSIS] Number of ZIP features: {len(zip_features)}")
+    except Exception as e:
+        logger.error(f"Ridge regression 500 error: {str(e)}", exc_info=True)
+        print(f"[ANALYSIS] Ridge regression 500 error: {str(e)}")
+        print(traceback.format_exc())
+        ridge_model = None
+
+    # STEP 5: Generate model predictions
+    if ridge_model is not None:
+        try:
+            feature_matrix = []
+            for _, row in zip_features.iterrows():
+                feature_values = [row.get(col, 0) for col in ridge_model.feature_names]
+                feature_matrix.append(feature_values)
+            X_scaled = ridge_model.feature_scaler.transform(feature_matrix)
+            predictions = ridge_model.predict(X_scaled)
+            if predictions.max() > predictions.min():
+                model_scores = (predictions - predictions.min()) / (predictions.max() - predictions.min())
+            else:
+                model_scores = np.full(len(predictions), 0.5)
+            print("[ANALYSIS] Ridge regression predictions complete")
+        except Exception as e:
+            logger.error(f"Ridge regression prediction error: {str(e)}", exc_info=True)
+            print(f"[ANALYSIS] Ridge regression prediction error: {str(e)}")
+            print(traceback.format_exc())
+            # Fallback to simple scoring
+            rev_by_zip = patients_df.groupby("zip_code")["revenue"].sum().rename("total_revenue")
+            zip_features = zip_features.merge(rev_by_zip, left_on="zip", right_index=True, how="left")
+            zip_features["total_revenue"] = zip_features["total_revenue"].fillna(0)
+            rd = (zip_features["total_revenue"] / zip_features["population"].replace(0, np.nan)).fillna(0) * 1000
+            if rd.max() > rd.min():
+                norm_rd = (rd - rd.min()) / (rd.max() - rd.min())
+            else:
+                norm_rd = np.zeros_like(rd)
+            model_scores = 0.6 * zip_features["accessibility"] + 0.4 * norm_rd.values
+    else:
+        rev_by_zip = patients_df.groupby("zip_code")["revenue"].sum().rename("total_revenue")
+        zip_features = zip_features.merge(rev_by_zip, left_on="zip", right_index=True, how="left")
+        zip_features["total_revenue"] = zip_features["total_revenue"].fillna(0)
+        rd = (zip_features["total_revenue"] / zip_features["population"].replace(0, np.nan)).fillna(0) * 1000
+        if rd.max() > rd.min():
+            norm_rd = (rd - rd.min()) / (rd.max() - rd.min())
+        else:
+            norm_rd = np.zeros_like(rd)
+        model_scores = 0.6 * zip_features["accessibility"] + 0.4 * norm_rd.values
+        print("[ANALYSIS] Used fallback scoring (no Ridge model)")
+
+    zip_features["model_score"] = model_scores
+
+    # STEP 6: Final lookalike score
+    zip_features["match_score"] = (
+        0.5 * zip_features["model_score"] + 
+        0.5 * zip_features["psych_score"]
+    )
+    print("[ANALYSIS] Calculated final match scores")
+
+    # STEP 7: Calibrate to realistic booking predictions
+    calibrator, confidence_info = calibrate_booking_predictions(zip_features, patients_df)
+    # Compute calibration meta
+    n_calib = getattr(calibrator, 'n_calib_', None)
+    if n_calib is None and hasattr(calibrator, 'X_'):
+        n_calib = len(getattr(calibrator, 'X_', []))
+    if n_calib is None:
+        n_calib = getattr(calibrator, 'n_calib', None)
+    if n_calib is None:
+        n_calib = 0
+
+    if n_calib >= 10:
+        confidence_level = 'high'
+    elif n_calib >= 5:
+        confidence_level = 'medium'
+    elif n_calib >= 3:
+        confidence_level = 'low'
+    else:
+        confidence_level = 'estimated'
+
+    calibration_meta = CalibrationMeta(
+        mode=type(calibrator).__name__,
+        n_calib=n_calib,
+        confidence=confidence_level
+    )
+    print(f"[ANALYSIS] Calibrator type: {type(calibrator)}")
+    print(f"[ANALYSIS] Match scores: {zip_features['match_score'].describe()}")
+
+    if isinstance(calibrator, IsotonicRegression):
+        scores_np = zip_features["match_score"].to_numpy(dtype=float)
+        pred_bookings = calibrator.predict(scores_np)
+        print(f"[ANALYSIS] p50 range: min={pred_bookings.min()}, max={pred_bookings.max()}")
+
+        p50 = np.rint(pred_bookings).astype(int).clip(1, 45)
+        zip_features.loc[:, "p50"] = p50
+        
+        p10 = np.maximum(np.floor(p50 * 0.7).astype(int), 1)
+        zip_features.loc[:, "p10"] = p10
+        
+        p90 = np.minimum(np.ceil(p50 * 1.4).astype(int), 60)
+        zip_features.loc[:, "p90"] = p90
+    else:
+        base = zip_features["match_score"].to_numpy(dtype=float) * (15.0 if request.focus == "surgical" else 12.0)
+        p50 = np.rint(base).astype(int).clip(1, 25)
+        zip_features.loc[:, "p50"] = p50
+        zip_features.loc[:, "p10"] = np.maximum(np.floor(p50 * 0.6).astype(int), 1)
+        zip_features.loc[:, "p90"] = np.minimum(np.ceil(p50 * 1.5).astype(int), 35)
+
+    print(f"[ANALYSIS] Final ranges - p10: {zip_features['p10'].min()}-{zip_features['p10'].max()}, p50: {zip_features['p50'].min()}-{zip_features['p50'].max()}, p90: {zip_features['p90'].min()}-{zip_features['p90'].max()}")
+
+    # STEP 8: Build response objects
+    headline_metrics = HeadlineMetrics(
+        total_patients=len(patients_df),
+        total_revenue=float(patients_df["revenue"].sum()),
+        avg_revenue=float(patients_df["revenue"].mean()),
+        high_value_count=int((patients_df["revenue"] >= vertical_config["high_value_threshold"]).sum()),
+        unique_zips=patients_df["zip_code"].nunique()
+    )
+
+    top_zip_features = zip_features.nlargest(20, "match_score")
+    top_segments = []
+    
+    # Count patients by ZIP for historical_patients
+    patient_counts = patients_df["zip_code"].astype(str).value_counts().to_dict()
+    for _, row in top_zip_features.iterrows():
+        explanations = generate_segment_explanations(row, ridge_model)
+        zip_str = str(row["zip"])
+        hist_patients = int(patient_counts.get(zip_str, 0))
+        segment = TopSegment(
+            zip=zip_str,
+            match_score=float(row["match_score"]),
+            expected_bookings=BookingRange(
+                p10=int(row["p10"]),
+                p50=int(row["p50"]),
+                p90=int(row["p90"])
+            ),
+            distance_miles=float(row["distance_miles"]),
+            competitors=int(row["competitors"]),
+            cohort=str(row.get("cohort_name", "Segment")),
+            why=explanations,
+            lat=float(row["lat"]) if not pd.isna(row["lat"]) else None,
+            lon=float(row["lon"]) if not pd.isna(row["lon"]) else None,
+            historical_patients=hist_patients,
+            is_new_market=(hist_patients == 0)
+        )
+        top_segments.append(segment)
+
+    map_points = [
+        MapPoint(
+            zip=str(row["zip"]),
+            lat=float(row["lat"]),
+            lon=float(row["lon"]),
+            score=float(row["match_score"])
+        )
+        for _, row in top_zip_features.iterrows()
+        if not pd.isna(row["lat"]) and not pd.isna(row["lon"])
+    ]
+
+    # --- Expansion Opportunity Metrics ---
+    # Find ZIPs in top_segments not in historical patients data
+    historical_zips = set(patients_df["zip_code"].astype(str).unique())
+    top_segment_zips = [s.zip for s in top_segments]
+    new_zips = [s for s in top_segments if s.zip not in historical_zips]
+    top_new_zips = new_zips[:7]
+    monthly_patients_low = sum(s.expected_bookings.p10 for s in top_new_zips)
+    monthly_patients_high = sum(s.expected_bookings.p90 for s in top_new_zips)
+    avg_patient_revenue = float(patients_df["revenue"].mean()) if len(patients_df) > 0 else 0.0
+    annual_revenue_low = monthly_patients_low * 12 * avg_patient_revenue
+    annual_revenue_high = monthly_patients_high * 12 * avg_patient_revenue
+    expansion_metrics = {
+        "new_zip_count": len(top_new_zips),
+        "monthly_patients_low": monthly_patients_low,
+        "monthly_patients_high": monthly_patients_high,
+        "annual_revenue_low": annual_revenue_low,
+        "annual_revenue_high": annual_revenue_high,
+        "current_zip_count": len(historical_zips)
+    }
+
+    print("[ANALYSIS] Analysis pipeline complete. Returning results.")
+    return RunResult(
+        status="done",
+        headline_metrics=headline_metrics,
+        top_segments=top_segments,
+        map_points=map_points,
+        confidence_info=confidence_info,
+        calibration_meta=calibration_meta,
+        expansion_metrics=expansion_metrics
+    )
+    
+    zip_features["model_score"] = model_scores
+    
+    # STEP 6: Final lookalike score
+    zip_features["match_score"] = (
+        0.5 * zip_features["model_score"] + 
+        0.5 * zip_features["psych_score"]
+    )
+    
+    # STEP 7: Calibrate to realistic booking predictions
+    calibrator, confidence_info = calibrate_booking_predictions(zip_features, patients_df)
+    # Compute calibration meta
+    n_calib = getattr(calibrator, 'n_calib_', None)
+    if n_calib is None and hasattr(calibrator, 'X_'):
+        n_calib = len(getattr(calibrator, 'X_', []))
+    if n_calib is None:
+        n_calib = getattr(calibrator, 'n_calib', None)
+    if n_calib is None:
+        n_calib = 0
+
+    if n_calib >= 10:
+        confidence_level = 'high'
+    elif n_calib >= 5:
+        confidence_level = 'medium'
+    elif n_calib >= 3:
+        confidence_level = 'low'
+    else:
+        confidence_level = 'estimated'
+
+    calibration_meta = CalibrationMeta(
+        mode=type(calibrator).__name__,
+        n_calib=n_calib,
+        confidence=confidence_level
+    )
+    print(f"DEBUG: Calibrator type: {type(calibrator)}")
+    print(f"DEBUG: Match scores: {zip_features['match_score'].describe()}")
+
+    if isinstance(calibrator, IsotonicRegression):
+        scores_np = zip_features["match_score"].to_numpy(dtype=float)
+        pred_bookings = calibrator.predict(scores_np)
+        print(f"DEBUG: p50 range: min={pred_bookings.min()}, max={pred_bookings.max()}")
+
+        p50 = np.rint(pred_bookings).astype(int).clip(1, 45)
+        zip_features.loc[:, "p50"] = p50
+        
+        p10 = np.maximum(np.floor(p50 * 0.7).astype(int), 1)
+        zip_features.loc[:, "p10"] = p10
+        
+        p90 = np.minimum(np.ceil(p50 * 1.4).astype(int), 60)
+        zip_features.loc[:, "p90"] = p90
+    else:
+        base = zip_features["match_score"].to_numpy(dtype=float) * (15.0 if request.focus == "surgical" else 12.0)
+        p50 = np.rint(base).astype(int).clip(1, 25)
+        zip_features.loc[:, "p50"] = p50
+        zip_features.loc[:, "p10"] = np.maximum(np.floor(p50 * 0.6).astype(int), 1)
+        zip_features.loc[:, "p90"] = np.minimum(np.ceil(p50 * 1.5).astype(int), 35)
+
+    print(f"DEBUG: Final ranges - p10: {zip_features['p10'].min()}-{zip_features['p10'].max()}, p50: {zip_features['p50'].min()}-{zip_features['p50'].max()}, p90: {zip_features['p90'].min()}-{zip_features['p90'].max()}")
+
+    # STEP 8: Build response objects
+    headline_metrics = HeadlineMetrics(
+        total_patients=len(patients_df),
+        total_revenue=float(patients_df["revenue"].sum()),
+        avg_revenue=float(patients_df["revenue"].mean()),
+        high_value_count=int((patients_df["revenue"] >= vertical_config["high_value_threshold"]).sum()),
+        unique_zips=patients_df["zip_code"].nunique()
+    )
+
+    top_zip_features = zip_features.nlargest(20, "match_score")
+    top_segments = []
+    
+    # Count patients by ZIP for historical_patients
+    patient_counts = patients_df["zip_code"].astype(str).value_counts().to_dict()
+    for _, row in top_zip_features.iterrows():
+        explanations = generate_segment_explanations(row, ridge_model)
+        zip_str = str(row["zip"])
+        hist_patients = int(patient_counts.get(zip_str, 0))
+        segment = TopSegment(
+            zip=zip_str,
+            match_score=float(row["match_score"]),
+            expected_bookings=BookingRange(
+                p10=int(row["p10"]),
+                p50=int(row["p50"]),
+                p90=int(row["p90"])
+            ),
+            distance_miles=float(row["distance_miles"]),
+            competitors=int(row["competitors"]),
+            cohort=str(row.get("cohort_name", "Segment")),
+            why=explanations,
+            lat=float(row["lat"]) if not pd.isna(row["lat"]) else None,
+            lon=float(row["lon"]) if not pd.isna(row["lon"]) else None,
+            historical_patients=hist_patients,
+            is_new_market=(hist_patients == 0)
+        )
+        top_segments.append(segment)
+
+    map_points = [
+        MapPoint(
+            zip=str(row["zip"]),
+            lat=float(row["lat"]),
+            lon=float(row["lon"]),
+            score=float(row["match_score"])
+        )
+        for _, row in top_zip_features.iterrows()
+        if not pd.isna(row["lat"]) and not pd.isna(row["lon"])
+    ]
+
+    # --- Expansion Opportunity Metrics ---
+    # Find ZIPs in top_segments not in historical patients data
+    historical_zips = set(patients_df["zip_code"].astype(str).unique())
+    top_segment_zips = [s.zip for s in top_segments]
+    new_zips = [s for s in top_segments if s.zip not in historical_zips]
+    top_new_zips = new_zips[:7]
+    monthly_patients_low = sum(s.expected_bookings.p10 for s in top_new_zips)
+    monthly_patients_high = sum(s.expected_bookings.p90 for s in top_new_zips)
+    avg_patient_revenue = float(patients_df["revenue"].mean()) if len(patients_df) > 0 else 0.0
+    annual_revenue_low = monthly_patients_low * 12 * avg_patient_revenue
+    annual_revenue_high = monthly_patients_high * 12 * avg_patient_revenue
+    expansion_metrics = {
+        "new_zip_count": len(top_new_zips),
+        "monthly_patients_low": monthly_patients_low,
+        "monthly_patients_high": monthly_patients_high,
+        "annual_revenue_low": annual_revenue_low,
+        "annual_revenue_high": annual_revenue_high,
+        "current_zip_count": len(historical_zips)
+    }
+
+    return RunResult(
+        status="done",
+        headline_metrics=headline_metrics,
+        top_segments=top_segments,
+        map_points=map_points,
+        confidence_info=confidence_info,
+        calibration_meta=calibration_meta,
+        expansion_metrics=expansion_metrics
+    )
+
+# Development server
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

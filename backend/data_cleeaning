@@ -1,0 +1,84 @@
+import pandas as pd
+import numpy as np
+
+def normalize_zip(z) -> str:
+    """Convert any ZIP code format to clean 5-digit string"""
+    try:
+        # Convert to string and remove non-digits
+        z_str = str(z).strip()
+        z_clean = ''.join(ch for ch in z_str if ch.isdigit())
+        # Pad with zeros to make 5 digits
+        return z_clean.zfill(5) if z_clean else "00000"
+    except:
+        return "00000"
+
+def coerce_float(x, default=0.0):
+    """Safely convert to float with fallback"""
+    try:
+        if pd.isna(x) or x is None:
+            return default
+        return float(x)
+    except:
+        return default
+
+def coerce_int(x, default=0):
+    """Safely convert to int with fallback"""
+    try:
+        if pd.isna(x) or x is None:
+            return default
+        return int(float(x))  # float first to handle "1.0" strings
+    except:
+        return default
+
+def normalize_patients_dataframe(df):
+    """Clean up patients dataframe with safe type conversion"""
+    df = df.copy()
+    
+    # Clean ZIP codes
+    if 'zip_code' in df.columns:
+        print(f"[CLEAN] Normalizing {len(df)} ZIP codes")
+        df['zip_code'] = df['zip_code'].apply(normalize_zip)
+        print(f"[CLEAN] Sample ZIPs after cleaning: {df['zip_code'].head(3).tolist()}")
+    
+    # Clean revenue column
+    if 'revenue' in df.columns:
+        original_nulls = df['revenue'].isna().sum()
+        df['revenue'] = df['revenue'].apply(lambda x: coerce_float(x, 500.0))  # default $500
+        print(f"[CLEAN] Revenue: {original_nulls} null values, filled with $500 default")
+    
+    # Clean geographic columns
+    for col in ['lat', 'lon']:
+        if col in df.columns:
+            original_nulls = df[col].isna().sum()
+            df[col] = df[col].apply(lambda x: coerce_float(x, None))  # keep None for missing geo
+            final_nulls = df[col].isna().sum()
+            print(f"[CLEAN] {col}: {original_nulls} -> {final_nulls} null values")
+    
+    return df
+
+def normalize_demographics_dataframe(df):
+    """Clean up demographics dataframe"""
+    df = df.copy()
+    
+    # Clean ZIP codes
+    if 'zip' in df.columns:
+        df['zip'] = df['zip'].apply(normalize_zip)
+    
+    # Clean numeric columns with sensible defaults
+    numeric_columns = {
+        'median_income': 75000,
+        'population': 20000,
+        'lat': None,  # Keep None for missing
+        'lon': None,
+        'density_per_sqmi': 3000,
+        'college_pct': 0.32,
+        'age_25_54_pct': 0.39,
+        'owner_occ_pct': 0.65
+    }
+    
+    for col, default in numeric_columns.items():
+        if col in df.columns:
+            df[col] = df[col].apply(lambda x: coerce_float(x, default))
+    
+    print(f"[CLEAN] Demographics cleaned: {len(df)} ZIP codes")
+    return df

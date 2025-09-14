@@ -1,0 +1,26 @@
+{
+  "name": "medspa",
+  "high_value_threshold": 5000,
+  "non_inv_keywords": [
+    "botox", "filler", "laser", "coolsculpt", "hydrafacial", 
+    "ipl", "peel", "microneedling", "radiofrequency"
+  ],
+  "surgical_keywords": [
+    "rhinoplasty", "tummy", "facelift", "lipo", "augmentation", 
+    "blepharoplasty", "lift", "reduction", "implant"
+  ],
+  "cohort_names": [
+    "Luxury Suburbs", 
+    "Urban Pros", 
+    "Suburban Families", 
+    "Emerging Affluents", 
+    "Dense Blue-Collar"
+  ],
+  "copy_hints": {
+    "Luxury Suburbs": ["premium positioning", "exclusive experiences", "concierge service"],
+    "Urban Pros": ["tech-forward", "efficient scheduling", "convenience"],
+    "Suburban Families": ["natural results", "flexible scheduling", "family-friendly"],
+    "Emerging Affluents": ["value options", "financing available", "clear results"],
+    "Dense Blue-Collar": ["accessible pricing", "weekend availability", "straightforward approach"]
+  }
+}
