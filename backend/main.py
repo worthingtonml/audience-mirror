@@ -28,6 +28,7 @@ from .services.scoring import (
 )
 from .services.validate import validate_algorithm_accuracy
 from .database import get_db, Dataset, AnalysisRun, create_tables
+
 from sqlalchemy.orm import Session
 
 def normalize_zip(z) -> str:
@@ -687,6 +688,33 @@ async def get_campaign_cards(run_id: str, db: Session = Depends(get_db)):
         )
 
     return {"status": "done", "campaigns": campaigns}
+
+# Add this class definition first (near the top with your other imports/models)
+class CampaignRequest(BaseModel):
+    cohort: str
+    zip_code: str
+    competitors: int
+    reasons: list[str]
+    match_score: float
+
+# Then add this endpoint after your get_campaign_cards function
+@app.post("/api/generate-campaign")
+async def generate_campaign_endpoint(request: CampaignRequest):
+    """Generate dynamic Facebook campaign content using LLM"""
+    try:
+        from .services.campaign_generator import generate_campaign_content
+        
+        return await generate_campaign_content(
+            request.cohort,
+            request.zip_code, 
+            request.competitors,
+            request.reasons,
+            request.match_score
+        )
+    except ImportError:
+        raise HTTPException(status_code=501, detail="Campaign generation service not implemented")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Campaign generation failed: {str(e)}")
 
 @app.post("/api/v1/integrations/facebook")
 async def connect_facebook(access_token: str = Form(...), ad_account_id: str = Form(...)):
