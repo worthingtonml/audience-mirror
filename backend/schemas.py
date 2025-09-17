@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Literal, Dict
 from datetime import datetime
 
+
 # Type definitions
 FocusType = Literal["non_inv", "surgical"]
 StatusType = Literal["pending", "running", "done", "error"]

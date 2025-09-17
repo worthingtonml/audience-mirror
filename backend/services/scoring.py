@@ -7,7 +7,15 @@ from sklearn.cluster import KMeans
 from sklearn.isotonic import IsotonicRegression
 from typing import Optional, Tuple, List
 import warnings
-from services.zip_income import get_zip_income_data
+from pydantic import BaseModel, Field
+from typing import List, Optional, Literal, Dict
+from datetime import datetime
+
+# relative imports because we're inside backend/services
+from .zip_income import get_zip_income_data              # if you use it
+from ..schemas import RunCreateRequest                   # if you reference it here
+from ..database import get_db, Dataset, AnalysisRun      # if you reference them here
+
 warnings.filterwarnings('ignore')
 
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -107,7 +115,7 @@ def fit_lifestyle_cohorts(zip_features):
     if n_samples < 10:
         n_clusters = min(3, n_samples - 1)
     else:
-        n_clusters = min(5, len(zip_features))  # Use fewer clusters for small datasets
+        n_clusters = min(3, len(zip_features))  # Use fewer clusters for small datasets
 
     features_to_cluster = [
         'population', 'median_income', 'competitors', 'distance_miles'
@@ -150,16 +158,15 @@ def _create_rule_based_cohorts(zip_features):
         income = row.get('median_income', 0)
         competitors = row.get('competitors', 0)
 
-        if income > 75000 and competitors <= 2:
-            cohort_labels.append('Premium')
-        elif income > 60000:
-            cohort_labels.append('Affluent') 
-        elif competitors <= 1:
-            cohort_labels.append('Emerging')
+        # Updated 3-cohort logic with new names
+        if income > 90000 and competitors <= 2:
+            cohort_labels.append('Luxury Clients')
+        elif income > 50000:
+            cohort_labels.append('Comfort Spenders') 
         else:
-            cohort_labels.append('Value')
+            cohort_labels.append('Budget Conscious')
 
-    return None, None, cohort_labels
+    return None, None, cohort_labels  # Keep same return structure
 
 def _assign_cohort_names(zip_features, cluster_labels, n_clusters):
     """
@@ -185,8 +192,8 @@ def _assign_cohort_names(zip_features, cluster_labels, n_clusters):
     cluster_profiles.sort(key=lambda x: x['income'], reverse=True)
 
     name_mapping = {}
-    available_names = ['Premium', 'Affluent', 'Emerging', 'Value', 'Niche']
-
+    available_names = ['Luxury Clients', 'Comfort Spenders', 'Budget Conscious']
+    
     for idx, profile in enumerate(cluster_profiles):
         name_mapping[profile['cluster']] = available_names[idx]
 

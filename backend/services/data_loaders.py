@@ -138,5 +138,5 @@ def load_vertical_config(vertical_name: str) -> dict:
             "high_value_threshold": 5000,
             "non_inv_keywords": ["botox", "filler", "laser", "coolsculpt", "hydrafacial"],
             "surgical_keywords": ["rhinoplasty", "tummy", "facelift", "lipo", "augmentation"],
-            "cohort_names": ["Luxury Suburbs", "Urban Pros", "Suburban Families", "Emerging Affluents", "Dense Blue-Collar"]
+            "cohort_names": ['Luxury Clients', 'Comfort Spenders', 'Budget Conscious']
         }
