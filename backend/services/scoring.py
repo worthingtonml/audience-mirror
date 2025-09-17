@@ -12,9 +12,10 @@ from typing import List, Optional, Literal, Dict
 from datetime import datetime
 
 # relative imports because we're inside backend/services
-from .zip_income import get_zip_income_data              # if you use it
-from ..schemas import RunCreateRequest                   # if you reference it here
-from ..database import get_db, Dataset, AnalysisRun      # if you reference them here
+# Change these lines in scoring.py:
+# from zip_income import get_zip_income_data
+# from schemas import RunCreateRequest                   
+# from database import get_db, Dataset, AnalysisRun
 
 warnings.filterwarnings('ignore')
 

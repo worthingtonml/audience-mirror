@@ -75,12 +75,12 @@ REQUIREMENTS:
 - Use market context to differentiate from competitors
 """
 
-async def generate_campaign_content(cohort: str, zip_code: str, competitors: int, reasons: list, match_score: float):
+def generate_campaign_content(cohort: str, zip_code: str, competitors: int, reasons: list, match_score: float):
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
     prompt = build_campaign_prompt(cohort, zip_code, competitors, reasons, match_score)
     
-    response = await client.chat.completions.create(
+    response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7

@@ -1,4 +1,6 @@
+import sys
 import os
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import requests
 import uuid
 import json
@@ -9,27 +11,38 @@ import numpy as np
 import pandas as pd
 from datetime import datetime
 
+from dotenv import load_dotenv
+load_dotenv()  # This loads your .env file
+
 import fastapi
 from fastapi import UploadFile, Form, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sklearn.isotonic import IsotonicRegression
 
-from .schemas import *
-from .services.data_loaders import (
+from schemas import *
+from pydantic import BaseModel
+from services.data_loaders import (
     validate_and_load_patients, load_competitors_csv,
     load_zip_demographics, load_vertical_config
 )
-from .services.scoring import (
+from services.scoring import (
     compute_accessibility_score, fit_lifestyle_cohorts,
     calculate_psychographic_scores, learn_ridge_regression,
     calibrate_booking_predictions, generate_segment_explanations, validate_zip_recommendation_accuracy,
     generate_llm_explanations
 )
-from .services.validate import validate_algorithm_accuracy
-from .database import get_db, Dataset, AnalysisRun, create_tables
+from services.validate import validate_algorithm_accuracy
+from database import get_db, Dataset, AnalysisRun, create_tables
 
 from sqlalchemy.orm import Session
+
+class CampaignRequest(BaseModel):
+    cohort: str
+    zip_code: str
+    competitors: int
+    reasons: list[str]
+    match_score: float
 
 def normalize_zip(z) -> str:
     """Convert any ZIP code format to clean 5-digit string"""
@@ -688,32 +701,26 @@ async def get_campaign_cards(run_id: str, db: Session = Depends(get_db)):
         )
 
     return {"status": "done", "campaigns": campaigns}
-
-# Add this class definition first (near the top with your other imports/models)
-class CampaignRequest(BaseModel):
-    cohort: str
-    zip_code: str
-    competitors: int
-    reasons: list[str]
-    match_score: float
-
-# Then add this endpoint after your get_campaign_cards function
 @app.post("/api/generate-campaign")
 async def generate_campaign_endpoint(request: CampaignRequest):
     """Generate dynamic Facebook campaign content using LLM"""
     try:
-        from .services.campaign_generator import generate_campaign_content
+        print(f"[DEBUG] Attempting to import campaign_generator...")
+        from services.campaign_generator import generate_campaign_content
+        print(f"[DEBUG] Import successful, calling generate_campaign_content...")
         
-        return await generate_campaign_content(
+        return generate_campaign_content(
             request.cohort,
-            request.zip_code, 
+            request.zip_code,
             request.competitors,
             request.reasons,
             request.match_score
         )
-    except ImportError:
-        raise HTTPException(status_code=501, detail="Campaign generation service not implemented")
+    except ImportError as e:
+        print(f"[ERROR] ImportError: {e}")
+        raise HTTPException(status_code=501, detail=f"Campaign generation service not implemented: {e}")
     except Exception as e:
+        print(f"[ERROR] Exception: {e}")
         raise HTTPException(status_code=500, detail=f"Campaign generation failed: {str(e)}")
 
 @app.post("/api/v1/integrations/facebook")
