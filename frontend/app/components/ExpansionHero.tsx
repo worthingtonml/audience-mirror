@@ -1,4 +1,3 @@
-// frontend/app/components/ExpansionHero.tsx
 "use client";
 import React from "react";
 import MetricHelpButton from "./MetricHelpButton";
@@ -19,25 +18,30 @@ export default function ExpansionHero({
   revLow,
   revHigh,
   onDiscover,
-}: ExpansionHeroProps) {
-  return (
-    <section className="mb-10 rounded-2xl border border-gray-200 bg-slate-50 w-full max-w-5xl mx-auto shadow-sm px-0 py-0 overflow-visible">
-      {/* Header */}
-      <div className="flex flex-col items-start border-b border-gray-200 px-8 pt-8 pb-4">
-        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight mb-0">
-          Expansion Opportunity
-        </h2>
+    }: ExpansionHeroProps) {
+    return (
+        <section className="mb-10 rounded-2xl border border-gray-200 bg-slate-50 w-full max-w-5xl mx-auto shadow-sm px-0 py-0 overflow-visible">
+    {/* Header */}
+    <div className="flex flex-col items-start px-8 pt-8 pb-4">
+    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight mb-0">
+    
+    Expansion Opportunity
+    </h2>
 
+    {/* accuracy badge (hidden) */}
+    {false && (
         <span
-          className="ml-2 mt-2 inline-flex items-center text-xs font-medium text-gray-500 bg-gray-100 border border-gray-200 rounded-full px-2 py-0.5 select-none"
-          title="Based on historical patient data validation"
+        className="ml-2 mt-2 inline-flex items-center text-xs font-medium text-gray-500 bg-gray-100 border border-gray-200 rounded-full px-2 py-0.5"
+        title="Share of historical forecasts that landed within the Low–High band on held-out data."
         >
-          <svg className="w-3 h-3 text-green-500 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+        <svg className="w-3 h-3 text-green-500 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-          Algorithm accuracy: 93%
+        </svg>
+        Algorithm accuracy: 93%
         </span>
-      </div>
+    )}
+    </div>
+
 
       {/* KPI row */}
       <div className="flex flex-col md:flex-row md:space-x-0 divide-y md:divide-y-0 md:divide-x divide-gray-200 px-4 md:px-8 py-8">
