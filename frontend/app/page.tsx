@@ -110,6 +110,10 @@ export default function AudienceMirror() {
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
+  const [selectedProcedure, setSelectedProcedure] = useState<string>('');
+  const [availableProcedures, setAvailableProcedures] = useState<any[]>([]);
+  const [currentDatasetId, setCurrentDatasetId] = useState<string>('');
+
   const [campaignModal, setCampaignModal] = useState<{
     open: boolean;
     zipCode?: string;
@@ -154,6 +158,8 @@ export default function AudienceMirror() {
     setLoading(true);
     try {
       const datasetId = await uploadDataset(patientsFile, practiceZip, competitorsFile || undefined);
+      setCurrentDatasetId(datasetId);
+      await fetchProcedures(datasetId);
       const newRunId = await createRun(datasetId, focus);
       const runResults = await getRunResults(newRunId);
       console.log('🔍 FULL API RESPONSE:', runResults);
@@ -176,6 +182,42 @@ export default function AudienceMirror() {
       } else {
         setError('Analysis failed. Please check your data and try again.');
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchProcedures = async (datasetId: string) => {
+    try {
+      const response = await fetch(`http://localhost:8000/procedures?dataset_id=${datasetId}`);
+      const data = await response.json();
+      setAvailableProcedures(data.procedures || []);
+    } catch (error) {
+      console.error('Failed to fetch procedures:', error);
+    }
+  };
+
+  const handleProcedureChange = async (procedure: string) => {
+    setSelectedProcedure(procedure);
+    if (!currentDatasetId) return;
+    
+    setLoading(true);
+    try {
+      const url = procedure 
+        ? `http://localhost:8000/api/v1/runs?procedure=${encodeURIComponent(procedure)}`
+        : `http://localhost:8000/api/v1/runs`;
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataset_id: currentDatasetId })
+      });
+      
+      const runData = await response.json();
+      const runResults = await getRunResults(runData.run_id);
+      setResults(runResults);
+    } catch (error) {
+      setError('Failed to analyze with selected procedure');
     } finally {
       setLoading(false);
     }
@@ -269,6 +311,32 @@ export default function AudienceMirror() {
                 </div>
               );
             })()}
+          {/* Procedure Filter Dropdown */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Analysis Scope</h3>
+                <p className="text-sm text-gray-600 dark:text-white/70">Filter results by specific procedure type</p>
+              </div>
+              <select 
+                value={selectedProcedure}
+                onChange={(e) => handleProcedureChange(e.target.value)}
+                className="rounded-lg border border-gray-300 dark:border-white/20 bg-white dark:bg-white/5 px-4 py-2 text-gray-900 dark:text-white"
+              >
+                <option value="">All Procedures</option>
+                {availableProcedures.map((proc) => (
+                  <option key={proc.name} value={proc.name}>
+                    {proc.name} ({proc.count} patients)
+                  </option>
+                ))}
+              </select>
+            </div>
+            {selectedProcedure && (
+              <div className="mt-3 text-sm text-blue-700 dark:text-blue-300">
+                Showing results filtered for {selectedProcedure} patients only
+              </div>
+            )}
+          </div>
 
             {/* ZIP Cards */}
             <div id="zip-cards-section">

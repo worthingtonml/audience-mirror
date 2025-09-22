@@ -1,12 +1,18 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from services.data_loaders import validate_and_load_patients
+from database import get_db, Dataset
+from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/procedures", tags=["procedures"])
 
 @router.get("")
-def list_procedures(dataset_id: str):
+def list_procedures(dataset_id: str, db: Session = Depends(get_db)):
     # For now, we'll use a file path - you may need to adjust this based on how you handle dataset_id
-    file_path = f"{dataset_id}.csv"  # Adjust this path as needed
+    # Get the actual file path from database
+    dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+    if not dataset:
+        raise HTTPException(404, "Dataset not found")
+    file_path = dataset.patients_path
     
     success, warnings, df = validate_and_load_patients(file_path)
     
