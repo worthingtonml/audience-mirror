@@ -87,6 +87,7 @@ def validate_and_load_patients(file_path: str) -> Tuple[bool, List[str], Optiona
         df["consult_date"] = pd.to_datetime(df["consult_date"], errors="coerce")
 
     logger.info(f"Loaded patients: {len(df)} rows; {df['zip_code'].nunique()} unique ZIPs")
+    df = _apply_normalization(df)
     return True, warnings, df
 
 def load_competitors_csv(file_path: Optional[str]) -> pd.DataFrame:
@@ -140,3 +141,11 @@ def load_vertical_config(vertical_name: str) -> dict:
             "surgical_keywords": ["rhinoplasty", "tummy", "facelift", "lipo", "augmentation"],
             "cohort_names": ['Luxury Clients', 'Comfort Spenders', 'Budget Conscious']
         }
+# === Procedure normalization hook ===
+from services.procedures import normalize_procedure
+
+def _apply_normalization(df):
+    if "procedure_type" in df.columns and "procedure_norm" not in df.columns:
+        df = df.copy()
+        df["procedure_norm"] = df["procedure_type"].map(normalize_procedure)
+    return df

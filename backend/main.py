@@ -19,6 +19,7 @@ from fastapi import UploadFile, Form, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from sklearn.isotonic import IsotonicRegression
+from routers import procedures as procedures_router
 
 from schemas import *
 from pydantic import BaseModel
@@ -352,6 +353,8 @@ app = fastapi.FastAPI(
     version="1.0.0"
 )
 
+app.include_router(procedures_router.router)
+
 # Add this after your app = fastapi.FastAPI(...) section
 @app.on_event("startup")
 async def startup_event():
@@ -475,6 +478,7 @@ async def create_dataset(
 @app.post("/api/v1/runs")
 async def create_run(
     request: RunCreateRequest,
+    procedure: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """Start analysis run with sophisticated ML algorithm"""
@@ -503,6 +507,13 @@ async def create_run(
             raise HTTPException(status_code=400, detail="Patient data validation failed")
         
         df_grouped = df_grouped.reset_index(drop=True)
+        
+        # Add procedure filtering if specified
+        if procedure and procedure != "all":
+            if "procedure_norm" in df_grouped.columns:
+                df_grouped = df_grouped[df_grouped["procedure_norm"] == procedure]
+                if df_grouped.empty:
+                    raise HTTPException(status_code=400, detail=f"No data found for procedure: {procedure}")
         
         # Convert dataset to dict for compatibility with existing analysis function
         dataset_dict = {
