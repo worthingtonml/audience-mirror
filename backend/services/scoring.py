@@ -19,6 +19,30 @@ from datetime import datetime
 
 warnings.filterwarnings('ignore')
 
+def attach_match_percentage(df: pd.DataFrame, score_col: str = "oppScore",
+                            floor: int = 50, ceil: int = 96) -> pd.DataFrame:
+    """
+    Adds a 'match_percentage' column scaled from opportunity scores.
+    Uses per-response min–max so numbers spread nicely across cards.
+
+    df must include score_col (e.g., 'oppScore').
+    """
+    out = df.copy()
+    if score_col not in out.columns or out.empty:
+        out["match_percentage"] = 50
+        return out
+
+    s = out[score_col].astype(float)
+    s_min, s_max = float(np.nanmin(s)), float(np.nanmax(s))
+    if not np.isfinite(s_min) or not np.isfinite(s_max) or s_max <= s_min:
+        out["match_percentage"] = int((floor + ceil) / 2)
+        return out
+
+    norm = (s - s_min) / (s_max - s_min)           # 0..1
+    pct = floor + norm * (ceil - floor)            # floor..ceil
+    out["match_percentage"] = np.rint(pct).astype(int)
+    return out
+
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate Haversine distance between two points in miles"""
     R = 3956.0  # Earth's radius in miles

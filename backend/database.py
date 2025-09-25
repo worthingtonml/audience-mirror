@@ -54,6 +54,7 @@ class AnalysisRun(Base):
     top_segments = Column(JSON, nullable=True)
     map_points = Column(JSON, nullable=True)
     confidence_info = Column(JSON, nullable=True)
+    procedure = Column(String, nullable=True)
 
 # ---- Session helper ----
 def get_db():

@@ -44,6 +44,7 @@ class CampaignRequest(BaseModel):
     competitors: int
     reasons: list[str]
     match_score: float
+    procedure: Optional[str] = None
 
 def normalize_zip(z) -> str:
     """Convert any ZIP code format to clean 5-digit string"""
@@ -494,7 +495,8 @@ async def create_run(
         id=run_id,
         dataset_id=request.dataset_id,
         focus=request.focus,
-        status="running"
+        status="running",
+        procedure=procedure
     )
     
     db.add(analysis_run)
@@ -649,7 +651,7 @@ async def download_export(run_id: str, format: str = "full", top_n: int = 10):
     )
     
     # ---- campaign helper (place this above the route) ----
-def generate_campaign_card(segment_data, logo_url=None):
+def generate_campaign_card(segment_data, procedure=None, logo_url=None):
     zip_code = segment_data.get('zip')
     cohort = segment_data.get('cohort')
     match_score = float(segment_data.get('match_score', 0))
@@ -669,13 +671,22 @@ def generate_campaign_card(segment_data, logo_url=None):
         'Emerging': 'Ages 25-45, HH Income $60k+, Health-conscious'
     }.get(cohort, 'Ages 30-55, interested in wellness')
 
-    if avg_ticket > 1200:
-        ad_copy = f"Premier experience. Typical plans around ${int(avg_ticket)}."
-    elif competitors > 1:
-        ad_copy = f"Stand out from {competitors}+ local options. Avg ticket ~${int(avg_ticket)}."
+    # Procedure-specific ad copy
+    if procedure:
+        if avg_ticket > 1200:
+            ad_copy = f"Premier {procedure} results. Packages from ${int(avg_ticket)}. Book today."
+        elif competitors > 1:
+            ad_copy = f"Expert {procedure} treatments. Stand out from {competitors} local options. Avg ${int(avg_ticket)}."
+        else:
+            ad_copy = f"First in your area for {procedure}. Treatments from ${int(avg_ticket)}. Book now."
     else:
-        ad_copy = f"First-mover advantage. Typical visit ~${int(avg_ticket)}."
-
+        # Generic ad copy when no procedure specified
+        if avg_ticket > 1200:
+            ad_copy = f"Premier experience. Typical plans around ${int(avg_ticket)}."
+        elif competitors > 1:
+            ad_copy = f"Stand out from {competitors}+ local options. Avg ticket ~${int(avg_ticket)}."
+        else:
+            ad_copy = f"First-mover advantage. Typical visit ~${int(avg_ticket)}."
     daily_budget = max(5, round(monthly_ad_cap / 30))
 
     return {
@@ -708,10 +719,11 @@ async def get_campaign_cards(run_id: str, db: Session = Depends(get_db)):
     for seg in (top_segments or [])[:5]:
         seg_dict = dict(seg) if not isinstance(seg, dict) else seg
         campaigns.append(
-            generate_campaign_card(seg_dict, logo_url="/assets/audience-mirror-logo.png")
+            generate_campaign_card(seg_dict, procedure=analysis_run.procedure, logo_url="/assets/audience-mirror-logo.png")
         )
 
     return {"status": "done", "campaigns": campaigns}
+
 @app.post("/api/generate-campaign")
 async def generate_campaign_endpoint(request: CampaignRequest):
     """Generate dynamic Facebook campaign content using LLM"""
@@ -725,7 +737,8 @@ async def generate_campaign_endpoint(request: CampaignRequest):
             request.zip_code,
             request.competitors,
             request.reasons,
-            request.match_score
+            request.match_score,
+            request.procedure
         )
     except ImportError as e:
         print(f"[ERROR] ImportError: {e}")
@@ -1050,25 +1063,25 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
             psych_scores = calculate_psychographic_scores(
                 patients_df, zip_features, cohort_labels, vertical_config, request.focus
             )
-
-            # >>> ADD THESE TWO LINES HERE <<<
             psych_scores = pd.to_numeric(psych_scores, errors="coerce").fillna(0.5)
             zip_features["psych_score"] = psych_scores
-            # <<< END INSERT >>>
 
-            zip_features["psych_score"] = pd.to_numeric(psych_scores, errors="coerce").fillna(0.5)
+            if zip_features["psych_score"].nunique() == 1:
+                # Add small variance based on distance (closer = higher score)
+                dist_normalized = 1 - (zip_features["distance_miles"] - zip_features["distance_miles"].min()) / (zip_features["distance_miles"].max() - zip_features["distance_miles"].min() + 0.01)
+                zip_features["psych_score"] = 0.5 + (dist_normalized * 0.45)  # Range: 0.5 to 0.95    zip_features["psych_score"] = pd.to_numeric(psych_scores, errors="coerce").fillna(0.5)
 
-            print("[CHECK] psych_score min/max:", 
-                zip_features["psych_score"].min(),
-                zip_features["psych_score"].max())
-                
-            print(
-    zip_features[["zip", "median_income", "population", "distance_miles"]]
-        .assign(ps=zip_features["psych_score"])
-        .sort_values("ps", ascending=False)
-        .head(10)
-        .to_string(index=False)
-)
+                print("[CHECK] psych_score min/max:", 
+                    zip_features["psych_score"].min(),
+                    zip_features["psych_score"].max())
+                    
+                print(
+        zip_features[["zip", "median_income", "population", "distance_miles"]]
+            .assign(ps=zip_features["psych_score"])
+            .sort_values("ps", ascending=False)
+            .head(10)
+            .to_string(index=False)
+    )
 
             print("[ANALYSIS] Calculated psychographic scores successfully")
         except Exception as e:

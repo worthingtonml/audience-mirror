@@ -14,7 +14,7 @@ def get_campaign_with_cache(cohort, zip_code, competitors, reasons):
     reasons_hash = hashlib.md5(','.join(sorted(reasons)).encode()).hexdigest()
     return generate_cached_campaign(cohort, zip_code, competitors, reasons_hash)
 
-def build_campaign_prompt(cohort: str, zip_code: str, competitors: int, reasons: list, match_score: float):
+def build_campaign_prompt(cohort: str, zip_code: str, competitors: int, reasons: list, match_score: float, procedure: str = None):
     cohort_psychology = {
         "Budget Conscious": {
             "concerns": "cost, value, hidden fees, payment options",
@@ -47,6 +47,7 @@ MARKET CONTEXT:
 - {competitors} competitors in area
 - Match score: {match_score:.1%}
 - Key advantages: {', '.join(reasons)}
+- Procedure focus: {procedure if procedure else "General aesthetic services"}
 
 OUTPUT FORMAT:
 Return JSON with this exact structure:
@@ -75,10 +76,10 @@ REQUIREMENTS:
 - Use market context to differentiate from competitors
 """
 
-def generate_campaign_content(cohort: str, zip_code: str, competitors: int, reasons: list, match_score: float):
+def generate_campaign_content(cohort: str, zip_code: str, competitors: int, reasons: list, match_score: float, procedure: str = None):
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     
-    prompt = build_campaign_prompt(cohort, zip_code, competitors, reasons, match_score)
+    prompt = build_campaign_prompt(cohort, zip_code, competitors, reasons, match_score, procedure)
     
     response = client.chat.completions.create(
         model="gpt-4o-mini",
