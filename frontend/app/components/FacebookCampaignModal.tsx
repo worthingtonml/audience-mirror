@@ -8,6 +8,7 @@ interface FacebookCampaignModalProps {
   reasons: string[];
   competitors: number;
   matchScore: number;
+  procedure?: string | null;
 }
 
 const cohortDemographics: Record<string, string> = {
@@ -179,6 +180,7 @@ const FacebookCampaignModal: React.FC<FacebookCampaignModalProps> = ({
   reasons,
   competitors,
   matchScore,
+  procedure,
 }) => {
   const [campaignContent, setCampaignContent] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -194,7 +196,8 @@ const FacebookCampaignModal: React.FC<FacebookCampaignModalProps> = ({
           zip_code: zipCode,
           competitors,
           reasons,
-          match_score: matchScore
+          match_score: matchScore,
+          procedure: procedure
         })
       });
       

@@ -121,6 +121,7 @@ export default function AudienceMirror() {
     reasons?: string[];
     competitors?: number;
     matchScore?: number;
+    procedure?: string | null;
   }>({ open: false });
 
   const toggleTheme = () => {
@@ -216,6 +217,8 @@ export default function AudienceMirror() {
       const runData = await response.json();
       const runResults = await getRunResults(runData.run_id);
       setResults(runResults);
+      // Keep selectedProcedure set after results load
+      setSelectedProcedure(procedure); // ADD THIS LINE
     } catch (error) {
       setError('Failed to analyze with selected procedure');
     } finally {
@@ -428,6 +431,7 @@ export default function AudienceMirror() {
                         ],
                         competitors: segment.competitors,
                         matchScore: segment.match_score,
+                        procedure: selectedProcedure || null
                       })}
                     >
                       Generate Campaign Intelligence
@@ -447,6 +451,7 @@ export default function AudienceMirror() {
           reasons={campaignModal.reasons || []}
           competitors={campaignModal.competitors || 0}
           matchScore={campaignModal.matchScore || 0}
+          procedure={campaignModal.procedure}
         />
       </div>
     );
