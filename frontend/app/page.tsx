@@ -344,21 +344,130 @@ export default function AudienceMirror() {
             {/* ZIP Cards */}
             <div id="zip-cards-section">
               <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-8">Top Target Areas</h3>
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {getSixSegments(results.top_segments).map((segment: any, index: number) => (
-                  <div key={segment.zip} className="rounded-2xl border border-gray-200 dark:border-white/12 bg-white dark:bg-white/[0.03] p-8 hover:shadow-2xl dark:hover:bg-white/[0.06] transition-all duration-300 backdrop-blur-2xl">
-                    <div className="flex items-start justify-between mb-6">
-                      <div>
-                        <div className="flex items-center space-x-3 mb-3">
-                          <span className="text-sm font-medium text-gray-500 dark:text-white/60">#{index + 1}</span>
-                          <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
-                            ZIP {String(segment.zip).replace(/[^0-9]/g, '').substring(0, 5)}
-                          </h4>
-                        </div>
-                        <CohortPill label={segment.cohort} />
-                      </div>
-                      <MatchBadge score={segment.match_score} />
-                    </div>
+              
+              <div className="grid md:grid-cols-3 gap-6">
+  {results.top_segments.slice(0, 3).map((segment: any, index: number) => {
+    // Helper function for cohort colors
+    const getCohortColor = (cohort: string) => {
+      const colors: Record<string, string> = {
+        'Budget Conscious': '#64748b',
+        'Luxury Clients': '#7c3aed',
+        'Comfort Spenders': '#059669'
+      };
+      return colors[cohort] || '#64748b';
+    };
+
+    return (
+      <div 
+        key={segment.zip} 
+        className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-xl transition-shadow flex flex-col"
+      >
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="text-4xl font-bold text-gray-900">#{index + 1}</div>
+              <div className="h-8 w-px bg-gray-300"></div>
+              <h3 className="text-xl font-bold text-gray-900">
+                ZIP {String(segment.zip).replace(/[^0-9]/g, '').substring(0, 5)}
+              </h3>
+            </div>
+            <div className="px-3 py-1.5 bg-green-50 border border-green-200 text-green-700 text-sm font-semibold rounded-lg">
+              {segment.match_score}% Match
+            </div>
+          </div>
+          <div className="text-sm text-gray-500 pl-16">
+            {segment.area || 'Unknown Area'}
+          </div>
+        </div>
+        
+        {/* Cohort Badge */}
+        <div className="mb-5">
+          <div 
+            className="inline-block px-4 py-2 rounded-lg text-sm font-semibold text-white"
+            style={{ backgroundColor: getCohortColor(segment.cohort) }}
+          >
+            {segment.cohort}
+          </div>
+        </div>
+
+        {/* Metrics */}
+        <div className="grid grid-cols-3 gap-4 mb-5 pb-5 border-b border-gray-100">
+          <div>
+            <div className="text-2xl font-bold text-gray-900">
+              {segment?.distance_miles != null ? Number(segment.distance_miles).toFixed(1) : '—'}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">miles away</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-900">
+              {segment?.competitors === 0 ? 'None' : 
+               segment?.competitors <= 2 ? 'Low' : 'High'}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">competition</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold text-gray-900">
+              ${segment?.expected_bookings?.p50 
+                ? (segment.expected_bookings.p50 * 400 / 1000).toFixed(1) 
+                : '2.6'}K
+            </div>
+            <div className="text-xs text-gray-500 mt-1">monthly</div>
+          </div>
+        </div>
+
+          {/* Insight */}
+          <div className="mb-5 flex-grow">
+            <p className="text-sm text-gray-600 leading-relaxed mb-3">
+              {segment.strategic_insights?.[0] || 
+              `${segment.cohort} demographic in ${segment.area || 'this area'}.`}
+            </p>
+            
+            {/* Behavioral tags */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {segment.cohort === 'Budget Conscious' && (
+                <>
+                  <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded">High online research</span>
+                  <span className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded">Price-sensitive</span>
+                </>
+              )}
+              {segment.cohort === 'Luxury Clients' && (
+                <>
+                  <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded">Premium aesthetic focus</span>
+                  <span className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded">Social proof driven</span>
+                </>
+              )}
+              {segment.cohort === 'Comfort Spenders' && (
+                <>
+                  <span className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded">Strong referral network</span>
+                  <span className="text-xs px-2 py-1 bg-orange-50 text-orange-700 rounded">Value-conscious</span>
+                </>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+              </svg>
+              <span className="font-medium">
+                Best channel: {segment.recommended_platform || 'Facebook'}
+              </span>
+            </div>
+          </div>
+
+          <button
+            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white text-sm font-semibold rounded-lg transition-all shadow-sm hover:shadow-md"
+            onClick={() => {
+              // Navigate to prescriptive campaign page
+              window.location.href = `/prescriptive-campaign?zip=${segment.zip}&cohort=${segment.cohort}`;
+            }}
+          >
+            Generate Campaign Intelligence
+          </button>
+        </div>
+      );
+    })}
+  </div>
 
                     <div className="grid grid-cols-2 gap-6 text-sm mb-6">
                       <div className="flex flex-col">
