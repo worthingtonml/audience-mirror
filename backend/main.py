@@ -195,14 +195,15 @@ def normalize_demographics_dataframe(df):
     return df
 
 # ⬇️ PASTE THIS directly under build_strategic_insights_for_row(...) and above the closing helpers marker
-def generate_campaign_card(segment_data, logo_url=None):
+def generate_campaign_card(segment_data, procedure=None, logo_url=None):
+    # Extract all variables from segment_data first
     zip_code = segment_data.get('zip')
-    cohort = segment_data.get('cohort')
-    match_score = segment_data.get('match_score', 0)
-    avg_ticket = segment_data.get('avg_ticket_zip', 750)  # expects you to store this in seg
-    distance = segment_data.get('distance_miles', 0.0)
-    competitors = segment_data.get('competitors', 0)
-
+    cohort = segment_data.get('cohort', 'Budget Conscious')
+    match_score = float(segment_data.get('match_score', 0))
+    avg_ticket = float(segment_data.get('avg_ticket_zip', 750))
+    distance = float(segment_data.get('distance_miles', 0))
+    competitors = int(segment_data.get('competitors', 0))
+    
     p50 = 0
     eb = segment_data.get('expected_bookings') or {}
     if isinstance(eb, dict):
@@ -212,7 +213,7 @@ def generate_campaign_card(segment_data, logo_url=None):
     monthly_ad_cap = cpa_target * (p50 if p50 > 0 else 3)
 
     # tighter radius if the ZIP is far from practice
-    radius = 5 if (distance or 0) < 10 else 3
+    radius = 5 if distance < 10 else 3
 
     demo_targeting = {
         'Affluent':  'Ages 35-55, Household Income $120k+, College-educated',
@@ -241,6 +242,17 @@ def generate_campaign_card(segment_data, logo_url=None):
         'distance_note': f"{distance:.1f} mile travel consideration" if distance and distance > 10 else None,
         'match_score': match_score,
         'cohort': cohort,
+        
+        # Add these fields that your frontend expects
+        'location': segment_data.get('location_name', f'ZIP {zip_code}'),
+        'distance_miles': distance,
+        'competition_level': segment_data.get('competition_level', 'Low'),
+        'competitors_count': competitors,
+        'monthly_revenue_potential': int(avg_ticket * p50),
+        'demographic_description': segment_data.get('demographic_description', demo_targeting),
+        'marketing_tags': segment_data.get('behavioral_tags', []),
+        'recommended_channels': [segment_data.get('best_channel', 'Facebook')],
+        'expected_bookings': eb,
     }
 
 # ---------- Strategic insight helpers (updated) ----------
@@ -347,6 +359,158 @@ def build_strategic_insights_for_row(row_dict, avg_ticket, target_roas=5.0, cpl=
     return insights
 # ---------- /Strategic insight helpers ----------
 
+# ---------- Dynamic Data Enrichment Functions ----------
+
+# Add this dictionary RIGHT BEFORE the function
+ZIP_LOCATIONS = {
+    "11030": "Manhasset, Nassau County",
+    "10805": "New Rochelle, Westchester County", 
+    "10021": "Manhattan, NYC",
+}
+
+def get_location_name_from_demographics(zip_code: str, demographics_df: pd.DataFrame) -> str:
+    """Dynamically determine location name from demographics data"""
+    
+    # Check the explicit mapping first
+    if zip_code in ZIP_LOCATIONS:
+        return ZIP_LOCATIONS[zip_code]
+    
+    # Then use your existing coordinate logic
+    try:
+        zip_row = demographics_df[demographics_df['zip'] == zip_code].iloc[0] if not demographics_df[demographics_df['zip'] == zip_code].empty else None
+        if zip_row is None:
+            return f"ZIP {zip_code}"
+        
+        lat = float(zip_row.get('lat', 0))
+        lon = float(zip_row.get('lon', 0))
+        
+        if lat and lon:
+            if 40.7 <= lat <= 40.9 and -74.02 <= lon <= -73.90:
+                return f"Manhattan, NYC"
+            elif 40.57 <= lat <= 40.74 and -74.05 <= lon <= -73.83:
+                return f"Brooklyn, NYC"
+            elif 40.54 <= lat <= 40.80 and -73.96 <= lon <= -73.70:
+                return f"Queens, NYC"
+            elif 40.785 <= lat <= 40.92 and -73.93 <= lon <= -73.79:
+                return f"Bronx, NYC"
+            elif 40.55 <= lat <= 40.85 and -73.75 <= lon <= -73.40:
+                return f"Nassau County, NY"
+            elif 40.88 <= lat <= 41.37 and -73.98 <= lon <= -73.48:
+                return f"Westchester County, NY"
+            else:
+                return f"Greater NYC Area"
+        else:
+            return f"ZIP {zip_code}"
+    except Exception:
+        return f"ZIP {zip_code}"
+
+# Next function starts here...
+
+def generate_dynamic_demographic_description(row: pd.Series, cohort: str, patients_df: pd.DataFrame, zip_code: str) -> str:
+    """Generate description based entirely on actual data"""
+    income = int(float(row.get('median_income', 75000)))
+    population = int(float(row.get('population', 20000)))
+    college_pct = float(row.get('college_pct', 0.35))
+    distance = float(row.get('distance_miles', 5))
+    competitors = int(row.get('competitors', 0))
+    patient_count = int(row.get('patient_count', 0))
+    
+    zip_patients = patients_df[patients_df['zip_code'] == zip_code]
+    if not zip_patients.empty and 'revenue' in zip_patients.columns:
+        avg_revenue_in_zip = float(zip_patients['revenue'].mean())
+    else:
+        avg_revenue_in_zip = float(patients_df['revenue'].mean()) if 'revenue' in patients_df.columns else 750
+    
+    desc_parts = []
+    
+    if distance < 3:
+        desc_parts.append(f"Prime location just {distance:.1f} miles from your practice")
+    elif distance < 10:
+        desc_parts.append(f"Accessible market {distance:.1f} miles away")
+    else:
+        desc_parts.append(f"Extended reach market at {distance:.1f} miles")
+    
+    if income > 150000:
+        desc_parts.append(f" with affluent households (median ${income:,})")
+    elif income > 100000:
+        desc_parts.append(f" with upper-middle income households (${income:,})")
+    else:
+        desc_parts.append(f" with households earning ${income:,}")
+    
+    if college_pct > 0.5:
+        desc_parts.append(f" and {college_pct:.0%} college-educated population")
+    
+    if patient_count > 0:
+        desc_parts.append(f". You've served {patient_count} patients here")
+        if avg_revenue_in_zip > patients_df['revenue'].mean() * 1.2:
+            desc_parts.append(f" with above-average spend")
+    
+    if competitors == 0:
+        desc_parts.append(". No direct competition in this area")
+    elif competitors <= 2:
+        desc_parts.append(f". Limited competition ({competitors} providers)")
+    
+    return ''.join(desc_parts)
+
+def generate_data_driven_tags(row: pd.Series, patients_df: pd.DataFrame, zip_code: str) -> list:
+    """Generate behavioral tags based on actual data patterns"""
+    tags = []
+    income = float(row.get('median_income', 75000))
+    
+    if income > 150000:
+        tags.append("Premium market")
+    elif income > 100000:
+        tags.append("Quality-focused")
+    else:
+        tags.append("Value-conscious")
+    
+    zip_patients = patients_df[patients_df['zip_code'] == zip_code]
+    if len(zip_patients) >= 5:
+        tags.append("Proven market")
+    elif len(zip_patients) >= 2:
+        tags.append("Growing interest")
+    else:
+        tags.append("Untapped potential")
+    
+    return tags[:2]
+
+def determine_best_channel_from_data(row: pd.Series, cohort: str, patients_df: pd.DataFrame, zip_code: str) -> str:
+    """Determine marketing channel based on actual demographic data"""
+    age_25_54_pct = float(row.get('age_25_54_pct', 0.4))
+    college_pct = float(row.get('college_pct', 0.35))
+    income = float(row.get('median_income', 75000))
+    
+    if income > 150000 and college_pct > 0.5:
+        return "Instagram"
+    elif cohort == "Luxury Clients":
+        return "Instagram"
+    else:
+        return "Facebook"
+
+def calculate_dynamic_cpa_target(avg_ticket: float, match_score: float, competitors: int, distance: float) -> float:
+    """Calculate CPA target based on actual metrics"""
+    base_cpa_ratio = 0.2
+    
+    if match_score > 0.8:
+        base_cpa_ratio *= 1.2
+    elif match_score < 0.5:
+        base_cpa_ratio *= 0.8
+    
+    if competitors == 0:
+        base_cpa_ratio *= 0.7
+    elif competitors > 5:
+        base_cpa_ratio *= 1.3
+    
+    if distance > 20:
+        base_cpa_ratio *= 1.2
+    elif distance < 5:
+        base_cpa_ratio *= 0.9
+    
+    cpa = avg_ticket * base_cpa_ratio
+    return max(50, min(500, cpa))
+
+# ---------- /Dynamic Data Enrichment Functions ----------
+
 # === FastAPI app ===
 app = fastapi.FastAPI(
     title="Audience Mirror API",
@@ -396,31 +560,6 @@ async def save_uploaded_file(file: UploadFile, directory: str, filename: str) ->
 # ===========================================
 # API ENDPOINTS
 # ===========================================
-
-@app.get("/api/v1/runs/{run_id}")
-async def get_run_results(run_id: str, db: Session = Depends(get_db)):
-    """Retrieve analysis results"""
-    # Query database instead of memory
-    analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == run_id).first()
-    
-    if not analysis_run:
-        raise HTTPException(status_code=404, detail="Run not found")
-
-    if analysis_run.status == "error":
-        raise HTTPException(status_code=500, detail=analysis_run.error_message or "Analysis failed")
-
-    if analysis_run.status != "done":
-        return {"status": analysis_run.status}
-
-    return {
-        "status": "done",
-        "headline_metrics": analysis_run.headline_metrics,
-        "top_segments": analysis_run.top_segments,
-        "map_points": analysis_run.map_points,
-        "confidence_info": analysis_run.confidence_info,
-        "calibration_meta": None,
-        "expansion_metrics": {}
-    }
 
 @app.get("/")
 async def root():
@@ -488,7 +627,7 @@ async def create_run(
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
     
-    run_id = str(uuid.uuid4())[:12]
+    run_id = str(uuid.uuid4())
     
     # Create database record instead of memory storage
     analysis_run = AnalysisRun(
@@ -566,7 +705,7 @@ async def create_run(
         db.commit()
 
         return fastapi.responses.JSONResponse({"run_id": run_id})
-
+    
     except Exception as e:
         # Update database record with error
         analysis_run.status = "error"
@@ -576,13 +715,14 @@ async def create_run(
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 @app.post("/api/v1/exports")
-async def create_export_urls(request: ExportCreateRequest):
+async def create_export_urls(request: ExportCreateRequest, db: Session = Depends(get_db)):
     """Generate export URLs for different platforms"""
-    if request.run_id not in runs:
-        raise HTTPException(status_code=404, detail="Run not found")
+    analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == request.run_id).first()
+    if not analysis_run or analysis_run.status != "done":
+        raise HTTPException(status_code=404, detail="Run not found or not completed")
 
     base_url = f"/api/v1/exports/{request.run_id}"
-
+    
     return ExportUrls(
         facebook_url=f"{base_url}?format=facebook&top_n={request.top_n}",
         google_url=f"{base_url}?format=google&top_n={request.top_n}",
@@ -598,16 +738,16 @@ def g(obj, path, default=None):
     return cur
 
 @app.get("/api/v1/exports/{run_id}")
-async def download_export(run_id: str, format: str = "full", top_n: int = 10):
+async def download_export(run_id: str, format: str = "full", top_n: int = 10, db: Session = Depends(get_db)):
     """Stream CSV exports for different advertising platforms"""
-
-    run = runs[run_id] if run_id in runs else None
-    if run is None or run["status"] != "done":
+    
+    # Get from database instead of memory
+    analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == run_id).first()
+    if not analysis_run or analysis_run.status != "done":
         raise HTTPException(status_code=404, detail="Run results not found")
-
+    
     # Get top segments for export
-    result = run["result"]
-    top_segments = result.top_segments[:top_n]
+    top_segments = analysis_run.top_segments[:top_n]
 
     # Generate appropriate CSV format
     if format == "facebook":
@@ -700,8 +840,8 @@ def generate_campaign_card(segment_data, procedure=None, logo_url=None):
         'match_score': round(match_score, 2)
     }
     
-@app.get("/api/v1/runs/{run_id}/campaigns")
-async def get_campaign_cards(run_id: str, db: Session = Depends(get_db)):
+@app.get("/api/v1/runs/{run_id}/results")
+async def get_run_results(run_id: str, db: Session = Depends(get_db)):
     analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == run_id).first()
     if not analysis_run:
         raise HTTPException(status_code=404, detail="Run not found")
@@ -715,14 +855,7 @@ async def get_campaign_cards(run_id: str, db: Session = Depends(get_db)):
         except Exception:
             top_segments = []
 
-    campaigns = []
-    for seg in (top_segments or [])[:5]:
-        seg_dict = dict(seg) if not isinstance(seg, dict) else seg
-        campaigns.append(
-            generate_campaign_card(seg_dict, procedure=analysis_run.procedure, logo_url="/assets/audience-mirror-logo.png")
-        )
-
-    return {"status": "done", "campaigns": campaigns}
+    return {"status": "done", "campaigns": top_segments[:5]}
 
 @app.post("/api/generate-campaign")
 async def generate_campaign_endpoint(request: CampaignRequest):
@@ -1314,34 +1447,62 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
             p90 = max(p50 + 1, int(round(p50 * 1.6)))
             return {"p10": p10, "p50": p50, "p90": p90}
 
-        # pick top by score (but you can sort by a composite)
-        # pick top by score (but you can sort by a composite)
+        # STEP 5: Build top segments with DYNAMIC data enrichment
         top_zip_features = zip_features.sort_values("psych_score", ascending=False).head(20).reset_index(drop=True)
         top_segments = []
 
         for _, r in top_zip_features.iterrows():
             zip_code = str(r.get("zip"))
-            score    = float(coerce_float(r.get("psych_score", 0.5), 0.5))
-            dist     = float(coerce_float(r.get("distance_miles", 0.0), 0.0))
-            lat      = float(coerce_float(r.get("lat", 0.0), 0.0))
-            lon      = float(coerce_float(r.get("lon", 0.0), 0.0))
-            comp     = int(coerce_float(r.get("competitors", 0), 0))
+            score = float(coerce_float(r.get("psych_score", 0.5), 0.5))
+            dist = float(coerce_float(r.get("distance_miles", 0.0), 0.0))
+            lat = float(coerce_float(r.get("lat", 0.0), 0.0))
+            lon = float(coerce_float(r.get("lon", 0.0), 0.0))
+            comp = int(coerce_float(r.get("competitors", 0), 0))
             cohort_label = str(r.get("cohort", "Segment"))
-
-            # ticket: per-ZIP if available, else global
+            
+            # Get actual patient count and revenue for this ZIP
+            patient_count = int(coerce_float(r.get("patient_count", 0), 0))
             avg_ticket_zip = float(coerce_float(r.get("avg_ticket_zip", 0), 0))
-            global_avg     = float(coerce_float(patients_df.get("revenue", pd.Series([750])).mean(), 750))
-            ticket         = avg_ticket_zip if avg_ticket_zip > 0 else global_avg
-
-            # compute bookings once and reuse
-            bookings = _expected_bookings(r)
-
-            # build insights (ROAS default 5x; adjustable later)
+            global_avg = float(coerce_float(patients_df.get("revenue", pd.Series([750])).mean(), 750))
+            ticket = avg_ticket_zip if avg_ticket_zip > 0 else global_avg
+            
+            # Calculate expected bookings
+            population = float(r.get('population', 20000))
+            market_penetration = patient_count / population if population > 0 else 0.0001
+            base_monthly = max(1, int(population * market_penetration * score * 0.1))
+            bookings = {
+                "p10": max(1, int(base_monthly * 0.5)),
+                "p50": base_monthly,
+                "p90": max(base_monthly + 1, int(base_monthly * 1.5))
+            }
+            
+            # Generate dynamic fields
+            location_name = get_location_name_from_demographics(zip_code, demographics_df)
+            demographic_desc = generate_dynamic_demographic_description(r, cohort_label, patients_df, zip_code)
+            behavioral_tags = generate_data_driven_tags(r, patients_df, zip_code)
+            best_channel = determine_best_channel_from_data(r, cohort_label, patients_df, zip_code)
+            
+            # Competition level
+            if comp == 0:
+                competition_level = "None"
+            elif comp <= 2:
+                competition_level = "Low"
+            elif comp <= 5:
+                competition_level = "Moderate"
+            else:
+                competition_level = "High"
+            
+            # Dynamic CPA calculation
+            cpa_target = calculate_dynamic_cpa_target(ticket, score, comp, dist)
+            monthly_ad_cap = cpa_target * bookings["p50"]
+            target_roas = round(ticket / cpa_target, 1) if cpa_target > 0 else 5.0
+            
+            # Build insights
             row_dict_for_insights = {
                 "zip": zip_code,
                 "distance_miles": dist,
                 "competitors": comp,
-                "population": float(coerce_float(r.get("population", 20000), 20000)),
+                "population": population,
                 "expected_bookings": bookings,
             }
             insights_list = build_strategic_insights_for_row(
@@ -1349,29 +1510,38 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
                 avg_ticket=ticket,
                 target_roas=5.0,
             )
-
-            avg_ticket_zip = float(coerce_float(r.get("avg_ticket_zip", 0), 0))
-            global_avg = float(coerce_float(patients_df.get("revenue", pd.Series([750])).mean(), 750))
-            ticket = avg_ticket_zip if avg_ticket_zip > 0 else global_avg
-
+            
             seg = {
                 "zip": zip_code,
                 "match_score": score,
                 "expected_bookings": bookings,
                 "expected_monthly_revenue_p50": round(bookings["p50"] * ticket, 2),
-                "cpa_target": round(max(25.0, ticket / 5.0), 2),
+                "cpa_target": round(cpa_target, 2),
+                "monthly_ad_cap": round(monthly_ad_cap, 2),
                 "distance_miles": dist,
                 "competitors": comp,
+                "competition_level": competition_level,
                 "cohort": cohort_label,
                 "why": insights_list,
                 "strategic_insights": insights_list,
                 "lat": lat,
                 "lon": lon,
-                "historical_patients": int(coerce_float(r.get("patient_count", 0), 0)),
-                "is_new_market": True,
-
-                # ⬇️ store per-ZIP ticket for campaign generator
-                "avg_ticket_zip": ticket,
+                "historical_patients": patient_count,
+                "is_new_market": patient_count == 0,
+                "avg_ticket_zip": round(ticket, 2),
+                
+                # Rich dynamic fields
+                "location_name": location_name,
+                "demographic_description": demographic_desc,
+                "behavioral_tags": behavioral_tags,
+                "best_channel": best_channel,
+                "target_roas": target_roas,
+                
+                # Additional metrics
+                "population": int(population),
+                "median_income": int(r.get('median_income', 75000)),
+                "college_pct": float(r.get('college_pct', 0.35)),
+                "market_penetration": round(market_penetration * 100, 4)
             }
             top_segments.append(seg)
 
