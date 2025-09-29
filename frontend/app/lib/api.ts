@@ -1,141 +1,80 @@
-import axios from 'axios';
+import { RunResult, FocusType } from './types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://127.0.0.1:8000';
-
-const api = axios.create({
-  baseURL: API_BASE,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-export interface BookingRange {
-  p10: number;
-  p50: number;
-  p90: number;
-}
-
-
-
-
-export interface TopSegment {
-  zip: string;
-  match_score: number;
-  expected_bookings: BookingRange;
-  distance_miles: number;
-  competitors: number;
-  cohort: string;
-  why: string[];
-  lat?: number;
-  lon?: number;
-}
-
-
-
-export interface ExpansionMetrics {
-  new_zip_count: number;
-  monthly_patients_low: number;
-  monthly_patients_high: number;
-  annual_revenue_low: number;
-  annual_revenue_high: number;
-  current_zip_count: number;
-}
-
-export interface HeadlineMetrics {
-  total_patients: number;
-  total_revenue: number;
-  avg_revenue: number;
-  high_value_count: number;
-  unique_zips: number;
-  expansion_metrics?: ExpansionMetrics;
-}
-
-export interface ExpansionMetrics {
-  new_zip_count: number;
-  monthly_patients_low: number;
-  monthly_patients_high: number;
-  annual_revenue_low: number;
-  annual_revenue_high: number;
-  current_zip_count: number;
-}
-
-export interface RunResult {
-  status: string;
-  headline_metrics: HeadlineMetrics;
-  top_segments: TopSegment[];
-  map_points: Array<{
-    zip: string;
-    lat: number;
-    lon: number;
-    score: number;
-  }>;
-  confidence_info: {
-    level: "high" | "medium" | "early";
-    message: string;
-    status: "learned" | "estimated";
-    n_zips: number;
-  };
-  expansion_metrics?: ExpansionMetrics;
-}
-
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export async function uploadDataset(
   patientsFile: File,
   practiceZip: string,
-  competitorsFile?: File,
-  vertical: string = 'medspa'
+  competitorsFile?: File
 ): Promise<string> {
   const formData = new FormData();
-  formData.append('patients', patientsFile);
-  formData.append('practice_zip', practiceZip);
-  formData.append('vertical', vertical);
-  
-  if (competitorsFile) {
-    formData.append('competitors', competitorsFile);
-  }
+  formData.append('patients', patientsFile);  // was 'patients_file'
+formData.append('practice_zip', practiceZip);  // correct
+if (competitorsFile) {
+  formData.append('competitors', competitorsFile);  // was 'competitors_file'
+}
 
-  const response = await api.post('/api/v1/datasets', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
+  const response = await fetch(`${API_BASE_URL}/api/v1/datasets`, {
+    method: 'POST',
+    body: formData,
   });
 
-  return response.data.dataset_id;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to upload dataset');
+  }
+
+  const data = await response.json();
+  return data.dataset_id;
 }
 
 export async function createRun(
   datasetId: string,
-  focus: 'non_inv' | 'surgical' = 'non_inv',
-  marketTrend: number = 1.0,
-  capacityPerWeek?: number
+  focus: FocusType,
+  procedure?: string
 ): Promise<string> {
-  const response = await api.post('/api/v1/runs', {
-    dataset_id: datasetId,
-    focus,
-    market_trend: marketTrend,
-    capacity_per_week: capacityPerWeek,
+  const url = procedure 
+    ? `${API_BASE_URL}/api/v1/runs?procedure=${encodeURIComponent(procedure)}`
+    : `${API_BASE_URL}/api/v1/runs`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      dataset_id: datasetId,
+      focus 
+    }),
   });
 
-  return response.data.run_id;
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to create run');
+  }
+
+  const data = await response.json();
+  console.log('🔍 Full backend response:', data);  // ADD THIS
+  console.log('🔍 run_id value:', data.run_id);    // ADD THIS
+  return data.run_id;
 }
 
-export async function getRunResults(runId: string): Promise<RunResult> {
-  console.log('🔍 API: Fetching run:', runId);
-  const response = await api.get(`/api/v1/runs/${runId}`);
-  console.log('🔍 API: Raw response:', response);
-  console.log('🔍 API: Response data:', response.data);
-  console.log('🔍 API: Response status:', response.status);
-  return response.data;
+export async function getRunResults(runId: string) {
+  const response = await fetch(`${API_BASE_URL}/api/v1/runs/${runId}/results`);
+  // NOT: /api/v1/runs/${runId}/campaigns
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to fetch results');
+  }
+
+  return response.json();
 }
 
-export async function createExportUrls(runId: string, topN: number = 10) {
-  const response = await api.post('/api/v1/exports', {
-    run_id: runId,
-    top_n: topN,
-  });
-  return response.data;
-}
+export async function getProcedures(datasetId: string): Promise<{ procedures: any[] }> {
+  const response = await fetch(`${API_BASE_URL}/procedures?dataset_id=${datasetId}`);
+  
+  if (!response.ok) {
+    throw new Error('Failed to fetch procedures');
+  }
 
-export function getExportUrl(runId: string, format: 'facebook' | 'google' | 'full', topN: number = 10): string {
-  return `${API_BASE}/api/v1/exports/${runId}?format=${format}&top_n=${topN}`;
+  return response.json();
 }
