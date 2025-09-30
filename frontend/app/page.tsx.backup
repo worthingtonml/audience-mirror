@@ -4,7 +4,7 @@ import { Sun, Moon } from 'lucide-react';
 
 import { uploadDataset, createRun, getRunResults, getProcedures } from './lib/api';
 import { BRAND_GRADIENT, DEFAULT_ARPV } from './lib/constants';
-import { RunResult, Segment, Procedure } from './lib/types';
+import { RunResult, Segment } from './lib/types';
 import { downloadCSVTemplate } from './lib/utils';
 
 import SquareLogo from './components/SquareLogo';
@@ -14,47 +14,6 @@ import ZipTargetCard from './components/ZipTargetCard';
 import InsightsHeader from './components/InsightsHeader';
 import UploadSection from './components/UploadSection';
 import ProcedureFilter from './components/ProcedureFilter';
-
-// ---- API campaign -> Segment mapping ----
-type ApiCampaign = {
-  zip: string | number;
-  area?: string;
-  match_score?: number;
-  cohort?: string;
-  distance_miles?: number;
-  competitors?: number;
-  expected_bookings?: { p10?: number; p50?: number; p90?: number };
-  strategic_insights?: string[];
-  recommended_platform?: string;
-  location_name?: string;
-  competition_level?: string;
-  monthly_revenue_potential?: number;
-  demographic_description?: string;
-  behavioral_tags?: Array<string | { label: string; color?: string }>;
-  best_channel?: string;
-};
-
-const toSegment = (c: ApiCampaign): Segment => ({
-  zip: String(c.zip ?? ''),
-  area: c.area ?? '',
-  match_score: Number(c.match_score ?? 0),
-  cohort: c.cohort ?? 'Unknown',
-  distance_miles: Number(c.distance_miles ?? 0),
-  competitors: Number(c.competitors ?? 0),
-  expected_bookings: {
-    p10: Number(c.expected_bookings?.p10 ?? 0),
-    p50: Number(c.expected_bookings?.p50 ?? 0),
-    p90: Number(c.expected_bookings?.p90 ?? 0),
-  },
-  strategic_insights: c.strategic_insights,
-  recommended_platform: c.recommended_platform,
-  location_name: c.location_name,
-  competition_level: c.competition_level,
-  monthly_revenue_potential: c.monthly_revenue_potential,
-  demographic_description: c.demographic_description,
-  behavioral_tags: c.behavioral_tags,
-  best_channel: c.best_channel,
-});
 
 export default function AudienceMirror() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'insights'>('upload');
@@ -67,7 +26,7 @@ export default function AudienceMirror() {
   const [error, setError] = useState<string | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [selectedProcedure, setSelectedProcedure] = useState<string>('');
-  const [availableProcedures, setAvailableProcedures] = useState<Procedure[]>([]);
+  const [availableProcedures, setAvailableProcedures] = useState<any[]>([]);
   const [currentDatasetId, setCurrentDatasetId] = useState<string>('');
 
   const toggleTheme = () => {
@@ -82,44 +41,38 @@ export default function AudienceMirror() {
 
   const handleAnalyze = async () => {
     setError(null);
-
+    
     if (!patientsFile || !practiceZip) {
       setError('Please upload patient data and enter practice ZIP code.');
       return;
     }
 
     setLoading(true);
-
+    
     try {
       const datasetId = await uploadDataset(patientsFile, practiceZip, competitorsFile || undefined);
       setCurrentDatasetId(datasetId);
-
-      const proceduresResp = await getProcedures(datasetId);
-      setAvailableProcedures(proceduresResp.procedures || []);
-
+      
+      const procedures = await getProcedures(datasetId);
+      setAvailableProcedures(procedures.procedures || []);
+      
       const newRunId = await createRun(datasetId, focus);
-      const runResults = (await getRunResults(newRunId)) as { campaigns?: ApiCampaign[] };
-
-      if (!runResults?.campaigns?.length) {
+      const runResults = await getRunResults(newRunId);
+      
+      if (!runResults?.top_segments?.length) {
         setError('Analysis completed, but no results were found. Please check your data.');
         return;
       }
-
-      const transformedResults: RunResult = {
-        status: 'ok',
-        top_segments: runResults.campaigns.map(toSegment),
-        avg_revenue_per_patient: DEFAULT_ARPV,
-      };
-
-      setResults(transformedResults);
+      
+      setResults(runResults);
       setCurrentStep('insights');
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error('Analysis failed:', err);
-      const maybe = err as any;
-      if (maybe?.response?.data?.detail) {
-        setError('Upload failed: ' + maybe.response.data.detail);
-      } else if (maybe instanceof Error) {
-        setError('Analysis failed: ' + maybe.message);
+      
+      if (err?.response?.data?.detail) {
+        setError('Upload failed: ' + err.response.data.detail);
+      } else if (err instanceof Error) {
+        setError('Analysis failed: ' + err.message);
       } else {
         setError('Analysis failed. Please check your data and try again.');
       }
@@ -130,27 +83,18 @@ export default function AudienceMirror() {
 
   const handleProcedureChange = async (procedure: string) => {
     setSelectedProcedure(procedure);
+    
     if (!currentDatasetId) return;
-
+    
     setLoading(true);
+    
     try {
       const newRunId = await createRun(currentDatasetId, focus, procedure || undefined);
-      const runResults = (await getRunResults(newRunId)) as { campaigns?: ApiCampaign[] };
-
-      if (!runResults?.campaigns?.length) {
-        setError('No results for that procedure. Try another filter.');
-        return;
-      }
-
-      const transformedResults: RunResult = {
-        status: 'ok',
-        top_segments: runResults.campaigns.map(toSegment),
-        avg_revenue_per_patient: DEFAULT_ARPV,
-      };
-
-      setResults(transformedResults);
-    } catch (err) {
-      console.error('Procedure filter failed:', err);
+      const runResults = await getRunResults(newRunId);
+      setResults(runResults);
+      setSelectedProcedure(procedure);
+    } catch (error) {
+      console.error('Procedure filter failed:', error);
       setError('Failed to analyze with selected procedure');
     } finally {
       setLoading(false);
@@ -158,16 +102,14 @@ export default function AudienceMirror() {
   };
 
   const handleGenerateCampaign = (segment: Segment) => {
-  // Encode the cohort properly, removing spaces
-  const cohortParam = encodeURIComponent(segment.cohort.replace(/\s+/g, ''));
-  window.location.href = `/prescriptive-campaign?zip=${segment.zip}&cohort=${cohortParam}`;
-};
+    window.location.href = `/prescriptive-campaign?zip=${segment.zip}&cohort=${segment.cohort}`;
+  };
 
   const calculateExpansionMetrics = () => {
     if (!results?.top_segments) return null;
 
     const top3 = results.top_segments.slice(0, 3);
-    const targetZips = top3.map((s: Segment) =>
+    const targetZips = top3.map((s: Segment) => 
       String(s?.zip ?? '').replace(/[^0-9]/g, '').slice(0, 5)
     );
 
@@ -179,7 +121,7 @@ export default function AudienceMirror() {
     const annualLow = patientsLow * arpv * 12;
     const annualHigh = patientsHigh * arpv * 12;
 
-    const formatUSD = (n: number) =>
+    const formatUSD = (n: number) => 
       n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
 
     return {
@@ -187,7 +129,7 @@ export default function AudienceMirror() {
       patientsLow,
       patientsHigh,
       revLow: formatUSD(annualLow),
-      revHigh: formatUSD(annualHigh),
+      revHigh: formatUSD(annualHigh)
     };
   };
 
@@ -196,7 +138,7 @@ export default function AudienceMirror() {
 
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-[#0B0F1A] dark:bg-[radial-gradient(60%_70%_at_10%_0%,rgba(99,102,241,0.15),transparent_60%),radial-gradient(50%_60%_at_100%_0%,rgba(56,189,248,0.15),transparent_60%),radial-gradient(40%_50%_at_0%_100%,rgba(16,185,129,0.12),transparent_60%)]">
-        <InsightsHeader
+        <InsightsHeader 
           onNewAnalysis={() => setCurrentStep('upload')}
           theme={theme}
           onToggleTheme={toggleTheme}
@@ -210,14 +152,7 @@ export default function AudienceMirror() {
                   Market Intelligence Dashboard
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-white/70 mt-2">
-                  We analyzed your patient data and ranked ZIP codes by how closely they match your
-                  best customers&apos; demographics, spending patterns, and location preferences.
-                  Each area below shows match scores, local competition levels, distance from your
-                  practice, and projected patient volume. Higher match scores indicate stronger
-                  opportunities for acquiring profitable patients similar to your current top
-                  performers. Click <strong>Generate Campaign Intelligence</strong> on any ZIP to get
-                  specific marketing strategies, messaging recommendations, and channel guidance
-                  tailored to that market.
+                  We analyzed your patient data and ranked ZIP codes by how closely they match your best customers' demographics, spending patterns, and location preferences. Each area below shows match scores, local competition levels, distance from your practice, and projected patient volume. Higher match scores indicate stronger opportunities for acquiring profitable patients similar to your current top performers. Click <strong>Generate Campaign Intelligence</strong> on any ZIP to get specific marketing strategies, messaging recommendations, and channel guidance tailored to that market.
                 </p>
               </div>
             </div>
@@ -243,11 +178,11 @@ export default function AudienceMirror() {
               <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-8">
                 Top Target Areas
               </h3>
-
+              
               <div className="grid md:grid-cols-3 gap-6">
-                {results.top_segments.slice(0, 3).map((segment, index) => (
+                {results.top_segments.slice(0, 3).map((segment: Segment, index: number) => (
                   <ZipTargetCard
-                    key={`${segment.zip}-${index}`}
+                    key={segment.zip}
                     segment={segment}
                     index={index}
                     onGenerateCampaign={handleGenerateCampaign}
@@ -268,7 +203,7 @@ export default function AudienceMirror() {
           <div className="flex items-center space-x-4">
             <SquareLogo />
             <div>
-              <h1
+              <h1 
                 className="text-2xl font-semibold tracking-tight bg-clip-text text-transparent"
                 style={{ backgroundImage: BRAND_GRADIENT }}
               >
@@ -279,7 +214,7 @@ export default function AudienceMirror() {
           </div>
           <button
             onClick={toggleTheme}
-            className="relative h-10 w-10 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 flex items-center justify-center transition-all"
+            className="h-10 w-10 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 flex items-center justify-center transition-all"
             aria-label="Toggle theme"
           >
             <Sun className={`h-5 w-5 transition-all ${theme === 'dark' ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
@@ -291,13 +226,15 @@ export default function AudienceMirror() {
       <section className="py-16 text-center">
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
           Find more patients like your{' '}
-          <span className="bg-clip-text text-transparent" style={{ backgroundImage: BRAND_GRADIENT }}>
+          <span 
+            className="bg-clip-text text-transparent"
+            style={{ backgroundImage: BRAND_GRADIENT }}
+          >
             best ones
           </span>
         </h1>
         <p className="mt-4 text-lg text-gray-600 dark:text-white/70 max-w-2xl mx-auto">
-          ZIP-level intelligence that shows you exactly where your next best patients are hiding —
-          no PII, just data-driven clarity.
+          ZIP-level intelligence that shows you exactly where your next best patients are hiding — no PII, just data-driven clarity.
         </p>
       </section>
 
@@ -319,7 +256,9 @@ export default function AudienceMirror() {
       <section className="py-8">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">How It Works</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              How It Works
+            </h2>
             <p className="mt-3 text-lg text-gray-600 dark:text-white/70">
               Three simple steps to uncover your next best patients with clarity and confidence.
             </p>

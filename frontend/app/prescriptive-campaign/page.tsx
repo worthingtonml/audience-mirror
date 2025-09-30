@@ -1,5 +1,11 @@
-import PrescriptiveCampaignFlow from '@/src/components/PrescriptiveCampaignFlow';
+'use client';
+
+import { useSearchParams } from 'next/navigation';
+import PrescriptiveCampaignFlow from './PrescriptiveCampaignFlow';
 
 export default function PrescriptiveCampaignPage() {
-  return <PrescriptiveCampaignFlow />;
+  const searchParams = useSearchParams();
+  const zip = searchParams.get('zip');
+
+  return <PrescriptiveCampaignFlow initialZip={zip} />;
 }
