@@ -1,0 +1,48 @@
+{
+  "models": {
+    "score_model": {
+      "accuracy": 0.5625014251482767,
+      "type": "GradientBoostingRegressor"
+    },
+    "cpl_model": {
+      "accuracy": 0.9998076576975504,
+      "type": "GradientBoostingRegressor"
+    },
+    "ltv_model": {
+      "accuracy": 0.4350804664467275,
+      "type": "GradientBoostingRegressor"
+    }
+  },
+  "features": [
+    "zip_encoded",
+    "platform_encoded",
+    "avg_age",
+    "female_ratio",
+    "botox_ratio",
+    "filler_ratio",
+    "impressions",
+    "clicks",
+    "leads"
+  ],
+  "zip_codes": [
+    "7302",
+    "10021",
+    "10453",
+    "11030",
+    "11101",
+    "11211",
+    "90210"
+  ],
+  "platforms": [
+    "email",
+    "facebook",
+    "google",
+    "instagram",
+    "organic",
+    "referral",
+    "tiktok"
+  ],
+  "training_samples": 49,
+  "patient_records": 10000,
+  "campaign_records": 500
+}
