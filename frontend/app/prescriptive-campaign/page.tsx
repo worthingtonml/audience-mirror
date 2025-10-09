@@ -3,9 +3,10 @@
 import { useSearchParams } from 'next/navigation';
 import PrescriptiveCampaignFlow from './PrescriptiveCampaignFlow';
 
-export default function PrescriptiveCampaignPage() {
-  const searchParams = useSearchParams();
-  const zip = searchParams.get('zip');
-
-  return <PrescriptiveCampaignFlow initialZip={zip} />;
+export default function Page({
+  searchParams,
+}: {
+  searchParams: { zip?: string | null };
+}) {
+  return <PrescriptiveCampaignFlow initialZip={searchParams?.zip ?? null} />;
 }

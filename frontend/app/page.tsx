@@ -1,348 +1,277 @@
-'use client';
-import React, { useEffect, useState } from 'react';
-import { Sun, Moon } from 'lucide-react';
+"use client";
 
-import { uploadDataset, createRun, getRunResults, getProcedures } from './lib/api';
-import { BRAND_GRADIENT, DEFAULT_ARPV } from './lib/constants';
-import { RunResult, Segment, Procedure } from './lib/types';
-import { downloadCSVTemplate } from './lib/utils';
+import React, { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import SquareLogo from './components/SquareLogo';
-import StepCard from './components/StepCard';
-import ExpansionHero from './components/ExpansionHero';
-import ZipTargetCard from './components/ZipTargetCard';
-import InsightsHeader from './components/InsightsHeader';
-import UploadSection from './components/UploadSection';
-import ProcedureFilter from './components/ProcedureFilter';
+const ANALYSIS_ROUTE = "/insights"; // <-- change to your analysis route
 
-// ---- API campaign -> Segment mapping ----
-type ApiCampaign = {
-  zip: string | number;
-  area?: string;
-  match_score?: number;
-  cohort?: string;
-  distance_miles?: number;
-  competitors?: number;
-  expected_bookings?: { p10?: number; p50?: number; p90?: number };
-  strategic_insights?: string[];
-  recommended_platform?: string;
-  location_name?: string;
-  competition_level?: string;
-  monthly_revenue_potential?: number;
-  demographic_description?: string;
-  behavioral_tags?: Array<string | { label: string; color?: string }>;
-  best_channel?: string;
+const api = {
+  uploadDataset: async (file: File) => {
+    await new Promise((r) => setTimeout(r, 600));
+    return `dataset_${Date.now()}`;
+  },
+  createRun: async (datasetId: string, type: string) => {
+    await new Promise((r) => setTimeout(r, 900));
+    return `run_${Date.now()}`;
+  },
+  getRunResults: async (runId: string) => {
+    await new Promise((r) => setTimeout(r, 300));
+    return { campaigns: [{ id: 1, name: "Sample Campaign" }] };
+  },
+  createSampleRun: async () => {
+    await new Promise((r) => setTimeout(r, 600));
+    return `sample_run_${Date.now()}`;
+  },
 };
 
-const toSegment = (c: ApiCampaign): Segment => ({
-  zip: String(c.zip ?? ''),
-  area: c.area ?? '',
-  match_score: Number(c.match_score ?? 0),
-  cohort: c.cohort ?? 'Unknown',
-  distance_miles: Number(c.distance_miles ?? 0),
-  competitors: Number(c.competitors ?? 0),
-  expected_bookings: {
-    p10: Number(c.expected_bookings?.p10 ?? 0),
-    p50: Number(c.expected_bookings?.p50 ?? 0),
-    p90: Number(c.expected_bookings?.p90 ?? 0),
-  },
-  strategic_insights: c.strategic_insights,
-  recommended_platform: c.recommended_platform,
-  location_name: c.location_name,
-  competition_level: c.competition_level,
-  monthly_revenue_potential: c.monthly_revenue_potential,
-  demographic_description: c.demographic_description,
-  behavioral_tags: c.behavioral_tags,
-  best_channel: c.best_channel,
-});
-
-export default function AudienceMirror() {
-  const [currentStep, setCurrentStep] = useState<'upload' | 'insights'>('upload');
-  const [patientsFile, setPatientsFile] = useState<File | null>(null);
-  const [competitorsFile, setCompetitorsFile] = useState<File | null>(null);
-  const [practiceZip, setPracticeZip] = useState('');
-  const [focus, setFocus] = useState<'non_inv' | 'surgical'>('non_inv');
+export default function Page() {
+  const router = useRouter();
+  const [file, setFile] = useState<File | null>(null);
+  const [drag, setDrag] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<RunResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [selectedProcedure, setSelectedProcedure] = useState<string>('');
-  const [availableProcedures, setAvailableProcedures] = useState<Procedure[]>([]);
-  const [currentDatasetId, setCurrentDatasetId] = useState<string>('');
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const toggleTheme = () => {
-    const next = theme === 'light' ? 'dark' : 'light';
-    setTheme(next);
-    document.documentElement.classList.toggle('dark', next === 'dark');
+  const validate = (f: File) => {
+    if (!/\.(csv|xlsx|xls)$/i.test(f.name)) return "Please upload a CSV or Excel file";
+    if (f.size > 10 * 1024 * 1024) return "File too large. Max 10MB";
+    return null;
   };
 
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-  }, [theme]);
+  const onPick = (f?: File) => {
+    if (!f) return;
+    const v = validate(f);
+    if (v) { setError(v); return; }
+    setError(null);
+    setFile(f);
+  };
+
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault(); e.stopPropagation();
+    setDrag(false);
+    onPick(e.dataTransfer.files?.[0]);
+  };
+
+  const goToAnalysis = (runId: string, extra?: Record<string, string | number | boolean>) => {
+    const params = new URLSearchParams({ runId, ...(extra ?? {}) } as Record<string, string>);
+    router.push(`${ANALYSIS_ROUTE}?${params.toString()}`);
+  };
 
   const handleAnalyze = async () => {
-    setError(null);
-
-    if (!patientsFile || !practiceZip) {
-      setError('Please upload patient data and enter practice ZIP code.');
-      return;
-    }
-
-    setLoading(true);
-
+    if (!file) return;
+    setLoading(true); setError(null);
     try {
-      const datasetId = await uploadDataset(patientsFile, practiceZip, competitorsFile || undefined);
-      setCurrentDatasetId(datasetId);
-
-      const proceduresResp = await getProcedures(datasetId);
-      setAvailableProcedures(proceduresResp.procedures || []);
-
-      const newRunId = await createRun(datasetId, focus);
-      const runResults = (await getRunResults(newRunId)) as { campaigns?: ApiCampaign[] };
-
-      if (!runResults?.campaigns?.length) {
-        setError('Analysis completed, but no results were found. Please check your data.');
-        return;
-      }
-
-      const transformedResults: RunResult = {
-        status: 'ok',
-        top_segments: runResults.campaigns.map(toSegment),
-        avg_revenue_per_patient: DEFAULT_ARPV,
-      };
-
-      setResults(transformedResults);
-      setCurrentStep('insights');
-    } catch (err: unknown) {
-      console.error('Analysis failed:', err);
-      const maybe = err as any;
-      if (maybe?.response?.data?.detail) {
-        setError('Upload failed: ' + maybe.response.data.detail);
-      } else if (maybe instanceof Error) {
-        setError('Analysis failed: ' + maybe.message);
-      } else {
-        setError('Analysis failed. Please check your data and try again.');
-      }
-    } finally {
-      setLoading(false);
-    }
+      const datasetId = await api.uploadDataset(file);
+      const runId = await api.createRun(datasetId, "non_inv");
+      const res = await api.getRunResults(runId);
+      if (!res?.campaigns?.length) { setError("No results found. Please check your data."); return; }
+      goToAnalysis(runId);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Analysis failed. Please try again.");
+    } finally { setLoading(false); }
   };
 
-  const handleProcedureChange = async (procedure: string) => {
-    setSelectedProcedure(procedure);
-    if (!currentDatasetId) return;
-
-    setLoading(true);
+  const handleSample = async () => {
+    setLoading(true); setError(null);
     try {
-      const newRunId = await createRun(currentDatasetId, focus, procedure || undefined);
-      const runResults = (await getRunResults(newRunId)) as { campaigns?: ApiCampaign[] };
-
-      if (!runResults?.campaigns?.length) {
-        setError('No results for that procedure. Try another filter.');
-        return;
-      }
-
-      const transformedResults: RunResult = {
-        status: 'ok',
-        top_segments: runResults.campaigns.map(toSegment),
-        avg_revenue_per_patient: DEFAULT_ARPV,
-      };
-
-      setResults(transformedResults);
-    } catch (err) {
-      console.error('Procedure filter failed:', err);
-      setError('Failed to analyze with selected procedure');
-    } finally {
-      setLoading(false);
-    }
+      const runId = await api.createSampleRun();
+      goToAnalysis(runId, { sample: 1 });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't load sample data.");
+    } finally { setLoading(false); }
   };
 
-  const handleGenerateCampaign = (segment: Segment) => {
-  // Encode the cohort properly, removing spaces
-  const cohortParam = encodeURIComponent(segment.cohort.replace(/\s+/g, ''));
-  window.location.href = `/prescriptive-campaign?zip=${segment.zip}&cohort=${cohortParam}`;
-};
-
-  const calculateExpansionMetrics = () => {
-    if (!results?.top_segments) return null;
-
-    const top3 = results.top_segments.slice(0, 3);
-    const targetZips = top3.map((s: Segment) =>
-      String(s?.zip ?? '').replace(/[^0-9]/g, '').slice(0, 5)
-    );
-
-    const sum = (arr: number[]) => arr.reduce((a, b) => a + (Number(b) || 0), 0);
-    const patientsLow = sum(top3.map((s: Segment) => s?.expected_bookings?.p10 ?? 0));
-    const patientsHigh = sum(top3.map((s: Segment) => s?.expected_bookings?.p90 ?? 0));
-
-    const arpv = Number(results.avg_revenue_per_patient) || DEFAULT_ARPV;
-    const annualLow = patientsLow * arpv * 12;
-    const annualHigh = patientsHigh * arpv * 12;
-
-    const formatUSD = (n: number) =>
-      n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-
-    return {
-      targetZips,
-      patientsLow,
-      patientsHigh,
-      revLow: formatUSD(annualLow),
-      revHigh: formatUSD(annualHigh),
-    };
-  };
-
-  if (currentStep === 'insights' && results) {
-    const expansionMetrics = calculateExpansionMetrics();
-
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#0B0F1A] dark:bg-[radial-gradient(60%_70%_at_10%_0%,rgba(99,102,241,0.15),transparent_60%),radial-gradient(50%_60%_at_100%_0%,rgba(56,189,248,0.15),transparent_60%),radial-gradient(40%_50%_at_0%_100%,rgba(16,185,129,0.12),transparent_60%)]">
-        <InsightsHeader
-          onNewAnalysis={() => setCurrentStep('upload')}
-          theme={theme}
-          onToggleTheme={toggleTheme}
-        />
-
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="space-y-12">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
-                  Market Intelligence Dashboard
-                </h2>
-                <p className="text-lg text-gray-600 dark:text-white/70 mt-2">
-                  We analyzed your patient data and ranked ZIP codes by how closely they match your
-                  best customers&apos; demographics, spending patterns, and location preferences.
-                  Each area below shows match scores, local competition levels, distance from your
-                  practice, and projected patient volume. Higher match scores indicate stronger
-                  opportunities for acquiring profitable patients similar to your current top
-                  performers. Click <strong>Generate Campaign Intelligence</strong> on any ZIP to get
-                  specific marketing strategies, messaging recommendations, and channel guidance
-                  tailored to that market.
-                </p>
-              </div>
-            </div>
-
-            {expansionMetrics && (
-              <ExpansionHero
-                targetZips={expansionMetrics.targetZips}
-                patientsLow={expansionMetrics.patientsLow}
-                patientsHigh={expansionMetrics.patientsHigh}
-                revLow={expansionMetrics.revLow}
-                revHigh={expansionMetrics.revHigh}
-                onDiscover={() => {}}
-              />
-            )}
-
-            <ProcedureFilter
-              selectedProcedure={selectedProcedure}
-              availableProcedures={availableProcedures}
-              onProcedureChange={handleProcedureChange}
-            />
-
-            <div id="zip-cards-section">
-              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-8">
-                Top Target Areas
-              </h3>
-
-              <div className="grid md:grid-cols-3 gap-6">
-                {results.top_segments.slice(0, 3).map((segment, index) => (
-                  <ZipTargetCard
-                    key={`${segment.zip}-${index}`}
-                    segment={segment}
-                    index={index}
-                    onGenerateCampaign={handleGenerateCampaign}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const dropClasses =
+    `min-w-0 rounded-xl ring-1 ring-inset transition ` +
+    (drag ? "ring-indigo-300 bg-indigo-50/60" : "ring-gray-200 bg-gray-50 hover:ring-indigo-200");
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-white dark:from-[#0B0F1A] dark:to-[#0B0F1A] dark:bg-[radial-gradient(60%_70%_at_10%_0%,rgba(99,102,241,0.15),transparent_60%),radial-gradient(50%_60%_at_100%_0%,rgba(56,189,248,0.15),transparent_60%),radial-gradient(40%_50%_at_0%_100%,rgba(16,185,129,0.12),transparent_60%)] min-h-screen">
-      <header className="px-6 py-6">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <SquareLogo />
-            <div>
-              <h1
-                className="text-2xl font-semibold tracking-tight bg-clip-text text-transparent"
-                style={{ backgroundImage: BRAND_GRADIENT }}
-              >
-                Audience Mirror
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-white/60">Premium data-driven intelligence</p>
+    <div className="isolate min-h-dvh w-[100svw] overflow-x-clip bg-white text-gray-950 antialiased">
+      {/* Header */}
+      <header className="border-b border-gray-200 bg-white">
+        <div className="frame py-4">
+          <div className="flex items-center gap-2">
+            <div className="grid h-8 w-8 place-items-center rounded bg-gray-900">
+              <div className="h-4 w-4 rounded-sm bg-white" />
             </div>
+            <span className="text-base font-semibold">Audience Mirror</span>
           </div>
-          <button
-            onClick={toggleTheme}
-            className="relative h-10 w-10 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 flex items-center justify-center transition-all"
-            aria-label="Toggle theme"
-          >
-            <Sun className={`h-5 w-5 transition-all ${theme === 'dark' ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
-            <Moon className={`absolute h-5 w-5 transition-all ${theme === 'dark' ? 'rotate-0 scale-100' : '-rotate-90 scale-0'}`} />
-          </button>
         </div>
       </header>
 
-      <section className="py-16 text-center">
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-          Find more patients like your{' '}
-          <span className="bg-clip-text text-transparent" style={{ backgroundImage: BRAND_GRADIENT }}>
-            best ones
-          </span>
-        </h1>
-        <p className="mt-4 text-lg text-gray-600 dark:text-white/70 max-w-2xl mx-auto">
-          ZIP-level intelligence that shows you exactly where your next best patients are hiding —
-          no PII, just data-driven clarity.
-        </p>
-      </section>
+      {/* Main */}
+      <main className="frame py-12 md:py-16 lg:py-20">
+        {/* Hero (larger base so it never wakes up tiny) */}
+        <section className="mb-10 text-center md:mb-14">
+          <h1 className="text-balance font-semibold leading-[1.08] tracking-tight text-4xl md:text-6xl lg:text-7xl">
+            Know your best patients.
+            <span className="block text-indigo-600">Find more like them.</span>
+          </h1>
+          <p className="mx-auto mt-5 max-w-2xl text-pretty text-base leading-7 text-gray-600 md:text-lg md:leading-8">
+            Upload a simple patient list (ZIP, visits, revenue). We highlight your highest-value guests and the
+            neighborhoods they come from—so you can target look-alikes, fill schedules, and grow memberships.
+          </p>
+        </section>
 
-      <UploadSection
-        patientsFile={patientsFile}
-        competitorsFile={competitorsFile}
-        practiceZip={practiceZip}
-        focus={focus}
-        error={error}
-        loading={loading}
-        onPatientsFileChange={setPatientsFile}
-        onCompetitorsFileChange={setCompetitorsFile}
-        onPracticeZipChange={setPracticeZip}
-        onFocusChange={setFocus}
-        onAnalyze={handleAnalyze}
-        onDownloadTemplate={downloadCSVTemplate}
-      />
+        {/* Upload */}
+        <section className="mx-auto w-full max-w-3xl md:max-w-4xl">
+          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm ring-1 ring-black/5">
+            <div className="p-6 sm:p-8 lg:p-10">
+              <div
+                className={dropClasses}
+                onDragEnter={(e) => { e.preventDefault(); setDrag(true); if (error) setError(null); }}
+                onDragOver={(e) => e.preventDefault()}
+                onDragLeave={(e) => { e.preventDefault(); setDrag(false); }}
+                onDrop={onDrop}
+                role="button"
+                tabIndex={0}
+                aria-label="File upload area"
+                onKeyDown={(e) => {
+                  if (!file && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); fileRef.current?.click(); }
+                }}
+                onClick={() => !file && fileRef.current?.click()}
+              >
+                <div className="px-6 sm:px-8 py-10">
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    className="hidden"
+                    accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    onChange={(e) => onPick(e.target.files?.[0] ?? undefined)}
+                  />
 
-      <section className="py-8">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mb-8 text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">How It Works</h2>
-            <p className="mt-3 text-lg text-gray-600 dark:text-white/70">
-              Three simple steps to uncover your next best patients with clarity and confidence.
-            </p>
+                  {/* Idle */}
+                  {!file && (
+                    <div className="text-center">
+                      <svg className="mx-auto mb-4 h-10 w-10 text-indigo-500 md:h-12 md:w-12" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <div className="text-base font-semibold md:text-lg">Drop your patient file</div>
+                      <div className="mt-1 text-xs text-gray-500 md:text-sm">CSV or Excel · Max 10MB</div>
+
+                      <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                        <button
+                          type="button"
+                          onClick={() => fileRef.current?.click()}
+                          disabled={loading}
+                          className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Select file
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSample}
+                          disabled={loading}
+                          className="text-sm font-medium text-indigo-700 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Use sample data
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Selected file – compact card */}
+                  {file && (
+                    <div className="flex flex-col items-center gap-6">
+                      <div className="flex max-w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                        <div className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-100 text-indigo-700">
+                          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+                            <path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" stroke="currentColor" strokeWidth="1.5"/>
+                            <path d="M14 3v5h5" stroke="currentColor" strokeWidth="1.5"/>
+                          </svg>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold text-gray-900">{file.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {(file.size / (1024 * 1024)).toFixed(2)} MB · <span className="text-green-700">Ready to analyze</span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setFile(null); setError(null); }}
+                          disabled={loading}
+                          className="ml-auto text-sm font-medium text-indigo-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Change
+                        </button>
+                      </div>
+
+                      <div className="flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={handleAnalyze}
+                          disabled={loading}
+                          className="w-full sm:w-auto rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {loading ? "Analyzing…" : "Analyze data"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSample}
+                          disabled={loading}
+                          className="w-full sm:w-auto rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-900 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Try with sample data
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {error && (
+                <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+                  {error}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="grid gap-8 md:grid-cols-3">
-            <StepCard
-              number="1"
-              title="Upload Your File"
-              desc="Drop in a CSV with ZIP codes, treatments, and revenue. No sensitive info needed — just the basics for analysis."
-            />
-            <StepCard
-              number="2"
-              title="AI Uncovers Hotspots"
-              desc="Our algorithm pinpoints the ZIP codes with the highest growth potential by blending demographics, competition, and patient history."
-            />
-            <StepCard
-              number="3"
-              title="Get Your Growth Playbook"
-              desc="Receive a clear roadmap: where to market, pricing strategy, and projected patient volume for smarter decisions."
-            />
-          </div>
+        </section>
+
+        {/* How it works */}
+        {/* How it works — stack on narrow, 3-up on wide */}
+       <section className="mx-auto mt-12 max-w-5xl lg:mt-16">
+        <h2 className="mb-6 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 md:text-sm">
+          How it works
+        </h2>
+
+        {/* 1 col by default; 3 cols at ≥1024px */}
+        <div className="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-3 lg:items-stretch">
+          <div className="h-full"><Step n="1" t="Upload data" d="Import a CSV/XLSX with ZIP, visits, revenue." /></div>
+          <div className="h-full"><Step n="2" t="Find patterns" d="We surface high-value segments and repeat-visit drivers." /></div>
+          <div className="h-full"><Step n="3" t="Get insights" d="See look-alike ZIP codes and specific actions to grow bookings." /></div>
         </div>
       </section>
+
+      </main>
+
+      {/* One frame governs width/padding so header & main never misalign */}
+      <style jsx>{`
+        .frame {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding-left: clamp(16px, 4vw, 32px);
+          padding-right: clamp(16px, 4vw, 32px);
+          width: 100%;
+          box-sizing: border-box;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function Step({ n, t, d }: { n: string; t: string; d: string }) {
+  return (
+    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+      <div className="flex items-start gap-3">
+        <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-indigo-600 text-sm font-semibold text-white">
+          {n}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 text-base font-semibold">{t}</div>
+          <p className="text-pretty text-sm leading-6 text-gray-600">{d}</p>
+        </div>
+      </div>
     </div>
   );
 }

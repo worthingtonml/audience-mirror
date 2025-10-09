@@ -17,20 +17,22 @@ export const metadata: Metadata = {
   description: "Prescriptive campaigns",
 };
 
-export const viewport: Viewport = {
+// app/layout.tsx
+// app/layout.tsx
+export const viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      {/* Base text size + line-height */}
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased text-[1rem] leading-7 md:text-[1.0625rem]`}>
-        {children}
+    <html lang="en" className="h-full w-full overflow-x-clip">
+      <body className="h-full w-full overflow-x-clip antialiased">
+        <div id="__page" className="isolate min-h-dvh w-[100svw] overflow-x-clip">
+          {children}
+        </div>
       </body>
     </html>
   );
 }
-
-
