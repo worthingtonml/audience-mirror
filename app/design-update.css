@@ -1,0 +1,31 @@
+/* Updated Design System */
+:root {
+  --color-primary: #4338CA;
+  --color-primary-hover: #3730A3;
+  --color-success: #00a650;
+  --color-gray-bg: #fafafa;
+  --color-gray-border: #e5e5e5;
+  --color-text-primary: #000;
+  --color-text-secondary: #666;
+  --color-text-tertiary: #999;
+}
+
+/* Override existing styles */
+.your-existing-cards {
+  background: var(--color-gray-bg);
+  border: 1px solid var(--color-gray-border);
+  border-radius: 0;
+  padding: 24px;
+}
+
+/* Update buttons */
+.your-existing-buttons {
+  background: var(--color-primary);
+  border-radius: 0;
+  font-weight: 500;
+}
+
+.your-existing-buttons:hover {
+  background: var(--color-primary-hover);
+  transform: translateY(-1px);
+}

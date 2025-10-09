@@ -1,0 +1,182 @@
+@import "tailwindcss";
+
+/* --- Global guard & sane defaults --- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  overflow-x: clip;              /* stop horizontal cutoff everywhere */
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Bigger, still fluid base type (affects rem units site-wide) */
+html {
+  /* min 18.5px on phones, scales with viewport, caps ~21.5px on big screens */
+  font-size: clamp(18.5px, 1.15vw + 10px, 21.5px);
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+}
+
+
+/* tokens (yours) */
+:root{ --background:#ffffff; --foreground:#171717; }
+@media (prefers-color-scheme: dark){
+  :root{ --background:#0a0a0a; --foreground:#ededed; }
+}
+
+body{
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Media never overflows */
+img, video, canvas, svg { max-width: 100%; height: auto; }
+
+/* Single responsive frame for pages (use on header/main wrappers) */
+.frame{
+  /* Feels like ~“67% zoom” on large screens without actually changing zoom */
+  max-width: min(72vw, 1400px);   /* bumped from 67 → 72 for better legibility */
+  margin-inline: auto;
+  padding-inline: clamp(16px, 4vw, 32px);
+  width: 100%;
+  box-sizing: border-box;
+}
+@media (max-width: 1024px){
+  .frame{ max-width: 100%; }
+}
+
+/* Body defaults */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Media should never overflow its container */
+img, video, canvas, svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Utility: one frame to rule width & padding (use on header/main wrappers)
+   Example: <div class="frame"> ... </div> */
+/* One frame to rule width & padding */
+.frame{
+  /* On desktop: use ~67% of the viewport, but never exceed 1400px */
+  max-width: min(67vw, 1400px);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(16px, 4vw, 32px);
+  padding-right: clamp(16px, 4vw, 32px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* On tablets & below, just use full width with padding */
+@media (max-width: 1024px){
+  .frame{ max-width: 100%; }
+}
+
+
+/* -----------------------------
+   Your existing custom styles
+   ----------------------------- */
+
+/* Responsive base type (kept for compatibility; html clamp above now drives size) */
+/* html{
+  font-size: clamp(16px, 0.95vw + 10px, 18px);
+  line-height: 1.6;
+  -webkit-text-size-adjust: 100%;
+} */
+
+/* ... rest of your custom styles ... */
+
+/* ExpansionHero advanced glassmorphism cards */
+.expansion-card{
+  background: rgba(255,255,255,0.95);
+  border-radius: 1.5rem;
+  border: 1.5px solid #e5e7eb;
+  box-shadow: 0 8px 32px rgba(31,38,135,0.13), 0 1.5px 8px rgba(80,80,120,0.04);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 2.5rem 1.5rem 2rem;
+  display:flex; flex-direction:column; align-items:center;
+  transition: box-shadow .35s cubic-bezier(.4,0,.2,1), background .3s, transform .35s cubic-bezier(.4,0,.2,1);
+  position:relative; z-index:1;
+}
+.expansion-card:hover{
+  box-shadow: 0 16px 48px rgba(31,38,135,0.18), 0 3px 16px rgba(80,80,120,0.08);
+  background: rgba(255,255,255,0.99);
+  transform: translateY(-4px) scale(1.035);
+  border-color:#c7d2fe;
+}
+
+/* ExpansionHero premium button */
+.expansion-hero-btn{
+  background: linear-gradient(90deg,#3b82f6 0%,#6366f1 60%,#a21caf 100%);
+  border-radius:9999px;
+  box-shadow:0 4px 24px rgba(31,38,135,0.13);
+  color:#fff; font-weight:700; border:none; outline:none;
+  transition: box-shadow .3s, background .3s, transform .3s;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  position:relative; z-index:2;
+}
+.expansion-hero-btn:hover{
+  box-shadow:0 8px 32px rgba(31,38,135,0.18);
+  transform:scale(1.045);
+  background: linear-gradient(90deg,#2563eb 0%,#4f46e5 60%,#7c3aed 100%);
+}
+
+/* Premium B2B Glassmorphism Card */
+.glass-card-b2b{
+  background: rgba(255,255,255,0.90);
+  border-radius:1.5rem;
+  border:1px solid #e5e7eb;
+  box-shadow:0 4px 24px rgba(31,38,135,0.10);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  padding:2rem;
+  display:flex; flex-direction:column; align-items:center;
+  transition: box-shadow .3s, background .3s, transform .3s;
+}
+.glass-card-b2b:hover{
+  box-shadow:0 8px 32px rgba(31,38,135,0.16);
+  background:rgba(255,255,255,0.97);
+  transform:translateY(-2px) scale(1.03);
+}
+
+/* Premium B2B Glass Button */
+.glass-btn-b2b{
+  background:rgba(255,255,255,0.80);
+  border:1px solid #e5e7eb;
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+  box-shadow:0 2px 8px rgba(31,38,135,0.08);
+  transition: box-shadow .2s, background .2s, transform .2s;
+}
+.glass-btn-b2b:hover{
+  background:rgba(255,255,255,0.92);
+  box-shadow:0 4px 16px rgba(31,38,135,0.12);
+  transform:scale(1.04);
+}
+
+/* Utility glass card */
+.glass-card{
+  background:rgba(255,255,255,0.60);
+  border-radius:1.25rem;
+  box-shadow:0 8px 32px rgba(31,38,135,0.18);
+  backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+  border:1.5px solid rgba(255,255,255,0.3);
+  padding:2rem;
+  display:flex; flex-direction:column; align-items:center;
+  transition: box-shadow .3s, background .3s, transform .3s;
+}
+.glass-card:hover{
+  box-shadow:0 12px 40px rgba(31,38,135,0.22);
+  background:rgba(255,255,255,0.80);
+  transform:translateY(-2px) scale(1.03);
+}

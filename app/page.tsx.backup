@@ -1,0 +1,287 @@
+'use client';
+import React, { useEffect, useState } from 'react';
+import { Sun, Moon } from 'lucide-react';
+
+import { uploadDataset, createRun, getRunResults, getProcedures } from './lib/api';
+import { BRAND_GRADIENT, DEFAULT_ARPV } from './lib/constants';
+import { RunResult, Segment } from './lib/types';
+import { downloadCSVTemplate } from './lib/utils';
+
+import SquareLogo from './components/SquareLogo';
+import StepCard from './components/StepCard';
+import ExpansionHero from './components/ExpansionHero';
+import ZipTargetCard from './components/ZipTargetCard';
+import InsightsHeader from './components/InsightsHeader';
+import UploadSection from './components/UploadSection';
+import ProcedureFilter from './components/ProcedureFilter';
+
+export default function AudienceMirror() {
+  const [currentStep, setCurrentStep] = useState<'upload' | 'insights'>('upload');
+  const [patientsFile, setPatientsFile] = useState<File | null>(null);
+  const [competitorsFile, setCompetitorsFile] = useState<File | null>(null);
+  const [practiceZip, setPracticeZip] = useState('');
+  const [focus, setFocus] = useState<'non_inv' | 'surgical'>('non_inv');
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<RunResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [selectedProcedure, setSelectedProcedure] = useState<string>('');
+  const [availableProcedures, setAvailableProcedures] = useState<any[]>([]);
+  const [currentDatasetId, setCurrentDatasetId] = useState<string>('');
+
+  const toggleTheme = () => {
+    const next = theme === 'light' ? 'dark' : 'light';
+    setTheme(next);
+    document.documentElement.classList.toggle('dark', next === 'dark');
+  };
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+  }, [theme]);
+
+  const handleAnalyze = async () => {
+    setError(null);
+    
+    if (!patientsFile || !practiceZip) {
+      setError('Please upload patient data and enter practice ZIP code.');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const datasetId = await uploadDataset(patientsFile, practiceZip, competitorsFile || undefined);
+      setCurrentDatasetId(datasetId);
+      
+      const procedures = await getProcedures(datasetId);
+      setAvailableProcedures(procedures.procedures || []);
+      
+      const newRunId = await createRun(datasetId, focus);
+      const runResults = await getRunResults(newRunId);
+      
+      if (!runResults?.top_segments?.length) {
+        setError('Analysis completed, but no results were found. Please check your data.');
+        return;
+      }
+      
+      setResults(runResults);
+      setCurrentStep('insights');
+    } catch (err: any) {
+      console.error('Analysis failed:', err);
+      
+      if (err?.response?.data?.detail) {
+        setError('Upload failed: ' + err.response.data.detail);
+      } else if (err instanceof Error) {
+        setError('Analysis failed: ' + err.message);
+      } else {
+        setError('Analysis failed. Please check your data and try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProcedureChange = async (procedure: string) => {
+    setSelectedProcedure(procedure);
+    
+    if (!currentDatasetId) return;
+    
+    setLoading(true);
+    
+    try {
+      const newRunId = await createRun(currentDatasetId, focus, procedure || undefined);
+      const runResults = await getRunResults(newRunId);
+      setResults(runResults);
+      setSelectedProcedure(procedure);
+    } catch (error) {
+      console.error('Procedure filter failed:', error);
+      setError('Failed to analyze with selected procedure');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateCampaign = (segment: Segment) => {
+    window.location.href = `/prescriptive-campaign?zip=${segment.zip}&cohort=${segment.cohort}`;
+  };
+
+  const calculateExpansionMetrics = () => {
+    if (!results?.top_segments) return null;
+
+    const top3 = results.top_segments.slice(0, 3);
+    const targetZips = top3.map((s: Segment) => 
+      String(s?.zip ?? '').replace(/[^0-9]/g, '').slice(0, 5)
+    );
+
+    const sum = (arr: number[]) => arr.reduce((a, b) => a + (Number(b) || 0), 0);
+    const patientsLow = sum(top3.map((s: Segment) => s?.expected_bookings?.p10 ?? 0));
+    const patientsHigh = sum(top3.map((s: Segment) => s?.expected_bookings?.p90 ?? 0));
+
+    const arpv = Number(results.avg_revenue_per_patient) || DEFAULT_ARPV;
+    const annualLow = patientsLow * arpv * 12;
+    const annualHigh = patientsHigh * arpv * 12;
+
+    const formatUSD = (n: number) => 
+      n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+    return {
+      targetZips,
+      patientsLow,
+      patientsHigh,
+      revLow: formatUSD(annualLow),
+      revHigh: formatUSD(annualHigh)
+    };
+  };
+
+  if (currentStep === 'insights' && results) {
+    const expansionMetrics = calculateExpansionMetrics();
+
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0B0F1A] dark:bg-[radial-gradient(60%_70%_at_10%_0%,rgba(99,102,241,0.15),transparent_60%),radial-gradient(50%_60%_at_100%_0%,rgba(56,189,248,0.15),transparent_60%),radial-gradient(40%_50%_at_0%_100%,rgba(16,185,129,0.12),transparent_60%)]">
+        <InsightsHeader 
+          onNewAnalysis={() => setCurrentStep('upload')}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="space-y-12">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
+                  Market Intelligence Dashboard
+                </h2>
+                <p className="text-lg text-gray-600 dark:text-white/70 mt-2">
+                  We analyzed your patient data and ranked ZIP codes by how closely they match your best customers' demographics, spending patterns, and location preferences. Each area below shows match scores, local competition levels, distance from your practice, and projected patient volume. Higher match scores indicate stronger opportunities for acquiring profitable patients similar to your current top performers. Click <strong>Generate Campaign Intelligence</strong> on any ZIP to get specific marketing strategies, messaging recommendations, and channel guidance tailored to that market.
+                </p>
+              </div>
+            </div>
+
+            {expansionMetrics && (
+              <ExpansionHero
+                targetZips={expansionMetrics.targetZips}
+                patientsLow={expansionMetrics.patientsLow}
+                patientsHigh={expansionMetrics.patientsHigh}
+                revLow={expansionMetrics.revLow}
+                revHigh={expansionMetrics.revHigh}
+                onDiscover={() => {}}
+              />
+            )}
+
+            <ProcedureFilter
+              selectedProcedure={selectedProcedure}
+              availableProcedures={availableProcedures}
+              onProcedureChange={handleProcedureChange}
+            />
+
+            <div id="zip-cards-section">
+              <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-8">
+                Top Target Areas
+              </h3>
+              
+              <div className="grid md:grid-cols-3 gap-6">
+                {results.top_segments.slice(0, 3).map((segment: Segment, index: number) => (
+                  <ZipTargetCard
+                    key={segment.zip}
+                    segment={segment}
+                    index={index}
+                    onGenerateCampaign={handleGenerateCampaign}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-gradient-to-b from-gray-50 to-white dark:from-[#0B0F1A] dark:to-[#0B0F1A] dark:bg-[radial-gradient(60%_70%_at_10%_0%,rgba(99,102,241,0.15),transparent_60%),radial-gradient(50%_60%_at_100%_0%,rgba(56,189,248,0.15),transparent_60%),radial-gradient(40%_50%_at_0%_100%,rgba(16,185,129,0.12),transparent_60%)] min-h-screen">
+      <header className="px-6 py-6">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <SquareLogo />
+            <div>
+              <h1 
+                className="text-2xl font-semibold tracking-tight bg-clip-text text-transparent"
+                style={{ backgroundImage: BRAND_GRADIENT }}
+              >
+                Audience Mirror
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-white/60">Premium data-driven intelligence</p>
+            </div>
+          </div>
+          <button
+            onClick={toggleTheme}
+            className="h-10 w-10 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 flex items-center justify-center transition-all"
+            aria-label="Toggle theme"
+          >
+            <Sun className={`h-5 w-5 transition-all ${theme === 'dark' ? 'rotate-90 scale-0' : 'rotate-0 scale-100'}`} />
+            <Moon className={`absolute h-5 w-5 transition-all ${theme === 'dark' ? 'rotate-0 scale-100' : '-rotate-90 scale-0'}`} />
+          </button>
+        </div>
+      </header>
+
+      <section className="py-16 text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+          Find more patients like your{' '}
+          <span 
+            className="bg-clip-text text-transparent"
+            style={{ backgroundImage: BRAND_GRADIENT }}
+          >
+            best ones
+          </span>
+        </h1>
+        <p className="mt-4 text-lg text-gray-600 dark:text-white/70 max-w-2xl mx-auto">
+          ZIP-level intelligence that shows you exactly where your next best patients are hiding — no PII, just data-driven clarity.
+        </p>
+      </section>
+
+      <UploadSection
+        patientsFile={patientsFile}
+        competitorsFile={competitorsFile}
+        practiceZip={practiceZip}
+        focus={focus}
+        error={error}
+        loading={loading}
+        onPatientsFileChange={setPatientsFile}
+        onCompetitorsFileChange={setCompetitorsFile}
+        onPracticeZipChange={setPracticeZip}
+        onFocusChange={setFocus}
+        onAnalyze={handleAnalyze}
+        onDownloadTemplate={downloadCSVTemplate}
+      />
+
+      <section className="py-8">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mb-8 text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              How It Works
+            </h2>
+            <p className="mt-3 text-lg text-gray-600 dark:text-white/70">
+              Three simple steps to uncover your next best patients with clarity and confidence.
+            </p>
+          </div>
+          <div className="grid gap-8 md:grid-cols-3">
+            <StepCard
+              number="1"
+              title="Upload Your File"
+              desc="Drop in a CSV with ZIP codes, treatments, and revenue. No sensitive info needed — just the basics for analysis."
+            />
+            <StepCard
+              number="2"
+              title="AI Uncovers Hotspots"
+              desc="Our algorithm pinpoints the ZIP codes with the highest growth potential by blending demographics, competition, and patient history."
+            />
+            <StepCard
+              number="3"
+              title="Get Your Growth Playbook"
+              desc="Receive a clear roadmap: where to market, pricing strategy, and projected patient volume for smarter decisions."
+            />
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
