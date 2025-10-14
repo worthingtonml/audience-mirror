@@ -37,6 +37,7 @@ from services.validate import validate_algorithm_accuracy
 from database import get_db, Dataset, AnalysisRun, create_tables
 
 from sqlalchemy.orm import Session
+from routers import patient_intel as patient_intel_router
 
 class CampaignRequest(BaseModel):
     cohort: str
@@ -79,6 +80,106 @@ def normalize_patients_dataframe(df):
         print(f"[CLEAN] Revenue: {original_nulls} null values, filled with $500 default")
     
     return df
+
+# ============================================================================
+# STEP 1: ADD THIS FUNCTION AFTER normalize_patients_dataframe()
+# ============================================================================
+
+def segment_patients_by_behavior(patients_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Behavioral-first segmentation based on actual spending patterns.
+    Classifies patients by what they DO, not where they live.
+    
+    Args:
+        patients_df: DataFrame with patient data (must have 'revenue' or 'total_spent')
+    
+    Returns:
+        Same DataFrame with new 'behavioral_segment' column added
+    """
+    df = patients_df.copy()
+    
+    # Use existing revenue column name
+    revenue_col = 'revenue' if 'revenue' in df.columns else 'total_spent'
+    
+    # Parse treatment count from treatments_received if available
+    if 'treatments_received' in df.columns:
+        df['treatment_count'] = df['treatments_received'].astype(str).apply(
+            lambda x: len([t for t in str(x).split(',') if t.strip()]) if pd.notna(x) else 1
+        )
+    else:
+        df['treatment_count'] = 1
+    
+    # Use total_visits if available, otherwise estimate
+    if 'total_visits' in df.columns:
+        df['visit_count'] = df['total_visits']
+    else:
+        # Estimate: each row in grouped data represents visits to that ZIP
+        df['visit_count'] = df.groupby('zip_code')[revenue_col].transform('count')
+    
+    # Calculate annual visit frequency if we have date data
+    if 'first_visit' in df.columns and 'last_visit' in df.columns:
+        try:
+            first = pd.to_datetime(df['first_visit'], errors='coerce')
+            last = pd.to_datetime(df['last_visit'], errors='coerce')
+            df['months_active'] = ((last - first).dt.days / 30.44).clip(lower=1)
+            df['months_active'] = df['months_active'].fillna(12)
+            df['visits_per_year'] = (df['visit_count'] / df['months_active']) * 12
+        except Exception as e:
+            print(f"[BEHAVIORAL] Could not calculate visit frequency: {e}")
+            df['visits_per_year'] = 2.5  # Default assumption
+    else:
+        df['visits_per_year'] = 2.5  # Default if no dates
+    
+    # Behavioral classification function
+    def classify_behavior(row):
+        """Classify based on spend + frequency + treatment diversity"""
+        spend = float(row.get(revenue_col, 0))
+        visits = float(row.get('visit_count', 1))
+        treatments = int(row.get('treatment_count', 1))
+        freq = float(row.get('visits_per_year', 2))
+        
+        # VIP: High spend + high frequency + multiple treatments
+        if spend >= 2500 and freq >= 3 and treatments > 1:
+            return "VIP Regular"
+        
+        # Progressive Buyer: Multiple treatments, growing engagement
+        elif treatments > 1 and spend >= 1500:
+            return "Progressive Buyer"
+        
+        # Premium Single: High-value single purchase
+        elif spend >= 2000 and treatments == 1:
+            return "Premium Single"
+        
+        # Regular Maintainer: Consistent visits, moderate spend
+        elif freq >= 2.5 and spend >= 800:
+            return "Regular Maintainer"
+        
+        # Entry Explorer: New, trying services
+        elif visits <= 2 and spend < 1000:
+            return "Entry Explorer"
+        
+        # Occasional: Everyone else
+        else:
+            return "Occasional Visitor"
+    
+    # Apply classification
+    df['behavioral_segment'] = df.apply(classify_behavior, axis=1)
+    
+    # Log results for debugging
+    print(f"\n[BEHAVIORAL] Segmented {len(df)} patients by behavior:")
+    segment_dist = df['behavioral_segment'].value_counts()
+    for segment, count in segment_dist.items():
+        pct = (count / len(df)) * 100
+        print(f"  {segment:25s}: {count:3d} patients ({pct:5.1f}%)")
+    print("")
+    
+    return df
+
+# ============================================================================
+# STOP HERE - Don't add anything else yet!
+# Next: Make one small change to test this function
+# ============================================================================
+
 
 # --- ZIP → lat/lon (offline) helpers ---
 import numpy as np
@@ -131,43 +232,86 @@ def ensure_zip_latlon(df: pd.DataFrame, zip_col: str = "zip", country: str = "US
 
     return out
 
-def build_or_enrich_demographics_from_patients(patients_df: pd.DataFrame, raw_demographics: Optional[pd.DataFrame]) -> pd.DataFrame:
+def build_market_zip_universe(
+    practice_zip: str, 
+    raw_demographics: Optional[pd.DataFrame],
+    radius_miles: float = 50.0
+) -> pd.DataFrame:
     """
-    Construct a usable demographics_df from patient ZIPs (and any provided demographics).
-    Ensures columns: zip, lat, lon (+ defaulted demo fields).
+    Return ALL candidate ZIPs in the market (not just patient ZIPs).
+    
+    This is THE KEY FUNCTION that makes the algorithm profile-first.
     """
-    # Start with unique patient ZIPs
-    base = pd.DataFrame({"zip": patients_df["zip_code"].astype(str).str.zfill(5).unique()})
-
-    # Merge any provided demographics (optional)
+    
+    # If we have a full market demographics file, use it
     if raw_demographics is not None and "zip" in raw_demographics.columns:
-        demo = raw_demographics.copy()
-        demo["zip"] = demo["zip"].astype(str).str.zfill(5)
-        # Keep all extra demo columns if present
-        base = base.merge(demo, on="zip", how="left")
-
-    # Fill lat/lon via offline ZIP centroid lookup
-    base = ensure_zip_latlon(base, zip_col="zip", country="US")
-
-    # Ensure other demographic fields exist with reasonable defaults
+        print(f"[SCAN] Loading full market demographics...")
+        df = raw_demographics.copy()
+        df["zip"] = df["zip"].astype(str).str.zfill(5)
+        print(f"[SCAN] Loaded {len(df)} ZIPs from market database")
+    else:
+        # Fallback: just the practice ZIP (keeps current behavior if no market file)
+        print("[WARN] No market demographics provided, falling back to practice ZIP only")
+        df = pd.DataFrame({"zip": [practice_zip]})
+        df["zip"] = df["zip"].astype(str).str.zfill(5)
+    
+    # Ensure lat/lon for all ZIPs (offline, no PII)
+    df = ensure_zip_latlon(df, zip_col="zip", country="US")
+    
+    # Get practice coordinates
+    import pgeocode
+    nom = pgeocode.Nominatim("us")
+    practice_coords = nom.query_postal_code(practice_zip)
+    
+    if pd.isna(practice_coords["latitude"]):
+        raise ValueError(f"Could not find coordinates for practice ZIP {practice_zip}")
+    
+    plat = float(practice_coords["latitude"])
+    plon = float(practice_coords["longitude"])
+    
+    print(f"[SCAN] Practice at {practice_zip}: ({plat:.4f}, {plon:.4f})")
+    
+    # Calculate distance to practice using Haversine
+    r = 3958.8  # Earth radius in miles
+    lat1 = np.radians(df["lat"].astype(float))
+    lon1 = np.radians(df["lon"].astype(float))
+    lat2 = np.radians(plat)
+    lon2 = np.radians(plon)
+    
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2
+    df["distance_miles"] = 2 * r * np.arcsin(np.sqrt(a))
+    
+    # Filter to market window (radius)
+    market = df[df["distance_miles"] <= radius_miles].copy()
+    
+    print(f"[SCAN] {len(market)} ZIPs within {radius_miles}-mile radius")
+    
+    # Ensure required demographic columns exist with defaults
     defaults = {
         "median_income": 75000,
-        "density_per_sqmi": 3000,
+        "population": 20000,
         "college_pct": 0.32,
         "age_25_54_pct": 0.39,
         "owner_occ_pct": 0.65,
-        "population": 20000,
+        "density_per_sqmi": 3000
     }
-    for col, val in defaults.items():
-        if col not in base.columns:
-            base[col] = val
+    
+    for col, default in defaults.items():
+        if col not in market.columns:
+            market[col] = default
         else:
-            base[col] = pd.to_numeric(base[col], errors="coerce").fillna(val)
-
-    # Final clean
-    base["zip"] = base["zip"].astype(str).str.zfill(5)
-    base = base.dropna(subset=["zip", "lat", "lon"]).drop_duplicates(subset=["zip"]).reset_index(drop=True)
-    return base
+            market[col] = pd.to_numeric(market[col], errors="coerce").fillna(default)
+    
+    # Clean and deduplicate
+    market = market.dropna(subset=["zip", "lat", "lon"])
+    market = market.drop_duplicates(subset=["zip"])
+    market = market.reset_index(drop=True)
+    
+    print(f"[SCAN] ✅ Market universe ready: {len(market)} ZIPs")
+    
+    return market
 
 def normalize_demographics_dataframe(df):
     """Clean up demographics dataframe"""
@@ -519,6 +663,7 @@ app = fastapi.FastAPI(
 )
 
 app.include_router(procedures_router.router)
+app.include_router(patient_intel_router.router)
 
 # Add this after your app = fastapi.FastAPI(...) section
 @app.on_event("startup")
@@ -538,7 +683,7 @@ app.add_middleware(
 BASE_DIR = os.path.dirname(__file__)
 DATA_DIR = os.path.join(BASE_DIR, "data")
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-ZIP_DEMOGRAPHICS_PATH = os.path.join(DATA_DIR, "zip_demographics.sample.csv")
+ZIP_DEMOGRAPHICS_PATH = os.path.join(DATA_DIR, "uszips.csv")
 
 # Ensure upload directory exists
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -986,6 +1131,253 @@ async def validate_algorithm(
 # ===========================================
 # CORE ANALYSIS ENGINE
 # ===========================================
+# ============================================================================
+# STEP 2: ADD THIS FUNCTION BEFORE execute_advanced_analysis()
+# ============================================================================
+
+def identify_dominant_profile(
+    patients_df: pd.DataFrame, 
+    zip_features: pd.DataFrame,
+    top_percentile: float = 0.2
+) -> dict:
+    """
+    PROFILE-FIRST analysis: Identify WHO your best customers are,
+    then show WHERE they live (not the other way around).
+    
+    This implements Jeff's vision: "Target the PROFILE, not the ZIP"
+    
+    Args:
+        patients_df: Patient data with behavioral_segment column
+        zip_features: ZIP-level features with cohort assignments
+        top_percentile: What % to consider "best customers" (default 20%)
+    
+    Returns:
+        {
+            "dominant_profile": {
+                "psychographic": "Affluent Wellness",
+                "behavioral": "VIP Regular",
+                "combined": "Affluent Wellness - VIP Regular"
+            },
+            "profile_characteristics": {...},
+            "behavior_patterns": {...},
+            "geographic_concentration": [list of ZIPs with this profile],
+            "total_addressable_market": 47500,
+            "profile_summary": "Your best patients are..."
+        }
+    """
+    
+    # Use existing revenue column
+    revenue_col = 'revenue' if 'revenue' in patients_df.columns else 'total_spent'
+    
+    # Find top customers by revenue
+    sorted_patients = patients_df.sort_values(revenue_col, ascending=False)
+    top_count = max(1, int(len(patients_df) * top_percentile))
+    top_patients = sorted_patients.head(top_count)
+    
+    print(f"[PROFILE] Analyzing top {top_count} patients ({top_percentile*100:.0f}% of {len(patients_df)})")
+    
+    # 1. BEHAVIORAL PATTERN of best customers
+    if 'behavioral_segment' in top_patients.columns:
+        behavior_dist = top_patients['behavioral_segment'].value_counts()
+        dominant_behavior = behavior_dist.index[0]
+        behavior_pct = int((behavior_dist.iloc[0] / len(top_patients)) * 100)
+        print(f"[PROFILE] Dominant behavior: {dominant_behavior} ({behavior_pct}% of top patients)")
+    else:
+        dominant_behavior = "High-Value Customer"
+        behavior_pct = 0
+    
+    # 2. PSYCHOGRAPHIC PROFILE (from ZIP demographics)
+    top_zips = top_patients['zip_code'].unique()
+    zip_profiles = zip_features[zip_features['zip'].isin(top_zips)]
+    
+    if len(zip_profiles) > 0 and 'cohort' in zip_profiles.columns:
+        cohort_dist = zip_profiles['cohort'].value_counts()
+        dominant_psychographic = cohort_dist.index[0]
+        psycho_pct = int((cohort_dist.iloc[0] / len(zip_profiles)) * 100)
+        print(f"[PROFILE] Dominant psychographic: {dominant_psychographic} ({psycho_pct}% of ZIPs)")
+        
+        # Average demographics of top customer ZIPs
+        avg_income = int(zip_profiles['median_income'].mean())
+        avg_college = float(zip_profiles['college_pct'].mean())
+        avg_owner = float(zip_profiles.get('owner_occ_pct', pd.Series([0.65])).mean())
+    else:
+        dominant_psychographic = "Premium Market"
+        psycho_pct = 0
+        avg_income = 100000
+        avg_college = 0.40
+        avg_owner = 0.65
+    
+    # 3. BEHAVIORAL METRICS of best customers
+    avg_ltv = int(top_patients[revenue_col].mean())
+    
+    if 'visits_per_year' in top_patients.columns:
+        avg_frequency = float(top_patients['visits_per_year'].mean())
+    else:
+        avg_frequency = 2.5
+    
+    if 'treatment_count' in top_patients.columns:
+        avg_treatments = float(top_patients['treatment_count'].mean())
+    else:
+        avg_treatments = 1.5
+    
+    # 4. TOP TREATMENTS (if available)
+    top_treatments = ["Primary Service"]  # Default
+    if 'treatments_received' in top_patients.columns:
+        all_treatments = []
+        for treatments in top_patients['treatments_received'].dropna():
+            treatment_list = [t.strip() for t in str(treatments).split(',') if t.strip()]
+            all_treatments.extend(treatment_list)
+        
+        if all_treatments:
+            treatment_counts = pd.Series(all_treatments).value_counts()
+            top_treatments = treatment_counts.head(3).index.tolist()
+    
+    print(f"[PROFILE] Behavioral metrics: ${avg_ltv:,} LTV, {avg_frequency:.1f}× yearly, {avg_treatments:.1f} treatments")
+    print(f"[PROFILE] Top treatments: {', '.join(top_treatments[:3])}")
+    
+    # 5. FIND ALL ZIPS WHERE THIS PROFILE LIVES
+    # Key insight: Don't just show patient ZIPs, show ALL ZIPs matching this profile
+    if 'cohort' in zip_features.columns:
+        matching_zips = zip_features[
+            zip_features['cohort'] == dominant_psychographic
+        ].sort_values('psych_score', ascending=False).head(15)
+    else:
+        # Fallback: use top scored ZIPs
+        matching_zips = zip_features.sort_values('psych_score', ascending=False).head(15)
+    
+    # Build geographic concentration list
+    geo_concentration = []
+    for _, row in matching_zips.iterrows():
+        zip_code = str(row['zip'])
+        geo_concentration.append({
+            "zip": zip_code,
+            "match_score": float(row.get('psych_score', 0.5)),
+            "distance_miles": float(row.get('distance_miles', 0)),
+            "population": int(row.get('population', 20000)),
+            "estimated_households": int(row.get('population', 20000) * 0.35),
+            "has_existing_patients": zip_code in top_zips,
+            "median_income": int(row.get('median_income', 75000))
+        })
+    
+    total_addressable = sum(g['estimated_households'] for g in geo_concentration)
+    existing_zips = sum(1 for g in geo_concentration if g['has_existing_patients'])
+    new_zips = len(geo_concentration) - existing_zips
+    
+    print(f"[PROFILE] Found {len(geo_concentration)} high-match ZIPs:")
+    print(f"[PROFILE]   - {existing_zips} ZIPs with existing patients")
+    print(f"[PROFILE]   - {new_zips} expansion opportunity ZIPs")
+    print(f"[PROFILE]   - {total_addressable:,} total addressable households")
+    
+    # Build profile summary
+    combined_label = f"{dominant_psychographic} - {dominant_behavior}"
+    summary = (
+        f"Your best patients are {combined_label}. "
+        f"They spend ${avg_ltv:,} on average, visit {avg_frequency:.1f}× per year, "
+        f"and are concentrated across {len(geo_concentration)} high-match ZIPs "
+        f"reaching {total_addressable:,} households."
+    )
+    
+    return {
+        "dominant_profile": {
+            "psychographic": dominant_psychographic,
+            "behavioral": dominant_behavior,
+            "combined": combined_label,
+            "behavioral_match_pct": behavior_pct,
+            "psychographic_match_pct": psycho_pct
+        },
+        "profile_characteristics": {
+            "median_income": avg_income,
+            "college_educated_pct": int(avg_college * 100),
+            "homeowner_pct": int(avg_owner * 100),
+            "income_range": f"${max(40000, avg_income-20000):,}-${avg_income+30000:,}"
+        },
+        "behavior_patterns": {
+            "avg_lifetime_value": avg_ltv,
+            "avg_visits_per_year": round(avg_frequency, 1),
+            "avg_treatments_per_patient": round(avg_treatments, 1),
+            "top_treatments": top_treatments
+        },
+        "geographic_concentration": geo_concentration,
+        "geographic_summary": {
+            "total_zips": len(geo_concentration),
+            "existing_patient_zips": existing_zips,
+            "expansion_opportunity_zips": new_zips,
+            "total_addressable_households": total_addressable
+        },
+        "profile_summary": summary
+    }
+# ============================================================================
+# STOP HERE - Next we'll wire this up in execute_advanced_analysis()
+# ============================================================================
+# ============================================================================
+# ZIP DEMOGRAPHICS LOADING AND STANDARDIZATION
+# ============================================================================
+
+def load_zip_demographics(path: str) -> pd.DataFrame:
+    """Load and standardize ZIP demographics from SimpleMaps or other sources"""
+    try:
+        df = pd.read_csv(path)
+        
+        # If it's SimpleMaps format (has 'lng' column), standardize it
+        if 'lng' in df.columns:
+            df = standardize_simplemaps_columns(df)
+        
+        print(f"[DATA] Loaded demographics for {len(df)} ZIPs from {path}")
+        return df
+    except Exception as e:
+        print(f"[ERROR] Failed to load demographics from {path}: {e}")
+        return None
+
+
+def standardize_simplemaps_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Standardize SimpleMaps column names to match our algorithm's expectations.
+    
+    SimpleMaps columns → Our expected columns
+    """
+    
+    # Column mapping
+    column_mapping = {
+        'zip': 'zip',
+        'lat': 'lat',
+        'lng': 'lon',  # SimpleMaps uses 'lng', we use 'lon'
+        'population': 'population',
+        'density': 'density_per_sqmi',
+        'income_household_median': 'median_income',
+        'education_college_or_above': 'college_pct',
+        'home_ownership': 'owner_occ_pct',
+        'age_median': 'age_median'
+    }
+    
+    # Rename columns
+    df = df.rename(columns=column_mapping)
+    
+    # Ensure ZIP is string with leading zeros
+    df['zip'] = df['zip'].astype(str).str.zfill(5)
+    
+    # Convert percentages (SimpleMaps uses 0-1 scale already, but verify)
+    for pct_col in ['college_pct', 'owner_occ_pct']:
+        if pct_col in df.columns:
+            # If values are > 1, they're percentages (like 45.0 instead of 0.45)
+            if df[pct_col].max() > 1:
+                df[pct_col] = df[pct_col] / 100
+    
+    # Calculate age_25_54_pct from median age
+    if 'age_median' in df.columns:
+        df['age_25_54_pct'] = df['age_median'].apply(
+            lambda age: 0.45 if 30 <= age <= 50 else 
+                       0.40 if 25 <= age < 30 or 50 < age <= 55 else 
+                       0.35
+        )
+    else:
+        df['age_25_54_pct'] = 0.39
+    
+    print(f"[DATA] Standardized {len(df)} ZIP records from SimpleMaps format")
+    
+    return df
+# ============================================================================
+# MAIN ANALYSIS FUNCTION
+# ============================================================================
 
 def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest, df_grouped: Optional[pd.DataFrame] = None):
     """Execute the sophisticated multi-step analysis algorithm"""
@@ -1019,7 +1411,11 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
             raw_demographics = None
 
         # Build a usable demographics table from patient ZIPs (and enrich with any provided demos)
-        demographics_df = build_or_enrich_demographics_from_patients(patients_df, raw_demographics)
+        demographics_df = build_market_zip_universe(
+            practice_zip=dataset["practice_zip"],
+            raw_demographics=raw_demographics,
+            radius_miles=50.0
+        )
         print(f"[CLEAN] Demographics ready: {len(demographics_df)} ZIPs with coordinates")
 
         # Merge patient ZIPs with demographics (keep all patient columns)
@@ -1049,6 +1445,8 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
 
         # Update frames
         patients_df = merged.copy().reset_index(drop=True)
+        
+        patients_df = segment_patients_by_behavior(patients_df)
         demographics_df = (
             merged[["zip_code"] + demo_cols]
             .rename(columns={"zip_code": "zip"})
@@ -1184,12 +1582,25 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
         print("[ANALYSIS] Computed accessibility scores")
 
         # STEP 2: Fit lifestyle cohorts
-        kmeans_model, scaler, cohort_labels = fit_lifestyle_cohorts(zip_features)
-        zip_features["cohort"] = cohort_labels
+        from data.lifestyle_profiles import assign_lifestyle_segment
+
+        # Apply sophisticated rule-based segmentation
+        zip_features["cohort"] = zip_features.apply(
+            lambda row: assign_lifestyle_segment(
+                median_income=row.get('median_income', 75000),
+                college_pct=row.get('college_pct', 0.35),
+                owner_pct=row.get('owner_occ_pct', 0.65),
+                age_group_pct=row.get('age_25_54_pct', 0.40)
+            ),
+            axis=1
+        )
+            
         print("[ANALYSIS] Fitted lifestyle cohorts")
         print("[CHECK] cohort distribution:\n",
             zip_features["cohort"].value_counts(dropna=False).to_string())
 
+        # Extract cohort labels from the rule-based segmentation
+        cohort_labels = zip_features["cohort"].values
 
         # STEP 3: Calculate psychographic scores
         try:
@@ -1448,7 +1859,29 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
             return {"p10": p10, "p50": p50, "p90": p90}
 
         # STEP 5: Build top segments with DYNAMIC data enrichment
-        top_zip_features = zip_features.sort_values("psych_score", ascending=False).head(20).reset_index(drop=True)
+        # Add lift scoring for profile-first ranking
+        if "cohort" in zip_features.columns:
+            zip_features["lift_index"] = zip_features.groupby("cohort")["psych_score"].transform(
+                lambda s: (s / (s.mean() + 1e-6)) * 100
+            )
+        else:
+            zip_features["lift_index"] = 100
+
+        # Rank by Lift × Population (profile-first scoring)
+        zip_features["profile_score"] = zip_features["lift_index"] * (zip_features["population"] / 1000)
+
+        # Select top ZIPs and count expansion opportunities
+        top_zip_features = zip_features.sort_values(
+            ["profile_score", "psych_score"], 
+            ascending=False
+        ).head(20).reset_index(drop=True)
+
+        expansion_count = int((top_zip_features.get("patient_count", 0) == 0).sum())
+
+        print(f"[SCAN] Evaluated: {len(zip_features)} total ZIPs")
+        print(f"[SCAN] Selected: {len(top_zip_features)} top ZIPs")
+        print(f"[SCAN] Expansion: {expansion_count} ZIPs with ZERO current patients 🎯")
+        
         top_segments = []
 
         for _, r in top_zip_features.iterrows():
@@ -1547,8 +1980,17 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
 
         print(f"[DEBUG] Total segments created: {len(top_segments)}")
 
+        # STEP 2: Generate profile-first analysis
+        dominant_profile = identify_dominant_profile(
+            patients_df, 
+            zip_features, 
+            top_percentile=0.2
+        )
+        print(f"[PROFILE] {dominant_profile['profile_summary']}")
+
         return {
             "headline_metrics": headline_metrics,
+            "dominant_profile": dominant_profile,  # ← NEW: Add profile data
             "top_segments": top_segments,
             "map_points": [],
             "confidence_info": {"level": "early", "message": "Limited data confidence"}

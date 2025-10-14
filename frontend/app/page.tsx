@@ -3,27 +3,6 @@
 import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const ANALYSIS_ROUTE = "/insights"; // <-- change to your analysis route
-
-const api = {
-  uploadDataset: async (file: File) => {
-    await new Promise((r) => setTimeout(r, 600));
-    return `dataset_${Date.now()}`;
-  },
-  createRun: async (datasetId: string, type: string) => {
-    await new Promise((r) => setTimeout(r, 900));
-    return `run_${Date.now()}`;
-  },
-  getRunResults: async (runId: string) => {
-    await new Promise((r) => setTimeout(r, 300));
-    return { campaigns: [{ id: 1, name: "Sample Campaign" }] };
-  },
-  createSampleRun: async () => {
-    await new Promise((r) => setTimeout(r, 600));
-    return `sample_run_${Date.now()}`;
-  },
-};
-
 export default function Page() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -52,33 +31,52 @@ export default function Page() {
     onPick(e.dataTransfer.files?.[0]);
   };
 
-  const goToAnalysis = (runId: string, extra?: Record<string, string | number | boolean>) => {
-    const params = new URLSearchParams({ runId, ...(extra ?? {}) } as Record<string, string>);
-    router.push(`${ANALYSIS_ROUTE}?${params.toString()}`);
+  const parseCSV = (text: string) => {
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    
+    return lines.slice(1).map(line => {
+      const values = line.split(',');
+      const row: any = {};
+      headers.forEach((header, i) => {
+        row[header] = values[i]?.trim();
+      });
+      return row;
+    });
   };
 
   const handleAnalyze = async () => {
     if (!file) return;
-    setLoading(true); setError(null);
+    setLoading(true);
+    setError(null);
+    
     try {
-      const datasetId = await api.uploadDataset(file);
-      const runId = await api.createRun(datasetId, "non_inv");
-      const res = await api.getRunResults(runId);
-      if (!res?.campaigns?.length) { setError("No results found. Please check your data."); return; }
-      goToAnalysis(runId);
+      // Read the CSV file
+      const text = await file.text();
+      const data = parseCSV(text);
+      
+      if (data.length === 0) {
+        setError("No data found in CSV. Please check your file.");
+        setLoading(false);
+        return;
+      }
+
+      // Store data in sessionStorage so patient-insights can access it
+      sessionStorage.setItem('patientData', JSON.stringify(data));
+      
+      // Navigate to patient insights with real data flag
+      router.push('/patient-insights?source=upload');
+      
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Analysis failed. Please try again.");
-    } finally { setLoading(false); }
+      setError(e instanceof Error ? e.message : "Failed to parse CSV. Please check the format.");
+      setLoading(false);
+    }
   };
 
-  const handleSample = async () => {
-    setLoading(true); setError(null);
-    try {
-      const runId = await api.createSampleRun();
-      goToAnalysis(runId, { sample: 1 });
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't load sample data.");
-    } finally { setLoading(false); }
+  const handleSample = () => {
+    // Clear any uploaded data and use test data
+    sessionStorage.removeItem('patientData');
+    router.push('/patient-insights?source=sample');
   };
 
   const dropClasses =
@@ -101,7 +99,7 @@ export default function Page() {
 
       {/* Main */}
       <main className="frame py-12 md:py-16 lg:py-20">
-        {/* Hero (larger base so it never wakes up tiny) */}
+        {/* Hero */}
         <section className="mb-10 text-center md:mb-14">
           <h1 className="text-balance font-semibold leading-[1.08] tracking-tight text-4xl md:text-6xl lg:text-7xl">
             Know your best patients.
@@ -170,7 +168,7 @@ export default function Page() {
                     </div>
                   )}
 
-                  {/* Selected file – compact card */}
+                  {/* Selected file */}
                   {file && (
                     <div className="flex flex-col items-center gap-6">
                       <div className="flex max-w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
@@ -229,23 +227,19 @@ export default function Page() {
         </section>
 
         {/* How it works */}
-        {/* How it works — stack on narrow, 3-up on wide */}
-       <section className="mx-auto mt-12 max-w-5xl lg:mt-16">
-        <h2 className="mb-6 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 md:text-sm">
-          How it works
-        </h2>
+        <section className="mx-auto mt-12 max-w-5xl lg:mt-16">
+          <h2 className="mb-6 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 md:text-sm">
+            How it works
+          </h2>
 
-        {/* 1 col by default; 3 cols at ≥1024px */}
-        <div className="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-3 lg:items-stretch">
-          <div className="h-full"><Step n="1" t="Upload data" d="Import a CSV/XLSX with ZIP, visits, revenue." /></div>
-          <div className="h-full"><Step n="2" t="Find patterns" d="We surface high-value segments and repeat-visit drivers." /></div>
-          <div className="h-full"><Step n="3" t="Get insights" d="See look-alike ZIP codes and specific actions to grow bookings." /></div>
-        </div>
-      </section>
-
+          <div className="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-3 lg:items-stretch">
+            <div className="h-full"><Step n="1" t="Upload data" d="Import a CSV/XLSX with ZIP, visits, revenue." /></div>
+            <div className="h-full"><Step n="2" t="Find patterns" d="We surface high-value segments and repeat-visit drivers." /></div>
+            <div className="h-full"><Step n="3" t="Get insights" d="See look-alike ZIP codes and specific actions to grow bookings." /></div>
+          </div>
+        </section>
       </main>
 
-      {/* One frame governs width/padding so header & main never misalign */}
       <style jsx>{`
         .frame {
           max-width: 1400px;

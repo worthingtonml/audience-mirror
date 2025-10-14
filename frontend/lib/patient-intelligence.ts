@@ -565,3 +565,337 @@ export function analyzePatientData(data: PatientRecord[], procedureFilter?: stri
   const engine = new PatientIntelligenceEngine(data, procedureFilter);
   return engine.analyze();
 }
+// Add this to your lib/patient-intelligence.ts file
+
+/* ===================== HERO INSIGHTS TYPES ===================== */
+
+export type HeroInsight = {
+  id: 'cohort' | 'basket' | 'geo' | 'channel';
+  icon: string;
+  title: string;
+  stat: string;
+  sub: string;
+  confidence: 'High' | 'Medium' | 'Low';
+  action: {
+    label: string;
+    data: any; // Additional data for the action
+  };
+  color: 'purple' | 'blue' | 'green' | 'orange';
+};
+
+/* ===================== HERO INSIGHTS GENERATOR ===================== */
+
+export function generateHeroInsights(records: PatientRecord[]): HeroInsight[] {
+  if (!records || records.length === 0) {
+    return [];
+  }
+
+  // Calculate top 20% patients by revenue
+  const sortedByRevenue = [...records].sort((a, b) => b.revenue - a.revenue);
+  const top20Count = Math.ceil(records.length * 0.2);
+  const top20Patients = sortedByRevenue.slice(0, top20Count);
+
+  const insights: HeroInsight[] = [];
+
+  // 1. WHO - Dominant Cohort Insight
+  const cohortInsight = generateCohortInsight(records, top20Patients);
+  if (cohortInsight) insights.push(cohortInsight);
+
+  // 2. WHAT - Procedure Combo Insight
+  const basketInsight = generateBasketInsight(records, top20Patients);
+  if (basketInsight) insights.push(basketInsight);
+
+  // 3. WHERE - Geographic Concentration
+  const geoInsight = generateGeoInsight(records, top20Patients);
+  if (geoInsight) insights.push(geoInsight);
+
+  // 4. CHANNEL - Best LTV Channel
+  const channelInsight = generateChannelInsight(records, top20Patients);
+  if (channelInsight) insights.push(channelInsight);
+
+  return insights;
+}
+
+/* ===================== INDIVIDUAL INSIGHT GENERATORS ===================== */
+
+function generateCohortInsight(
+  allPatients: PatientRecord[],
+  topPatients: PatientRecord[]
+): HeroInsight | null {
+  // Classify patients by spending into cohorts
+  const revenues = allPatients.map(p => p.revenue).sort((a, b) => a - b);
+  const p80 = revenues[Math.floor(revenues.length * 0.8)] || 5000;
+  const p50 = revenues[Math.floor(revenues.length * 0.5)] || 2000;
+
+  const classifyPatient = (revenue: number): string => {
+    if (revenue >= p80) return 'Luxury Clients';
+    if (revenue >= p50) return 'Comfort Spenders';
+    return 'Budget Conscious';
+  };
+
+  // Count cohorts in top 20%
+  const cohortCounts: Record<string, number> = {};
+  topPatients.forEach(p => {
+    const cohort = classifyPatient(p.revenue);
+    cohortCounts[cohort] = (cohortCounts[cohort] || 0) + 1;
+  });
+
+  // Find dominant cohort
+  const dominantCohort = Object.entries(cohortCounts)
+    .sort((a, b) => b[1] - a[1])[0];
+
+  if (!dominantCohort) return null;
+
+  const [cohortName, count] = dominantCohort;
+  const percentage = Math.round((count / topPatients.length) * 100);
+
+  // Find how many ZIPs contribute to this cohort
+  const topZips = new Set(topPatients.map(p => p.patient_zip));
+  const uniqueZipCount = topZips.size;
+
+  return {
+    id: 'cohort',
+    icon: 'Users',
+    title: 'Dominant Cohort',
+    stat: `${cohortName} · ${percentage}%`,
+    sub: `${uniqueZipCount} ZIP${uniqueZipCount !== 1 ? 's' : ''} drive majority of top patients`,
+    confidence: percentage >= 60 ? 'High' : percentage >= 40 ? 'Medium' : 'Low',
+    action: {
+      label: 'Build Audience',
+      data: {
+        cohort: cohortName,
+        percentage,
+        zips: Array.from(topZips),
+      },
+    },
+    color: 'purple',
+  };
+}
+
+function generateBasketInsight(
+  allPatients: PatientRecord[],
+  topPatients: PatientRecord[]
+): HeroInsight | null {
+  // Group patients by patient_id to find those with multiple procedures
+  const patientProcedures: Record<string, { procedures: string[]; totalRevenue: number }> = {};
+  
+  allPatients.forEach(p => {
+    if (!patientProcedures[p.patient_id]) {
+      patientProcedures[p.patient_id] = { procedures: [], totalRevenue: 0 };
+    }
+    patientProcedures[p.patient_id].procedures.push(p.procedure.toLowerCase());
+    patientProcedures[p.patient_id].totalRevenue += p.revenue;
+  });
+
+  // Find patients with combos (multiple procedures)
+  const comboPatients = Object.values(patientProcedures).filter(
+    p => new Set(p.procedures).size > 1
+  );
+  const singlePatients = Object.values(patientProcedures).filter(
+    p => new Set(p.procedures).size === 1
+  );
+
+  if (comboPatients.length === 0 || singlePatients.length === 0) {
+    // Fallback: analyze most common procedure combo
+    return generateFallbackBasketInsight(allPatients, topPatients);
+  }
+
+  const comboAvgRevenue = comboPatients.reduce((sum, p) => sum + p.totalRevenue, 0) / comboPatients.length;
+  const singleAvgRevenue = singlePatients.reduce((sum, p) => sum + p.totalRevenue, 0) / singlePatients.length;
+  
+  const multiplier = Math.round((comboAvgRevenue / singleAvgRevenue) * 10) / 10;
+
+  // Find most common combo
+  const comboCounts: Record<string, number> = {};
+  comboPatients.forEach(p => {
+    const comboKey = [...new Set(p.procedures)].sort().join(' + ');
+    comboCounts[comboKey] = (comboCounts[comboKey] || 0) + 1;
+  });
+
+  const topCombo = Object.entries(comboCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Multiple procedures';
+
+  return {
+    id: 'basket',
+    icon: 'Package',
+    title: 'Highest Revenue Combo',
+    stat: `${multiplier}× revenue`,
+    sub: `${topCombo} vs single procedures`,
+    confidence: multiplier >= 2 ? 'High' : multiplier >= 1.5 ? 'Medium' : 'Low',
+    action: {
+      label: 'Create Bundle',
+      data: {
+        multiplier,
+        combo: topCombo,
+        comboAvgRevenue: Math.round(comboAvgRevenue),
+        singleAvgRevenue: Math.round(singleAvgRevenue),
+      },
+    },
+    color: 'blue',
+  };
+}
+
+function generateFallbackBasketInsight(
+  allPatients: PatientRecord[],
+  topPatients: PatientRecord[]
+): HeroInsight {
+  // Find top procedures in top 20%
+  const procedureCounts: Record<string, { count: number; totalRevenue: number }> = {};
+  
+  topPatients.forEach(p => {
+    const proc = p.procedure.toLowerCase();
+    if (!procedureCounts[proc]) {
+      procedureCounts[proc] = { count: 0, totalRevenue: 0 };
+    }
+    procedureCounts[proc].count += 1;
+    procedureCounts[proc].totalRevenue += p.revenue;
+  });
+
+  const topProcedures = Object.entries(procedureCounts)
+    .map(([proc, data]) => ({
+      procedure: proc,
+      avgRevenue: data.totalRevenue / data.count,
+      count: data.count,
+    }))
+    .sort((a, b) => b.avgRevenue - a.avgRevenue)
+    .slice(0, 2);
+
+  if (topProcedures.length >= 2) {
+    const [first, second] = topProcedures;
+    return {
+      id: 'basket',
+      icon: 'Package',
+      title: 'Highest Revenue Procedures',
+      stat: `${first.procedure} + ${second.procedure}`,
+      sub: `Top combination drives highest patient value`,
+      confidence: 'Medium',
+      action: {
+        label: 'Create Bundle',
+        data: { combo: `${first.procedure} + ${second.procedure}` },
+      },
+      color: 'blue',
+    };
+  }
+
+  return {
+    id: 'basket',
+    icon: 'Package',
+    title: 'Top Procedure',
+    stat: topProcedures[0]?.procedure || 'Various',
+    sub: `Most popular among high-value patients`,
+    confidence: 'Medium',
+    action: {
+      label: 'View Details',
+      data: { procedure: topProcedures[0]?.procedure },
+    },
+    color: 'blue',
+  };
+}
+
+function generateGeoInsight(
+  allPatients: PatientRecord[],
+  topPatients: PatientRecord[]
+): HeroInsight | null {
+  // Count ZIPs in top patients
+  const zipCounts: Record<string, { count: number; totalRevenue: number }> = {};
+  
+  topPatients.forEach(p => {
+    if (!zipCounts[p.patient_zip]) {
+      zipCounts[p.patient_zip] = { count: 0, totalRevenue: 0 };
+    }
+    zipCounts[p.patient_zip].count += 1;
+    zipCounts[p.patient_zip].totalRevenue += p.revenue;
+  });
+
+  // Find top ZIP
+  const topZip = Object.entries(zipCounts)
+    .sort((a, b) => b[1].totalRevenue - a[1].totalRevenue)[0];
+
+  if (!topZip) return null;
+
+  const [zipCode, data] = topZip;
+  const matchScore = Math.round((data.count / topPatients.length) * 100);
+
+  // Calculate concentration
+  const totalZips = new Set(allPatients.map(p => p.patient_zip)).size;
+  const topZipCount = Object.keys(zipCounts).length;
+  const concentration = Math.round((topZipCount / totalZips) * 100);
+
+  return {
+    id: 'geo',
+    icon: 'MapPin',
+    title: 'Geographic Focus',
+    stat: `${zipCode} · ${matchScore}% match`,
+    sub: `Top ${topZipCount} ZIPs = ${concentration}% of high-value patients`,
+    confidence: matchScore >= 20 ? 'High' : matchScore >= 10 ? 'Medium' : 'Low',
+    action: {
+      label: 'Target Zone',
+      data: {
+        zip: zipCode,
+        matchScore,
+        topZips: Object.keys(zipCounts).slice(0, 5),
+      },
+    },
+    color: 'green',
+  };
+}
+
+function generateChannelInsight(
+  allPatients: PatientRecord[],
+  topPatients: PatientRecord[]
+): HeroInsight | null {
+  // Calculate LTV by channel
+  const channelStats: Record<string, { patients: Set<string>; totalRevenue: number; count: number }> = {};
+  
+  allPatients.forEach(p => {
+    const channel = (p.acquisition_channel || 'organic').toLowerCase();
+    if (!channelStats[channel]) {
+      channelStats[channel] = { patients: new Set(), totalRevenue: 0, count: 0 };
+    }
+    channelStats[channel].patients.add(p.patient_id);
+    channelStats[channel].totalRevenue += p.revenue;
+    channelStats[channel].count += 1;
+  });
+
+  // Calculate average LTV per patient per channel
+  const channelLTVs = Object.entries(channelStats)
+    .map(([channel, stats]) => ({
+      channel: channel.charAt(0).toUpperCase() + channel.slice(1),
+      ltv: Math.round(stats.totalRevenue / stats.patients.size),
+      patientCount: stats.patients.size,
+      totalRevenue: stats.totalRevenue,
+    }))
+    .sort((a, b) => b.ltv - a.ltv);
+
+  if (channelLTVs.length === 0) return null;
+
+  const topChannel = channelLTVs[0];
+  const secondChannel = channelLTVs[1];
+
+  const comparison = secondChannel 
+    ? `vs ${secondChannel.channel} ($${secondChannel.ltv.toLocaleString()})`
+    : 'highest patient value';
+
+  return {
+    id: 'channel',
+    icon: 'TrendingUp',
+    title: 'Best Channel',
+    stat: `${topChannel.channel} · LTV $${topChannel.ltv.toLocaleString()}`,
+    sub: `${topChannel.patientCount} patients, ${comparison}`,
+    confidence: topChannel.patientCount >= 10 ? 'High' : topChannel.patientCount >= 5 ? 'Medium' : 'Low',
+    action: {
+      label: 'Launch Campaign',
+      data: {
+        channel: topChannel.channel,
+        ltv: topChannel.ltv,
+        patientCount: topChannel.patientCount,
+      },
+    },
+    color: 'orange',
+  };
+}
+
+/* ===================== USAGE EXAMPLE ===================== */
+
+// In your analyzePatientData function, add this:
+// const heroInsights = generateHeroInsights(records);
+// return { ...existingResult, heroInsights };
