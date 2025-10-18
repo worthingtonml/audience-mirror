@@ -25,8 +25,10 @@ from schemas import *
 from pydantic import BaseModel
 from services.data_loaders import (
     validate_and_load_patients, load_competitors_csv,
-    load_zip_demographics, load_vertical_config
+    load_vertical_config
 )
+
+
 from services.scoring import (
     compute_accessibility_score, fit_lifestyle_cohorts,
     calculate_psychographic_scores, learn_ridge_regression,
