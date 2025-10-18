@@ -1,602 +1,414 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
-import { LineChart, Users, BadgeDollarSign, Target, MapPin, Activity } from "lucide-react";
-import Navigation from "@/components/navigation";
-import { Tooltip } from "@/components/Tooltip";
+import { Users, ArrowRight, MapPin, Target, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
-const IconPill = ({
-  children,
-  tone = "indigo",
-}: {
-  children: ReactNode;
-  tone?: string;
-}) => {
-  const tones: Record<string, string> = {
-    indigo: "from-indigo-50 to-blue-50 border-indigo-100",
-    violet: "from-violet-50 to-fuchsia-50 border-fuchsia-100",
-    green: "from-emerald-50 to-green-50 border-emerald-100",
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center justify-center rounded-xl border bg-gradient-to-br px-2.5 py-1.5 shadow-sm ${tones[tone]}`}
-    >
-      {children}
-    </span>
-  );
-};
-
-const SectionCard = ({
-  children,
-  className = "",
-}: {
-  children: ReactNode;
-  className?: string;
-}) => (
-  <div className={`bg-white rounded-2xl shadow-sm border border-slate-100 ${className}`}>
-    {children}
-  </div>
-);
-
-type InsightPattern = {
-  type: string;
-  title: string;
-  description: string;
-  action: string;
-  value: number;
-};
-
-type HeroInsight = {
-  id:
-    | "profile"
-    | "behavior"
-    | "geography"
-    | "concentration"
-    | "cohort"
-    | "basket"
-    | "geo"
-    | "channel";
-  icon: string;
-  title: string;
-  stat: string;
-  sub: string;
-  metrics?: any;
-};
-
-type PatientIntelResponse = {
-  summary?: {
-    totalPatients?: number;
-    revenueConcentration?: number;
-    avgBestPatientValue?: number;
-    avgOverallValue?: number;
-    multiplier?: number;
-  };
-  insights?: {
-    heroInsights?: HeroInsight[];
-    patterns?: InsightPattern[];
-    opportunities?: {
-      title: string;
-      description: string;
-      action: string;
-      value: number;
-    }[];
-  };
-};
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 export default function PatientInsights() {
-  const [loading, setLoading] = useState(false);
-  const [insights, setInsights] = useState<PatientIntelResponse | null>(null);
-  const [selectedProcedure, setSelectedProcedure] = useState("all");
-  const [showAllPatterns, setShowAllPatterns] = useState(false);
-  const [dataSource, setDataSource] = useState<"none" | "uploaded" | "test">("none");
+  const [analysisData, setAnalysisData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const procedures = [
-    { value: "all", label: "All Procedures" },
-    { value: "botox", label: "Botox" },
-  ];
+  useEffect(() => {
+    const runId = sessionStorage.getItem('runId');
 
-  const formatCurrency = (amount?: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      minimumFractionDigits: 0,
-    }).format(amount ?? 0);
-
-  const iconForPattern = (t: string) => {
-    switch (t) {
-      case "concentration":
-        return <Users className="h-4 w-4 text-indigo-600" strokeWidth={1.5} />;
-      case "geographic":
-        return <MapPin className="h-4 w-4 text-blue-600" strokeWidth={1.5} />;
-      case "behavioral":
-        return <LineChart className="h-4 w-4 text-violet-600" strokeWidth={1.5} />;
-      case "opportunity":
-        return <Target className="h-4 w-4 text-emerald-600" strokeWidth={1.5} />;
-      default:
-        return <Activity className="h-4 w-4 text-slate-600" strokeWidth={1.5} />;
-    }
-  };
-
-  const exportZIPsToCSV = (opportunity: any) => {
-    const zipMatch = opportunity.description.match(/ZIPs?: ([\d, ]]+)/);
-    const zips = zipMatch ? zipMatch[1].split(",").map((z: string) => z.trim()) : [];
-
-    if (zips.length === 0) {
-      alert("No ZIP codes found in this opportunity");
+    if (!runId) {
+      setError('No analysis found. Please upload patient data first.');
+      setLoading(false);
       return;
     }
 
-    const csvHeader = "zip_code,country,profile,opportunity_value\n";
-    const csvRows = zips
-      .map((zip) => `${zip},US,Young Professionals - Premium Single,${opportunity.value}`)
-      .join("\n");
-    const csvContent = csvHeader + csvRows;
+    const pollResults = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/v1/runs/${runId}/results`);
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: Failed to fetch results`);
+        }
 
-    link.setAttribute("href", url);
-    link.setAttribute("download", `target-zips-${Date.now()}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+        const data = await response.json();
+        console.log('[FRONTEND] API Response:', data);
 
-  const fetchInsights = async () => {
-    setLoading(true);
-    try {
-      const uploadedData = sessionStorage.getItem("patientData");
-      setDataSource(uploadedData ? "uploaded" : "test");
+        if (data.status === 'done') {
+          setAnalysisData(data);
+          setLoading(false);
+        } else if (data.status === 'processing') {
+          setTimeout(pollResults, 2000);
+        } else if (data.status === 'error') {
+          throw new Error(data.error || 'Analysis failed');
+        } else {
+          throw new Error(`Unknown status: ${data.status}`);
+        }
+      } catch (e: any) {
+        console.error('[FRONTEND] Error:', e);
+        setError(e.message);
+        setLoading(false);
+      }
+    };
 
-      const res = await fetch("http://127.0.0.1:8000/api/patient-intel", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          procedure: selectedProcedure === "all" ? undefined : selectedProcedure,
-          useTestData: !uploadedData,
-          patientData: uploadedData ? JSON.parse(uploadedData) : undefined,
-        }),
-      });
+    pollResults();
+  }, []);
 
-      const data: PatientIntelResponse = await res.json();
-      setInsights(data);
-    } catch (e) {
-      console.error("Error fetching insights:", e);
-      setInsights(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchInsights();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedProcedure]);
-
-  const calculateTotalRevenue = () => {
-    if (!insights?.summary) return 0;
-    const { totalPatients = 0, avgOverallValue = 0 } = insights.summary;
-    return totalPatients * avgOverallValue;
-  };
-
-  const totalRevenue = calculateTotalRevenue();
-
-  if (loading && !insights) {
+  if (error) {
     return (
-      <>
-        <Navigation />
-        <div className="grid min-h-screen place-items-center bg-slate-50">
-          <div className="text-center">
-            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-500" />
-            <p className="mt-4 text-slate-600">Analyzing patient data…</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-8">
+        <div className="max-w-md w-full bg-white rounded-xl border border-red-200 p-8 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="h-8 w-8 text-red-600" />
           </div>
-        </div>
-      </>
-    );
-  }
-
-  if (!insights) {
-    return (
-      <>
-        <Navigation />
-        <div className="min-h-screen bg-slate-50 p-6">
-          <div className="mx-auto max-w-7xl">
-            <SectionCard className="p-6">
-              <div className="text-slate-600">No insights available. Please add patient data.</div>
-            </SectionCard>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <>
-      <Navigation />
-      <div className="min-h-screen bg-slate-50 p-6">
-        <div className="mx-auto max-w-7xl">
-          {/* KPI header */}
-          <SectionCard className="mb-6 p-6">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-3xl font-bold text-slate-900">Patient Intelligence</h1>
-                <p className="mt-1 text-slate-600">
-                  Insights for {selectedProcedure === "all" ? "all procedures" : selectedProcedure}
-                  {dataSource === "uploaded" && (
-                    <span className="ml-2 rounded-full bg-emerald-100 px-2 py-1 text-xs font-medium text-emerald-700">
-                      Your Data
-                    </span>
-                  )}
-                </p>
-              </div>
-
-              <select
-                value={selectedProcedure}
-                onChange={(e) => setSelectedProcedure(e.target.value)}
-                className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-slate-900 shadow-sm"
-              >
-                {procedures.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-              <div className="rounded-xl bg-gradient-to-br from-indigo-50 to-blue-50 p-4">
-                <div className="text-sm font-semibold text-indigo-600">Total Revenue</div>
-                <div className="mt-1 text-2xl font-bold text-indigo-900">{formatCurrency(totalRevenue)}</div>
-                <div className="mt-2 text-xs text-indigo-700">
-                  From {insights.summary?.totalPatients ?? 0} patients
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 p-4">
-                <div className="text-sm font-semibold text-blue-600">Value Multiplier</div>
-                <div className="mt-1 text-2xl font-bold text-blue-900">
-                  {(insights.summary?.multiplier ?? 1).toFixed(1)}×
-                </div>
-                <div className="mt-2 text-xs text-blue-700">
-                  Top 20% worth {((insights.summary?.multiplier ?? 1) * 100 - 100).toFixed(0)}% more
-                </div>
-              </div>
-
-              <div className="rounded-xl bg-gradient-to-br from-emerald-50 to-green-50 p-4">
-                <div className="text-sm font-semibold text-emerald-600">Revenue Concentration</div>
-                <div className="mt-1 text-2xl font-bold text-emerald-900">
-                  {insights.summary?.revenueConcentration ?? 0}%
-                </div>
-                <div className="mt-2 text-xs text-emerald-700">Top 20% of patients</div>
-              </div>
-
-              <div className="rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 p-4">
-                <div className="flex items-center text-sm font-semibold text-amber-600">
-                  Target Patient Value
-                  <Tooltip text="Lifetime value of your top 20% patients. This is your benchmark for identifying high-value customer profiles." />
-                </div>
-                <div className="mt-1 text-2xl font-bold text-amber-900">
-                  {formatCurrency(insights.summary?.avgBestPatientValue)}
-                </div>
-                <div className="mt-2 text-xs text-amber-700">Your benchmark LTV</div>
-              </div>
-            </div>
-          </SectionCard>
-
-          {/* Dominant Profile & Insights */}
-          <SectionCard className="mb-6 p-6">
-            {insights.insights?.heroInsights && insights.insights.heroInsights.length > 0 && (
-              <div className="mb-6 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 p-8 text-white shadow-lg">
-                <div className="mb-3 inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-semibold tracking-wide backdrop-blur-sm">
-                  DOMINANT CUSTOMER PROFILE
-                </div>
-
-                <h1 className="mb-4 text-3xl font-bold">
-                  {insights.insights.heroInsights.find((h) => h.id === "profile")?.stat || "Premium Customers"}
-                </h1>
-
-                <div className="mb-4 grid grid-cols-3 gap-4">
-                  <div>
-                    <div className="text-2xl font-bold">{formatCurrency(insights.summary?.avgBestPatientValue)}</div>
-                    <div className="text-sm opacity-90">Avg LTV</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">2.5×</div>
-                    <div className="text-sm opacity-90">Yearly visits</div>
-                  </div>
-                  <div>
-                    <div className="text-2xl font-bold">21,000</div>
-                    <div className="text-sm opacity-90">Households</div>
-                  </div>
-                </div>
-
-                <p className="text-sm leading-relaxed opacity-95">
-                  {insights.insights.heroInsights.find((h) => h.id === "profile")?.sub ||
-                    "Your highest-value patient segment"}
-                </p>
-              </div>
-            )}
-
-            <h2 className="mb-6 flex items-center text-xl font-semibold text-slate-900">
-              <IconPill tone="violet">
-                <Activity className="h-4 w-4 text-violet-600" strokeWidth={1.5} />
-              </IconPill>
-              <span className="ml-2">Key Patterns &amp; Insights</span>
-            </h2>
-
-            {insights.insights?.heroInsights && insights.insights.heroInsights.length > 0 ? (
-              <>
-                <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {insights.insights.heroInsights.map((insight) => {
-                    const IconComponent =
-                      insight.icon === "Users"
-                        ? Users
-                        : insight.icon === "Package"
-                        ? BadgeDollarSign
-                        : insight.icon === "MapPin"
-                        ? MapPin
-                        : LineChart;
-
-                    /**
-                     * GEOGRAPHY — calm, clear, *no duplicates*, plain-English labels
-                     */
-                    if (insight.id === "geography") {
-                      const m = insight.metrics || {};
-                      const currentHH: number = m?.currentMarket?.households ?? 7000;
-                      const expansionHH: number = m?.expansionOpportunity?.households ?? 21000;
-                      const totalHH = Math.max(currentHH + expansionHH, 0);
-
-                      const rawProven: Array<{ zip: string; city?: string }> = m?.currentMarket?.zips ?? [];
-                      const rawHigh: Array<{ zip: string; city?: string }> = m?.expansionOpportunity?.zips ?? [];
-
-                      // unique-by-zip helper
-                      const uniq = (arr: Array<{ zip: string; city?: string }>) => {
-                        const seen = new Set<string>();
-                        const out: Array<{ zip: string; city?: string }> = [];
-                        for (const z of arr) {
-                          if (!seen.has(z.zip)) {
-                            seen.add(z.zip);
-                            out.push(z);
-                          }
-                        }
-                        return out;
-                      };
-
-                      const provenU = uniq(rawProven);
-                      // remove any proven zips from high list to prevent cross-duplication
-                      const provenSet = new Set(provenU.map((z) => z.zip));
-                      const highU = uniq(rawHigh).filter((z) => !provenSet.has(z.zip));
-
-                      const showProven = provenU.slice(0, 2);
-                      const showHigh = highU.slice(0, 3);
-                      const moreHigh = Math.max(highU.length - showHigh.length, 0);
-                      const moreProven = Math.max(provenU.length - showProven.length, 0);
-
-                      const compact = (n: number) =>
-                        Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(n);
-                      const full = (n: number) => Intl.NumberFormat("en-US").format(n);
-
-                      const ZipChip = ({ z, tone = "slate" }: { z: { zip: string; city?: string }; tone?: "slate" | "indigo" }) => {
-                        const base =
-                          tone === "indigo"
-                            ? "border-indigo-200 bg-indigo-50 text-indigo-900"
-                            : "border-slate-200 bg-white text-slate-800";
-                        // only show city if it's present AND different from the zip string
-                        const showCity = z.city && z.city !== z.zip;
-                        return (
-                          <span className={`rounded-md border px-2 py-1 text-xs ${base}`}>
-                            <span className="font-mono font-semibold">{z.zip}</span>
-                            {showCity ? <span className="ml-1.5 opacity-70">· {z.city}</span> : null}
-                          </span>
-                        );
-                      };
-
-                      return (
-                        <div key={insight.id} className="rounded-2xl border border-slate-200 bg-white p-6">
-                          {/* Header */}
-                          <div className="mb-5 flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900">
-                                <MapPin className="h-5 w-5 text-white" strokeWidth={2} />
-                              </div>
-                              <div>
-                                <div className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                                  {insight.title}
-                                </div>
-                                <div className="text-xl font-bold text-slate-900">{insight.stat}</div>
-                              </div>
-                            </div>
-                            <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                              High Match
-                            </span>
-                          </div>
-
-                          {/* Two simple numbers with plain-English captions */}
-                          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                              <div className="text-xs text-slate-500">Current reach</div>
-                              <div className="mt-0.5 text-xl font-bold text-slate-900">{compact(currentHH)}</div>
-                              <div className="mt-1 text-[11px] text-slate-500">
-                                Households in ZIPs you already serve
-                              </div>
-                            </div>
-                            <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3">
-                              <div className="text-xs text-indigo-600">With expansion</div>
-                              <div className="mt-0.5 text-xl font-bold text-indigo-900">{compact(totalHH)}</div>
-                              <div className="mt-1 text-[11px] text-indigo-700">
-                                Adds nearby ZIPs with similar households
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* One-sentence explainer */}
-                          <p className="text-sm text-slate-700">
-                            You reach <span className="font-semibold">{full(currentHH)}</span> households today.
-                            Matching nearby ZIPs add{" "}
-                            <span className="font-semibold">{full(expansionHH)}</span> more, for{" "}
-                            <span className="font-semibold">{full(totalHH)}</span> potential reach.
-                          </p>
-
-                          {/* ZIP chips — no duplicates, clearer section titles */}
-                          <div className="mt-5 grid gap-4 md:grid-cols-2">
-                            {showProven.length > 0 && (
-                              <div>
-                                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                  ZIPs you already serve
-                                </div>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {showProven.map((z, i) => (
-                                    <ZipChip key={`p-${i}-${z.zip}`} z={z} tone="slate" />
-                                  ))}
-                                  {moreProven > 0 && (
-                                    <span className="text-xs text-slate-500">+{moreProven} more</span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-
-                            {showHigh.length > 0 && (
-                              <div>
-                                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                  Nearby ZIPs with similar households
-                                </div>
-                                <div className="flex flex-wrap items-center gap-1.5">
-                                  {showHigh.map((z, i) => (
-                                    <ZipChip key={`h-${i}-${z.zip}`} z={z} tone="indigo" />
-                                  ))}
-                                  {moreHigh > 0 && (
-                                    <span className="text-xs text-slate-500">+{moreHigh} more</span>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Subtle footer context */}
-                          <p className="mt-5 border-t border-slate-100 pt-3 text-xs text-slate-600">{insight.sub}</p>
-                        </div>
-                      );
-                    }
-
-                    // Default rendering for other cards
-                    return (
-                      <div key={insight.id} className="rounded-lg border border-slate-200 bg-white p-5">
-                        <div className="flex items-start gap-4">
-                          <div className="rounded-lg bg-slate-100 p-2.5">
-                            <IconComponent className="h-5 w-5 text-slate-700" strokeWidth={1.5} />
-                          </div>
-                          <div className="flex-1">
-                            <div className="mb-1 text-xs font-medium uppercase text-slate-500">{insight.title}</div>
-                            <div className="mb-1 text-xl font-semibold text-slate-900">{insight.stat}</div>
-                            <div className="text-sm text-slate-600">{insight.sub}</div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {insights.insights?.patterns && insights.insights.patterns.length > 0 && (
-                  <div className="border-t border-slate-200 pt-6">
-                    <h3 className="mb-4 text-base font-semibold text-slate-900">Additional Patterns</h3>
-                    <div className="space-y-3">
-                      {insights.insights.patterns
-                        .slice(0, showAllPatterns ? undefined : 2)
-                        .map((p, idx) => (
-                          <div key={idx} className="rounded-lg border border-slate-200 bg-white p-4">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="mb-1 flex items-center gap-2">
-                                  {iconForPattern(p.type)}
-                                  <h4 className="text-sm font-semibold text-slate-900">{p.title}</h4>
-                                </div>
-                                <p className="mb-2 text-sm text-slate-600">{p.description}</p>
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-slate-500">{p.action}</span>
-                                  <span className="font-semibold text-slate-900">+{formatCurrency(p.value)}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                    </div>
-
-                    {insights.insights.patterns.length > 2 && (
-                      <button
-                        onClick={() => setShowAllPatterns(!showAllPatterns)}
-                        className="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                      >
-                        {showAllPatterns ? "Show less" : `Show ${insights.insights.patterns.length - 2} more`}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="py-12 text-center text-sm text-slate-500">
-                No insights available. Add patient data to see insights.
-              </div>
-            )}
-          </SectionCard>
-
-          {insights.insights?.opportunities && insights.insights.opportunities.length > 0 && (
-            <div id="growth-opportunities" className="scroll-mt-6">
-              <SectionCard className="p-6">
-                <h2 className="mb-4 flex items-center text-xl font-semibold text-slate-900">
-                  <IconPill tone="green">
-                    <Target className="h-4 w-4 text-emerald-600" strokeWidth={1.5} />
-                  </IconPill>
-                  <span className="ml-2">Growth Opportunities</span>
-                </h2>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  {insights.insights.opportunities.map((o, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50 p-5"
-                    >
-                      <div className="mb-3">
-                        <h3 className="mb-2 font-semibold text-emerald-900">{o.title}</h3>
-                        <p className="text-sm text-emerald-700">{o.description}</p>
-                      </div>
-
-                      <div className="mb-3 flex items-center justify-between border-t border-emerald-200 pt-3">
-                        <span className="text-xs font-medium text-emerald-700">{o.action}</span>
-                        <span className="font-bold text-emerald-900">+{formatCurrency(o.value)}</span>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => window.open("/campaign-generator", "_blank")}
-                          className="flex-1 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
-                        >
-                          Create Campaign
-                        </button>
-                        <button
-                          onClick={() => exportZIPsToCSV(o)}
-                          className="rounded-lg border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition-colors hover:bg-emerald-50"
-                        >
-                          Export ZIPs
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </SectionCard>
-            </div>
-          )}
+          <h2 className="text-xl font-bold text-slate-900 mb-2">Analysis Error</h2>
+          <p className="text-slate-600 mb-6">{error}</p>
+          <button
+            onClick={() => (window.location.href = '/')}
+            className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-700"
+          >
+            Upload New Data
+          </button>
         </div>
       </div>
-    </>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <div className="text-lg font-semibold text-slate-900 mb-2">
+            Analyzing your patients...
+          </div>
+          <div className="text-sm text-slate-600">
+            Building behavioral profiles and geographic insights
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!analysisData) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg font-semibold text-slate-900">No data available</div>
+        </div>
+      </div>
+    );
+  }
+
+  const {
+    dominant_profile,
+    profile_characteristics,
+    behavior_patterns,
+    geographic_summary,
+    top_segments,
+  } = analysisData;
+
+  return (
+    <div className="min-h-screen bg-slate-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">Patient Intelligence</h1>
+          <p className="text-slate-600">
+            Profile-first analysis powered by behavioral + psychographic modeling
+          </p>
+        </div>
+
+        <div className="rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 p-8 text-white shadow-lg mb-6">
+          <div className="flex items-start justify-between mb-6">
+            <div>
+              <div className="text-xs font-semibold text-indigo-200 mb-2 uppercase tracking-wide">
+                Your Best Patients Are
+              </div>
+              <div className="text-4xl font-bold mb-3">
+                {dominant_profile?.combined || 'Loading...'}
+              </div>
+              <div className="text-indigo-100 max-w-2xl leading-relaxed">
+                {analysisData.profile_summary || 'Analyzing your patient base...'}
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="rounded-lg bg-white/20 backdrop-blur-sm px-4 py-2 text-center">
+                <div className="text-xs text-indigo-200">Behavioral Match</div>
+                <div className="text-2xl font-bold">
+                  {dominant_profile?.behavioral_match_pct || 0}%
+                </div>
+              </div>
+              <div className="rounded-lg bg-white/20 backdrop-blur-sm px-4 py-2 text-center">
+                <div className="text-xs text-indigo-200">Psychographic Match</div>
+                <div className="text-2xl font-bold">
+                  {dominant_profile?.psychographic_match_pct || 0}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-4 gap-6 mb-6 pb-6 border-b border-white/20">
+            <div>
+              <div className="text-xs text-indigo-200 mb-1">Avg Lifetime Value</div>
+              <div className="text-3xl font-bold">
+                ${((behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-indigo-200 mb-1">Visit Frequency</div>
+              <div className="text-3xl font-bold">
+                {behavior_patterns?.avg_visits_per_year || 0}×
+              </div>
+              <div className="text-xs text-indigo-200">per year</div>
+            </div>
+            <div>
+              <div className="text-xs text-indigo-200 mb-1">Treatments/Patient</div>
+              <div className="text-3xl font-bold">
+                {behavior_patterns?.avg_treatments_per_patient || 0}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-indigo-200 mb-1">Top Treatment</div>
+              <div className="text-2xl font-bold">
+                {behavior_patterns?.top_treatments?.[0] || 'N/A'}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <div className="text-xs font-semibold text-indigo-200 mb-3 uppercase">
+                Profile Characteristics
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-indigo-100">Median Income</span>
+                  <span className="font-semibold">
+                    ${((profile_characteristics?.median_income || 0) / 1000).toFixed(0)}K
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-indigo-100">College Educated</span>
+                  <span className="font-semibold">
+                    {profile_characteristics?.college_educated_pct || 0}%
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-indigo-100">Homeownership</span>
+                  <span className="font-semibold">
+                    {profile_characteristics?.homeowner_pct || 0}%
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-indigo-200 mb-3 uppercase">
+                Market Opportunity
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-indigo-100">High-Match ZIPs</span>
+                  <span className="font-semibold">
+                    {geographic_summary?.total_zips || 0} ZIPs
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-indigo-100">Expansion Opportunities</span>
+                  <span className="font-semibold">
+                    {geographic_summary?.expansion_opportunity_zips || 0} new ZIPs
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-indigo-100">Addressable Market</span>
+                  <span className="font-semibold">
+                    {((geographic_summary?.total_addressable_households || 0) / 1000).toFixed(1)}K households
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-white border border-slate-200 shadow-sm mb-6 overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-200 bg-slate-50">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Top Opportunities</h3>
+                <p className="text-sm text-slate-600 mt-1">Ranked by profile match × market size</p>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <Target className="h-4 w-4" />
+                {top_segments?.length || 0} segments identified
+              </div>
+            </div>
+          </div>
+
+          <div className="divide-y divide-slate-200">
+            {(top_segments || []).map((segment: any, idx: number) => (
+              <div key={segment.zip} className="p-6 hover:bg-slate-50 transition-colors">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-start gap-4">
+                    <div
+                      className={`rounded-full w-10 h-10 flex items-center justify-center text-lg font-bold ${
+                        idx === 0
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : idx === 1
+                          ? 'bg-indigo-100 text-indigo-700'
+                          : 'bg-slate-100 text-slate-700'
+                      }`}
+                    >
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <div className="font-mono text-xl font-bold text-slate-900">
+                          {segment.zip}
+                        </div>
+                        {segment.is_new_market && (
+                          <div className="rounded-full bg-amber-100 text-amber-700 px-2 py-0.5 text-xs font-bold">
+                            🎯 EXPANSION
+                          </div>
+                        )}
+                        <div className="rounded-full bg-slate-100 text-slate-700 px-2 py-0.5 text-xs font-semibold">
+                          {segment.cohort}
+                        </div>
+                      </div>
+                      <div className="text-sm text-slate-600 mb-2">
+                        {segment.location_name || `ZIP ${segment.zip}`}
+                      </div>
+                      <div className="text-sm text-slate-700 max-w-2xl">
+                        {segment.demographic_description || 'Market analysis available'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-3xl font-bold text-emerald-600">
+                      ${((segment.expected_monthly_revenue_p50 || 0) / 1000).toFixed(0)}K
+                    </div>
+                    <div className="text-xs text-slate-500">monthly revenue (P50)</div>
+                    <div className="text-xs text-slate-600 mt-1">
+                      Match:{' '}
+                      <span className="font-semibold">
+                        {((segment.match_score || 0) * 100).toFixed(0)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-5 gap-4 mb-4 p-4 bg-slate-50 rounded-lg">
+                  <div>
+                    <div className="text-xs text-slate-500 mb-1">Expected Bookings</div>
+                    <div className="text-lg font-bold text-slate-900">
+                      {segment.expected_bookings?.p50 || 0}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      ({segment.expected_bookings?.p10 || 0}-
+                      {segment.expected_bookings?.p90 || 0} range)
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500 mb-1">Max CPA</div>
+                    <div className="text-lg font-bold text-slate-900">
+                      ${segment.cpa_target || 0}
+                    </div>
+                    <div className="text-xs text-slate-500">5× ROAS target</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500 mb-1">Distance</div>
+                    <div className="text-lg font-bold text-slate-900">
+                      {(segment.distance_miles || 0).toFixed(1)} mi
+                    </div>
+                    <div className="text-xs text-slate-500">from practice</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500 mb-1">Competition</div>
+                    <div className="text-lg font-bold text-slate-900">
+                      {segment.competitors || 0}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {segment.competition_level || 'Unknown'}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-500 mb-1">Current Patients</div>
+                    <div className="text-lg font-bold text-slate-900">
+                      {segment.historical_patients || 0}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {((segment.market_penetration || 0) * 100).toFixed(2)}% penetration
+                    </div>
+                  </div>
+                </div>
+
+                {segment.strategic_insights && segment.strategic_insights.length > 0 && (
+                  <div className="mb-4">
+                    <div className="text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">
+                      Strategic Insights
+                    </div>
+                    <div className="space-y-1">
+                      {segment.strategic_insights.map((insight: string, i: number) => (
+                        <div key={i} className="text-xs text-slate-700 flex items-start gap-2">
+                          <div className="text-emerald-600 mt-0.5">•</div>
+                          <div>{insight}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-4 border-t border-slate-200">
+                  <div className="flex items-center gap-2">
+                    {(segment.behavioral_tags || []).map((tag: string) => (
+                      <div
+                        key={tag}
+                        className="rounded-full bg-indigo-50 text-indigo-700 px-3 py-1 text-xs font-medium"
+                      >
+                        {tag}
+                      </div>
+                    ))}
+                    {segment.best_channel && (
+                      <div className="rounded-full bg-slate-100 text-slate-700 px-3 py-1 text-xs font-medium">
+                        Best: {segment.best_channel}
+                      </div>
+                    )}
+                  </div>
+                  <button className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800 flex items-center gap-2">
+                    Generate campaign
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-6 bg-indigo-50 border-2 border-indigo-200 rounded-lg">
+          <div className="flex items-start gap-3 mb-4">
+            <AlertCircle className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-bold text-indigo-900 mb-2">How This Analysis Works</h3>
+              <div className="text-sm text-indigo-800 space-y-2">
+                <div>
+                  <span className="font-semibold">1. Behavioral Segmentation:</span> Classifies
+                  your patients by actual spending patterns
+                </div>
+                <div>
+                  <span className="font-semibold">2. Profile-First Scoring:</span> Identifies WHO
+                  your best customers are, then finds WHERE similar people live
+                </div>
+                <div>
+                  <span className="font-semibold">3. Psychographic Modeling:</span> Combines
+                  demographics with lifestyle cohorts
+                </div>
+                <div>
+                  <span className="font-semibold">4. Predictive Analytics:</span> Calculates
+                  expected bookings with confidence intervals
+                </div>
+                <div>
+                  <span className="font-semibold">5. Strategic Insights:</span> Generates CPA
+                  targets, competition analysis, and distance economics
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
-
-
-
-
-
-
