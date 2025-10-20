@@ -1,0 +1,6 @@
+patient_id,first_name,last_name,email,phone,zip_code,city,state,date_of_birth,first_visit,last_visit,total_visits,total_spent,favorite_treatment,last_treatment,treatments_received,no_show_count,referral_source,vip_status,gender,age_group
+4001,Ashley,Henderson,ahenderson@email.com,214-555-0101,75205,Highland Park,TX,1978-03-15,2023-02-15,2024-11-28,8,12800,Botox,Filler,"Botox,Filler",0,Referral,Yes,F,45-54
+4002,Blake,Patterson,bpatterson@email.com,469-555-0102,75225,Preston Hollow,TX,1985-07-22,2023-03-20,2024-11-15,7,9500,Botox,Botox,"Botox,Filler",0,Instagram,Yes,M,35-44
+4003,Brittney,Crawford,bcrawford@email.com,214-555-0103,75205,Highland Park,TX,1982-11-08,2023-04-10,2024-10-22,9,15200,Filler,Coolsculpting,"Botox,Filler,Coolsculpting",0,Referral,Yes,F,35-44
+4004,Cody,Mitchell,cmitchell@email.com,972-555-0104,75023,Plano,TX,1990-05-30,2023-05-25,2024-11-20,5,4200,Botox,Botox,"Botox",1,Google,No,M,25-34
+4005,Taylor,Rodriguez,trodriguez@email.com,214-555-0105,75225,Preston Hollow,TX,1975-09-12,2023-06-05,2024-11-10,10,18500,Botox,Laser,"Botox,Filler,Laser",0,Instagram,Yes,F,45-54

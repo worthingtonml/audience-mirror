@@ -1,39 +1,10 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { ArrowLeft, Copy, Check, TrendingUp, Target, DollarSign, Users } from 'lucide-react';
 
-/* =========================
-   Types
-========================= */
-type PlatformID = "facebook" | "instagram" | "tiktok" | "google";
-
-interface Props {
-  initialZip?: string | null;
-}
-
-type CampaignData = {
-  procedure: string;
-  platform: PlatformID;
-  overview: string;
-  kpis: string[];
-  insights: string[];
-  nextSteps: string[];
-  metrics: {
-    match: number;
-    cplRange: [number, number];
-    engagementRange: [number, number];
-    bookingRateRange: [number, number];
-  };
-  variants: Array<{ headline: string; body: string }>;
-  creativeGuidance: { 
-    images: string[]; 
-    videos: string[]; 
-    notes?: string 
-  };
-};
-
-const PLATFORM_META: Record<PlatformID, { name: string; color: string; icon: string }> = {
+const PLATFORM_META: Record<string, { name: string; color: string; icon: string }> = {
   facebook: { 
     name: "Facebook", 
     color: "#1877F2", 
@@ -56,302 +27,369 @@ const PLATFORM_META: Record<PlatformID, { name: string; color: string; icon: str
   }
 };
 
-export default function PrescriptiveCampaignFlow({ initialZip }: Props) {
-  const router = useRouter();
+export default function CampaignGenerator() {
   const searchParams = useSearchParams();
-  
-  const [selectedProcedure, setSelectedProcedure] = useState<string>("all");
-  const [selectedZip, setSelectedZip] = useState<string | null>(initialZip || null);
-  const [selectedCohort, setSelectedCohort] = useState<string>("Budget Conscious");
-  const [campaignData, setCampaignData] = useState<CampaignData | null>(null);
-  const [activePlatform, setActivePlatform] = useState<PlatformID | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [copiedItem, setCopiedItem] = useState<string | null>(null);
+  const router = useRouter();
+  const [campaignData, setCampaignData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [expandedPlatform, setExpandedPlatform] = useState<string | null>(null);
+
+  const zip = searchParams.get('zip');
+  const cohort = searchParams.get('cohort');
+  const procedure = searchParams.get('procedure') || 'botox';
 
   useEffect(() => {
-  const zipFromUrl = searchParams?.get('zip');
-  const cohortFromUrl = searchParams?.get('cohort');
-  const procedureFromUrl = searchParams?.get('procedure');
-  
-  if (zipFromUrl) {
-    setSelectedZip(zipFromUrl);
-    if (cohortFromUrl) setSelectedCohort(cohortFromUrl);
-    if (procedureFromUrl) setSelectedProcedure(procedureFromUrl);
-    generateCampaign(zipFromUrl, procedureFromUrl || selectedProcedure);
-  } else {
-    // No ZIP in URL - set a default for testing
-    setSelectedZip('11030');
-    generateCampaign('11030', selectedProcedure);
-  }
-}, [searchParams]);
+    if (!zip || !cohort) {
+      router.push('/patient-insights');
+      return;
+    }
 
-  const generateCampaign = async (zip: string, procedure: string = selectedProcedure) => {
-  setLoading(true);
-  try {
-    const res = await fetch('/api/campaign-intel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ zip, procedure, cohort: selectedCohort })
-    });
-    const data = await res.json();
-    
-    // Transform API response to match component expectations
-    const topPlatform = data.platforms?.[0]; // Get highest scoring platform
-    
-    const transformedData: CampaignData = {
-      procedure: procedure,
-      platform: (topPlatform?.name || 'facebook') as PlatformID,
-      overview: `Recommended platform: ${topPlatform?.name || 'Facebook'} with ${topPlatform?.score || 0}% confidence score`,
-      kpis: [
-        `CPL: ${topPlatform?.metrics?.cpl || '$15-20'}`,
-        `Booking Rate: ${topPlatform?.metrics?.bookingRate || '15%'}`,
-        `ROAS: ${topPlatform?.metrics?.roas || '3.0x'}`
-      ],
-      insights: data.insights?.map((i: any) => i.text) || [],
-      nextSteps: [
-        'Launch campaign on recommended platform',
-        'Test ad copy variations',
-        'Monitor performance metrics'
-      ],
-      metrics: {
-        match: (topPlatform?.score || 75) / 100,
-        cplRange: [15, 25],
-        engagementRange: [2, 5],
-        bookingRateRange: [10, 20]
-      },
-      variants: topPlatform?.adCopy?.map((copy: string) => ({
-        headline: copy,
-        body: 'Transform your look with our expert treatments. Book your consultation today.'
-      })) || [],
-      creativeGuidance: {
-        images: ['Professional treatment photos', 'Before/after results'],
-        videos: ['Patient testimonials', 'Treatment process'],
-        notes: data.creativeGuidance?.notes
+    const generateCampaign = async () => {
+      try {
+        const response = await fetch('/api/campaign-intel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ zip, cohort, procedure }),
+        });
+
+        const data = await response.json();
+        setCampaignData(data);
+        setExpandedPlatform(data.platforms?.[0]?.name); // Auto-expand top platform
+      } catch (error) {
+        console.error('Failed to generate campaign:', error);
+      } finally {
+        setLoading(false);
       }
     };
-    
-    setCampaignData(transformedData);
-    setActivePlatform((topPlatform?.name || 'facebook') as PlatformID);
-  } catch (error) {
-    console.error('Failed to generate campaign:', error);
-  } finally {
-    setLoading(false);
-  }
-};
 
-  const copyToClipboard = (text: string, itemName: string) => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(text);
-      setCopiedItem(itemName);
-      setTimeout(() => setCopiedItem(null), 2000);
-    }
+    generateCampaign();
+  }, [zip, cohort, procedure, router]);
+
+  const copyToClipboard = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
   };
 
-  if (!campaignData || !selectedZip) {
-    return <div className="min-h-screen bg-gray-50 p-8 flex items-center justify-center">
-      <div className="text-lg">Loading campaign data...</div>
-    </div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <div className="text-lg font-semibold text-slate-900">Generating AI-powered campaigns...</div>
+        </div>
+      </div>
+    );
   }
 
-  const currentPlatform = activePlatform || campaignData.platform;
-  const meta = PLATFORM_META[currentPlatform];
+  if (!campaignData) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-lg font-semibold text-slate-900">Failed to generate campaign</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-slate-50 p-8">
       <div className="max-w-7xl mx-auto">
-        {/* Back button */}
-        <button
-          onClick={() => router.push('/dashboard')}
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 transition-colors"
-          type="button"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Results
-        </button>
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to insights
+          </button>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900 mb-2">Campaign Generator</h1>
+              <p className="text-slate-600">
+                AI-powered recommendations for ZIP {zip} · {cohort} · {procedure}
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-sm text-slate-500">Campaign ID</div>
+              <div className="font-mono text-sm text-slate-900">{campaignData.id}</div>
+            </div>
+          </div>
+        </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Header */}
-          <div style={{ backgroundColor: meta.color }} className="px-8 py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg">
-                  <svg className="w-7 h-7" style={{ color: meta.color }} fill="currentColor" viewBox="0 0 24 24">
-                    <path d={meta.icon} />
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-sm font-bold text-white uppercase tracking-wide mb-1">
-                    {meta.name} CAMPAIGN
-                  </div>
-                  <h2 className="text-lg text-white/90">
-                    ZIP {selectedZip} • {selectedCohort}
-                  </h2>
-                </div>
+        {/* Key Insights Banner */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
+          {campaignData.insights?.map((insight: any, idx: number) => (
+            <div
+              key={idx}
+              className={`rounded-lg p-4 ${
+                insight.type === 'success'
+                  ? 'bg-emerald-50 border border-emerald-200'
+                  : insight.type === 'warning'
+                  ? 'bg-amber-50 border border-amber-200'
+                  : 'bg-blue-50 border border-blue-200'
+              }`}
+            >
+              <div
+                className={`text-sm font-semibold ${
+                  insight.type === 'success'
+                    ? 'text-emerald-900'
+                    : insight.type === 'warning'
+                    ? 'text-amber-900'
+                    : 'text-blue-900'
+                }`}
+              >
+                {insight.text}
               </div>
+            </div>
+          ))}
+        </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  {Object.keys(PLATFORM_META).map((platformId) => (
-                    <button
-                      key={platformId}
-                      onClick={() => {
-                        setActivePlatform(platformId as PlatformID);
-                        generateCampaign(selectedZip, selectedProcedure);
-                      }}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                        platformId === currentPlatform 
-                          ? "bg-white text-gray-900 shadow-md" 
-                          : "text-white/70 hover:text-white hover:bg-white/20"
-                      }`}
-                    >
-                      {PLATFORM_META[platformId as PlatformID].name}
-                    </button>
-                  ))}
+        {/* Platform Cards - Ranked */}
+        <div className="space-y-6 mb-8">
+          {campaignData.platforms?.map((platform: any, idx: number) => {
+            const meta = PLATFORM_META[platform.name] || PLATFORM_META.facebook;
+            const isExpanded = expandedPlatform === platform.name;
+            
+            return (
+              <div 
+                key={platform.name} 
+                className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"
+              >
+                {/* Platform Header - Always Visible */}
+                <div 
+                  style={{ backgroundColor: meta.color }} 
+                  className="px-6 py-4 cursor-pointer"
+                  onClick={() => setExpandedPlatform(isExpanded ? null : platform.name)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`rounded-full w-10 h-10 flex items-center justify-center text-lg font-bold ${
+                          idx === 0
+                            ? 'bg-emerald-400 text-emerald-900'
+                            : 'bg-white/90 text-slate-700'
+                        }`}
+                      >
+                        #{idx + 1}
+                      </div>
+                      <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                        <svg className="w-6 h-6" style={{ color: meta.color }} fill="currentColor" viewBox="0 0 24 24">
+                          <path d={meta.icon} />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-xl font-bold text-white capitalize mb-0.5">
+                          {platform.name}
+                        </div>
+                        <div className="flex items-center gap-3 text-white/90 text-sm">
+                          <div className="flex items-center gap-1">
+                            <TrendingUp className="h-4 w-4" />
+                            <span className="font-semibold">{platform.score}% confidence</span>
+                          </div>
+                          <span>·</span>
+                          <span>ROAS: {platform.metrics.roas}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <div className="text-xs text-white/70">Est. CPL</div>
+                        <div className="text-lg font-bold text-white">{platform.metrics.cpl}</div>
+                      </div>
+                      <button className="text-white/70 hover:text-white">
+                        {isExpanded ? '−' : '+'}
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="px-3 py-1 bg-white/20 text-sm font-medium text-white rounded">
-                  {(campaignData.metrics.match * 100).toFixed(0)}% Match
-                </div>
+
+                {/* Expandable Content */}
+                {isExpanded && (
+                  <div className="p-6">
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-6 gap-4 mb-6 p-4 rounded-lg" style={{ backgroundColor: `${meta.color}10` }}>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">CTR</div>
+                        <div className="text-lg font-bold text-slate-900">{platform.metrics.ctr}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">CPL Range</div>
+                        <div className="text-lg font-bold text-slate-900">{platform.metrics.cpl}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">Booking Rate</div>
+                        <div className="text-lg font-bold text-slate-900">{platform.metrics.bookingRate}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">Max CPA</div>
+                        <div className="text-lg font-bold text-slate-900">{platform.metrics.maxCpa}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">LTV</div>
+                        <div className="text-lg font-bold text-slate-900">{platform.metrics.ltv}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-slate-500 mb-1">ROAS</div>
+                        <div className="text-lg font-bold" style={{ color: meta.color }}>{platform.metrics.roas}</div>
+                      </div>
+                    </div>
+
+                    {/* Ad Copy Variations - Detailed Cards */}
+                    <div className="mb-6">
+                      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                        Ad Copy Variations
+                      </div>
+                      <div className="space-y-4">
+                        {platform.adCopy?.map((copy: string, copyIdx: number) => (
+                          <div
+                            key={copyIdx}
+                            className="relative rounded-xl border-2 p-6 hover:border-slate-300 transition-colors"
+                            style={{ borderColor: `${meta.color}20` }}
+                          >
+                            <button
+                              onClick={() => copyToClipboard(copy, `${platform.name}-${copyIdx}`)}
+                              className="absolute right-4 top-4 rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:brightness-95 transition-all"
+                              style={{ backgroundColor: meta.color }}
+                            >
+                              {copied === `${platform.name}-${copyIdx}` ? (
+                                <span className="flex items-center gap-1">
+                                  <Check className="h-3 w-3" /> Copied
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <Copy className="h-3 w-3" /> Copy
+                                </span>
+                              )}
+                            </button>
+                            <div className="pr-20">
+                              <div className="text-xl font-bold text-slate-900 mb-2">{copy}</div>
+                              <div className="text-slate-600 leading-relaxed">
+                                Transform your look with expert {procedure} treatments. Book your consultation today and experience the difference.
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Targeting & Audiences */}
+                    <div className="mb-6">
+                      <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                        Targeting Strategy
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {platform.audiences?.map((audience: string, audienceIdx: number) => (
+                          <div
+                            key={audienceIdx}
+                            className="px-3 py-1.5 rounded-lg text-sm font-medium"
+                            style={{ backgroundColor: `${meta.color}15`, color: meta.color }}
+                          >
+                            {audience}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Creative Guidance */}
+                    <div className="grid grid-cols-2 gap-6 pt-6 border-t border-slate-200">
+                      <div>
+                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                          Image Guidelines
+                        </div>
+                        <ul className="space-y-1.5 text-sm text-slate-700">
+                          <li>• Professional treatment photos</li>
+                          <li>• Before/after results</li>
+                          <li>• Clean, modern aesthetic</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+                          Video Concepts
+                        </div>
+                        <ul className="space-y-1.5 text-sm text-slate-700">
+                          <li>• Patient testimonials</li>
+                          <li>• Treatment process walkthrough</li>
+                          <li>• Expert consultation clips</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Patient Intelligence Summary */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-8">
+          <h3 className="text-lg font-bold text-slate-900 mb-4">Patient Intelligence Summary</h3>
+          <div className="grid grid-cols-5 gap-6">
+            <div>
+              <div className="text-xs text-slate-500 mb-1">Top ZIP</div>
+              <div className="font-mono text-lg font-bold text-slate-900">
+                {campaignData.patientIntelligence?.topPerformingZip}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 mb-1">Best Channel</div>
+              <div className="text-lg font-bold text-slate-900 capitalize">
+                {campaignData.patientIntelligence?.recommendedChannel}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 mb-1">Avg Patient Value</div>
+              <div className="text-lg font-bold text-emerald-600">
+                ${campaignData.patientIntelligence?.avgPatientValue}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 mb-1">Data Points</div>
+              <div className="text-lg font-bold text-slate-900">
+                {campaignData.patientIntelligence?.dataPoints}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs text-slate-500 mb-1">Confidence</div>
+              <div className="text-lg font-bold text-slate-900">
+                {campaignData.modelConfidence?.patientDataSupport}
               </div>
             </div>
           </div>
+          <div className="mt-4 p-3 bg-slate-50 rounded-lg">
+            <div className="text-xs font-semibold text-slate-600 mb-1">Key Pattern</div>
+            <div className="text-sm text-slate-900">
+              {campaignData.patientIntelligence?.keyPattern}
+            </div>
+          </div>
+        </div>
 
-          {/* Content */}
-          <div className="p-8 space-y-8 text-[1.125rem] leading-8">
-            {/* Strategy Overview */}
-            <section
-              className="p-6 rounded-xl border"
-              style={{
-                background: `linear-gradient(to bottom right, ${meta.color}10, white)`,
-                borderColor: `${meta.color}30`,
-              }}
-            >
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                STRATEGY OVERVIEW
-              </h3>
-              <p className="text-gray-800">{campaignData.overview}</p>
-
-              <div className="grid md:grid-cols-3 gap-4 mt-5">
-                {campaignData.kpis.map((kpi, idx) => {
-                  const [label, value] = kpi.split(":");
-                  return (
-                    <div key={idx} className="text-gray-800">
-                      <span className="font-semibold text-gray-900">{label}:</span>
-                      <span>{value}</span>
-                    </div>
-                  );
-                })}
+        {/* Creative Guidance Footer */}
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-6">
+          <h3 className="text-lg font-bold text-indigo-900 mb-4">Overall Creative Strategy</h3>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <div className="text-sm font-semibold text-indigo-700 mb-2">Primary Message</div>
+              <div className="text-sm text-indigo-900">
+                {campaignData.creativeGuidance?.primaryMessage}
               </div>
-
-              {campaignData.insights && campaignData.insights.length > 0 && (
-                <div className="mt-6 pt-6 border-t" style={{ borderColor: `${meta.color}20` }}>
-                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                    KEY INSIGHTS
-                  </h4>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {campaignData.insights.map((insight, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <div
-                          className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 ${
-                            idx === 0 ? "bg-blue-500" : 
-                            idx === 1 ? "bg-green-500" : 
-                            idx === 2 ? "bg-purple-500" : "bg-orange-500"
-                          }`}
-                        />
-                        <p className="text-gray-800">{insight}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </section>
-
-            {/* Recommended Actions */}
-            <section
-              className="p-6 rounded-xl border"
-              style={{
-                background: `linear-gradient(to bottom right, ${meta.color}08, white)`,
-                borderColor: `${meta.color}20`,
-              }}
-            >
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                RECOMMENDED ACTIONS
-              </h3>
-              <ul className="space-y-3">
-                {campaignData.nextSteps.map((step, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-gray-800">
-                    <span className="text-gray-900 font-bold mt-1">→</span>
-                    <span>{step}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Ad Copy Variations */}
-            <section>
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
-                AD COPY VARIATIONS
-              </h3>
-              <ul className="w-full space-y-5">
-                {campaignData.variants.map((ad, idx) => (
-                  <li key={idx} className="relative rounded-xl border border-gray-200 p-6">
-                    <button
-                      onClick={() => copyToClipboard(`${ad.headline}\n\n${ad.body}`, `ad-${idx}`)}
-                      className="absolute right-4 top-4 rounded-md px-3 py-1 text-xs font-semibold text-white shadow-sm hover:brightness-95"
-                      style={{ backgroundColor: meta.color }}
-                    >
-                      {copiedItem === `ad-${idx}` ? "Copied" : "Copy"}
-                    </button>
-                    <div className="max-w-[90ch] pr-24">
-                      <h4 className="text-2xl font-semibold text-gray-900 mb-2">{ad.headline}</h4>
-                      <p className="text-[1.125rem] text-gray-800 leading-8">{ad.body}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </section>
-
-            {/* Creative */}
-            <section className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">IMAGES</div>
-                  <div className="space-y-2 text-gray-800">
-                    {campaignData.creativeGuidance.images.map((img, idx) => (
-                      <div key={idx}>• {img}</div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">VIDEOS</div>
-                  <div className="space-y-2 text-gray-800">
-                    {campaignData.creativeGuidance.videos.map((video, idx) => (
-                      <div key={idx}>• {video}</div>
-                    ))}
-                  </div>
-                </div>
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-indigo-700 mb-2">Visual Style</div>
+              <div className="text-sm text-indigo-900">
+                {campaignData.creativeGuidance?.visualStyle}
               </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200">
-                <div>
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                    PHOTOGRAPHY BRIEF
-                  </div>
-                  <p className="text-gray-800">
-                    Bright, authentic imagery showcasing real results and approachable staff.
-                  </p>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                    VIDEO CONCEPT
-                  </div>
-                  <p className="text-gray-800">
-                    {campaignData.creativeGuidance.notes || "Educational content emphasizing transparency and client success stories."}
-                  </p>
-                </div>
-              </div>
-            </section>
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-indigo-700 mb-2">Call-to-Action</div>
+              <div className="text-sm text-indigo-900">{campaignData.creativeGuidance?.cta}</div>
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-indigo-700 mb-2">Notes</div>
+              <div className="text-sm text-indigo-900">{campaignData.creativeGuidance?.notes}</div>
+            </div>
           </div>
         </div>
       </div>

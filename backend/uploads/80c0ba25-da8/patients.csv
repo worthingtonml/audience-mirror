@@ -1,0 +1,6 @@
+patient_id,first_name,last_name,email,phone,zip_code,city,state,date_of_birth,first_visit,last_visit,total_visits,total_spent,favorite_treatment,last_treatment,treatments_received,no_show_count,referral_source,vip_status,gender,age_group
+2001,Katherine,Whitman,kwhitman@email.com,203-555-0101,06830,Greenwich,CT,1968-03-15,2023-03-15,2024-11-28,4,3200,Botox,Botox,"Botox",0,Referral,No,F,55-64
+2002,Charles,Morrison,cmorrison@email.com,203-555-0102,06880,Westport,CT,1972-07-22,2023-04-20,2024-10-15,3,2100,Botox,Botox,"Botox",1,Website,No,M,45-54
+2003,Elizabeth,Hartford,ehartford@email.com,203-555-0103,06840,New Canaan,CT,1965-11-08,2023-05-10,2024-09-22,2,1800,Botox,Botox,"Botox",0,Referral,No,F,55-64
+2004,William,Sterling,wsterling@email.com,203-555-0104,06830,Greenwich,CT,1970-05-30,2023-06-25,2024-11-20,5,4500,Botox,Filler,"Botox,Filler",0,Referral,Yes,M,45-54
+2005,Margaret,Booth,mbooth@email.com,203-555-0105,06903,Stamford,CT,1978-09-12,2023-07-05,2024-08-10,2,850,Botox,Botox,"Botox",2,Google,No,F,45-54

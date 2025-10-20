@@ -1,0 +1,6 @@
+patient_id,first_name,last_name,email,phone,zip_code,city,state,date_of_birth,first_visit,last_visit,total_visits,total_spent,favorite_treatment,last_treatment,treatments_received,no_show_count,referral_source,vip_status,gender,age_group
+5001,Isabella,Delgado,idelgado@email.com,305-555-0101,33139,Miami Beach,FL,1978-03-15,2023-01-15,2024-11-28,22,58500,Coolsculpting,Laser,"Botox,Filler,Coolsculpting,Laser,Chemical Peel",0,Instagram,Yes,F,45-54
+5002,Santiago,Martinez,smartinez@email.com,305-555-0102,33146,Coral Gables,FL,1985-07-22,2023-01-20,2024-11-15,18,32400,Botox,Filler,"Botox,Filler,Chemical Peel",0,Instagram,Yes,M,35-44
+5003,Valentina,Rodriguez,vrodriguez@email.com,305-555-0103,33139,Miami Beach,FL,1982-11-08,2023-02-10,2024-11-22,24,64000,Filler,Coolsculpting,"Botox,Filler,Coolsculpting,Laser,Chemical Peel",0,Referral,Yes,F,35-44
+5004,Diego,Hernandez,dhernandez@email.com,786-555-0104,33432,Boca Raton,FL,1990-05-30,2023-02-25,2024-11-20,15,22500,Botox,Botox,"Botox,Filler",0,Instagram,Yes,M,25-34
+5005,Sofia,Lopez,slopez@email.com,305-555-0105,33146,Coral Gables,FL,1975-09-12,2023-03-05,2024-11-10,20,52000,Laser,Laser,"Botox,Filler,Coolsculpting,Laser",0,Instagram,Yes,F,45-54

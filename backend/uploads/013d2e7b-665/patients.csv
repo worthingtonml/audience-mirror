@@ -1,0 +1,6 @@
+patient_id,first_name,last_name,email,phone,zip_code,city,state,date_of_birth,first_visit,last_visit,total_visits,total_spent,favorite_treatment,last_treatment,treatments_received,no_show_count,referral_source,vip_status,gender,age_group
+3001,Madison,Blake,mblake@email.com,310-555-0101,90210,Beverly Hills,CA,1978-03-15,2023-01-15,2024-11-28,18,42500,Filler,Coolsculpting,"Botox,Filler,Coolsculpting,Laser,Chemical Peel",0,Instagram,Yes,F,45-54
+3002,Tyler,Russo,trusso@email.com,310-555-0102,90049,Brentwood,CA,1985-07-22,2023-01-20,2024-11-15,16,28900,Botox,Filler,"Botox,Filler,Laser",0,Instagram,Yes,M,35-44
+3003,Jessica,Stone,jstone@email.com,310-555-0103,90210,Beverly Hills,CA,1982-11-08,2023-02-10,2024-11-22,20,52000,Coolsculpting,Laser,"Botox,Filler,Coolsculpting,Laser,Chemical Peel",0,Referral,Yes,F,35-44
+3004,Brandon,Hayes,bhayes@email.com,424-555-0104,90403,Santa Monica,CA,1990-05-30,2023-02-25,2024-11-20,14,19800,Botox,Botox,"Botox,Filler",1,Instagram,Yes,M,25-34
+3005,Sophia,Martinez,smartinez@email.com,310-555-0105,90210,Beverly Hills,CA,1975-09-12,2023-03-05,2024-11-10,22,68000,Laser,Coolsculpting,"Botox,Filler,Coolsculpting,Laser,Chemical Peel",0,Instagram,Yes,F,45-54

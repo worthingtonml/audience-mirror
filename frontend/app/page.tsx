@@ -77,6 +77,7 @@ export default function Page() {
       
       // Step 3: Store run_id and navigate
       sessionStorage.setItem('runId', run_id);
+      sessionStorage.setItem('datasetId', dataset_id);
       router.push('/patient-insights');
       
     } catch (e) {

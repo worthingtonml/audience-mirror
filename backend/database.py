@@ -55,6 +55,7 @@ class AnalysisRun(Base):
     map_points = Column(JSON, nullable=True)
     confidence_info = Column(JSON, nullable=True)
     procedure = Column(String, nullable=True)
+    patient_count = Column(Integer, nullable=True)
 
 # ---- Session helper ----
 def get_db():

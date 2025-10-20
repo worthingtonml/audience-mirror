@@ -1,0 +1,151 @@
+zip_code,age_band,procedure_type,status,revenue,consult_date,lead_source
+10001,35-44,Rhinoplasty,Treated,7445.27,2025-06-14,Google Ads
+10001,25-34,CoolSculpting,Treated,2952.1,2025-01-27,Google Ads
+90212,35-44,Chemical Peel,No Show,0,2024-12-28,Referral
+10001,25-34,Microneedling,Treated,392.69,2024-10-04,Facebook
+10021,35-44,Microneedling,Treated,412.09,2025-03-21,Google Ads
+10002,45-54,Chemical Peel,Treated,388.66,2025-02-23,Organic
+10021,25-34,CoolSculpting,Treated,1722.42,2025-07-27,Google Ads
+10001,35-44,Chemical Peel,Treated,251.71,2025-05-26,Instagram
+10022,35-44,Tummy Tuck,Consulted Only,0,2025-06-07,Instagram
+10001,25-34,CoolSculpting,Treated,2912.53,2024-12-19,Facebook
+90211,45-54,Botox,Treated,559.3,2024-09-26,Organic
+10021,35-44,Chemical Peel,Consulted Only,0,2024-10-31,Instagram
+10022,25-34,Botox,Treated,507,2025-04-14,Google Ads
+90210,25-34,Botox,Treated,592.78,2024-12-14,Facebook
+10022,25-34,Rhinoplasty,Treated,7240.6,2025-01-10,Facebook
+90210,25-34,Brazilian Butt Lift,Treated,9846.5,2025-05-07,Referral
+90212,45-54,Fillers,Treated,739.58,2025-08-20,Facebook
+10003,25-34,Botox,Treated,458.84,2024-12-29,Direct Mail
+33140,25-34,Botox,Treated,493.7,2024-10-28,Facebook
+90211,45-54,Brazilian Butt Lift,Consulted Only,0,2025-08-21,Organic
+33140,35-44,Laser Hair Removal,No Show,0,2025-07-16,Facebook
+90210,25-34,Fillers,Consulted Only,0,2024-10-16,Organic
+10003,45-54,Breast Augmentation,Treated,8009,2024-09-20,Referral
+90210,45-54,CoolSculpting,Treated,2900.8,2025-05-13,Direct Mail
+10022,45-54,Laser Hair Removal,Treated,506.32,2025-08-05,Direct Mail
+10022,55-64,Microneedling,Consulted Only,0,2024-12-26,Referral
+90210,25-34,Chemical Peel,Treated,389.15,2025-03-06,Facebook
+10002,35-44,CoolSculpting,Treated,2600.35,2025-08-10,Facebook
+10003,35-44,CoolSculpting,Treated,2070.88,2025-07-27,Instagram
+10021,25-34,Rhinoplasty,Treated,11232.02,2024-10-31,Direct Mail
+10021,25-34,Brazilian Butt Lift,Consulted Only,0,2024-11-19,Facebook
+10022,35-44,Botox,Consulted Only,0,2025-01-01,Referral
+90211,35-44,Facelift,Treated,9040.46,2025-03-15,Organic
+90210,25-34,Tummy Tuck,No Show,0,2025-07-25,Instagram
+10001,25-34,Chemical Peel,Treated,256.82,2025-03-29,Direct Mail
+10003,45-54,Facelift,Treated,9791.08,2025-04-12,Instagram
+90211,35-44,Microneedling,No Show,0,2025-02-14,Direct Mail
+33139,45-54,Botox,No Show,0,2025-07-23,Referral
+90211,35-44,Fillers,No Show,0,2025-08-21,Facebook
+90210,45-54,Brazilian Butt Lift,Consulted Only,0,2024-11-28,Organic
+90210,35-44,CoolSculpting,Treated,1795.79,2025-05-24,Google Ads
+33140,35-44,Microneedling,Treated,459.52,2024-12-03,Referral
+90212,55-64,Laser Hair Removal,No Show,0,2025-04-28,Google Ads
+90212,35-44,Facelift,Treated,7969.47,2024-11-26,Referral
+90211,25-34,Laser Hair Removal,Treated,632.05,2025-03-08,Organic
+33139,25-34,Microneedling,Treated,338.56,2025-03-14,Google Ads
+90210,25-34,Chemical Peel,Treated,299.32,2025-08-18,Instagram
+33140,25-34,Microneedling,Treated,328.95,2025-03-24,Direct Mail
+90210,45-54,Rhinoplasty,Treated,11555.4,2025-03-30,Referral
+33140,35-44,Microneedling,Treated,434.87,2024-12-13,Direct Mail
+90210,35-44,Rhinoplasty,Consulted Only,0,2025-07-06,Referral
+10001,35-44,Brazilian Butt Lift,Consulted Only,0,2024-11-02,Facebook
+10021,55-64,Facelift,Treated,8340.63,2025-03-18,Instagram
+10022,25-34,CoolSculpting,Treated,2569.78,2024-09-22,Facebook
+10022,45-54,Rhinoplasty,No Show,0,2025-07-29,Direct Mail
+90211,35-44,Tummy Tuck,Treated,6724.19,2025-06-15,Facebook
+90211,25-34,Botox,Treated,416.28,2025-02-10,Facebook
+10021,35-44,Microneedling,Treated,455.96,2025-08-08,Referral
+10022,25-34,Microneedling,No Show,0,2025-07-14,Facebook
+33140,25-34,Laser Hair Removal,Treated,552.89,2025-07-19,Direct Mail
+33139,35-44,Microneedling,Consulted Only,0,2025-06-28,Organic
+90211,55-64,Rhinoplasty,Treated,9049.21,2025-05-30,Facebook
+33139,25-34,CoolSculpting,No Show,0,2025-02-20,Organic
+10001,45-54,Laser Hair Removal,Treated,996.63,2025-07-10,Direct Mail
+10021,35-44,Microneedling,Treated,345.03,2025-05-17,Instagram
+10021,35-44,Fillers,No Show,0,2025-02-08,Facebook
+33140,35-44,Laser Hair Removal,No Show,0,2025-06-06,Referral
+10021,25-34,Laser Hair Removal,Treated,612.78,2025-01-19,Direct Mail
+10022,35-44,Laser Hair Removal,Treated,701.39,2024-09-12,Google Ads
+33139,55-64,Brazilian Butt Lift,Consulted Only,0,2025-04-27,Google Ads
+33140,35-44,CoolSculpting,Treated,2965.13,2024-09-20,Referral
+10021,25-34,CoolSculpting,Consulted Only,0,2025-03-10,Facebook
+10021,55-64,Rhinoplasty,Treated,10386.66,2025-06-25,Referral
+10001,35-44,Fillers,Consulted Only,0,2024-11-07,Instagram
+10002,45-54,Fillers,No Show,0,2024-09-13,Instagram
+10003,35-44,Breast Augmentation,Consulted Only,0,2025-07-04,Facebook
+10001,45-54,Tummy Tuck,Treated,7671.97,2025-07-28,Referral
+90210,35-44,Brazilian Butt Lift,Treated,8369.33,2025-07-16,Organic
+10003,25-34,Laser Hair Removal,Treated,639.19,2025-05-08,Instagram
+90211,35-44,Rhinoplasty,Treated,11510.15,2024-10-04,Referral
+90211,45-54,Botox,Treated,595.23,2025-05-10,Google Ads
+90210,45-54,Tummy Tuck,No Show,0,2024-10-09,Direct Mail
+90211,35-44,Breast Augmentation,Treated,7748.14,2024-10-10,Direct Mail
+10021,35-44,CoolSculpting,Treated,2896.3,2024-08-30,Google Ads
+10021,25-34,Rhinoplasty,Treated,10484.86,2025-03-19,Organic
+10003,45-54,Laser Hair Removal,Treated,787.94,2025-01-08,Instagram
+10003,25-34,Botox,Treated,380.27,2025-02-25,Organic
+90211,55-64,Tummy Tuck,Treated,6016.57,2025-05-13,Google Ads
+90211,25-34,Facelift,No Show,0,2024-09-02,Google Ads
+10003,35-44,Fillers,Treated,513.25,2024-09-22,Instagram
+33140,25-34,Botox,Treated,316.35,2025-04-11,Google Ads
+90211,35-44,Rhinoplasty,No Show,0,2025-02-24,Organic
+10021,35-44,Tummy Tuck,Treated,6259.63,2024-10-28,Google Ads
+90211,45-54,Tummy Tuck,Treated,6576.46,2025-01-21,Google Ads
+10003,35-44,Microneedling,Treated,395.4,2024-10-10,Referral
+90211,25-34,Brazilian Butt Lift,No Show,0,2025-05-12,Instagram
+33139,35-44,CoolSculpting,Treated,1834.32,2025-02-10,Instagram
+90210,25-34,Fillers,Treated,780.57,2025-04-05,Organic
+10021,25-34,Fillers,Consulted Only,0,2025-06-03,Instagram
+10002,35-44,Chemical Peel,Treated,282,2024-08-25,Referral
+90210,35-44,Fillers,Consulted Only,0,2025-07-02,Direct Mail
+33139,55-64,Botox,Consulted Only,0,2025-03-23,Google Ads
+10022,35-44,Laser Hair Removal,Consulted Only,0,2025-06-21,Direct Mail
+10022,35-44,Brazilian Butt Lift,Treated,9728.9,2024-12-30,Organic
+90211,55-64,Botox,Treated,558.7,2025-04-24,Direct Mail
+90211,45-54,Laser Hair Removal,Treated,985.3,2025-02-19,Organic
+90211,45-54,Brazilian Butt Lift,Consulted Only,0,2024-11-14,Referral
+10003,55-64,CoolSculpting,Consulted Only,0,2024-12-06,Facebook
+33139,25-34,Botox,Treated,409.1,2025-05-26,Direct Mail
+10022,45-54,Microneedling,Treated,394.97,2024-09-02,Instagram
+90210,35-44,Breast Augmentation,Treated,7575.16,2025-06-16,Direct Mail
+90210,45-54,Botox,Consulted Only,0,2025-03-05,Facebook
+33139,35-44,Tummy Tuck,Treated,6241.49,2025-04-02,Facebook
+90212,25-34,CoolSculpting,Treated,2189.56,2025-03-06,Google Ads
+10003,45-54,CoolSculpting,No Show,0,2024-08-31,Direct Mail
+10021,35-44,Microneedling,Treated,499.95,2025-08-14,Organic
+90210,25-34,Brazilian Butt Lift,Treated,9405.53,2025-03-28,Facebook
+10022,35-44,Botox,Treated,324.85,2024-10-18,Google Ads
+10021,45-54,Botox,Treated,578,2024-11-09,Google Ads
+10002,35-44,Fillers,Treated,738.78,2025-01-17,Referral
+10022,35-44,Breast Augmentation,Treated,8065.4,2025-01-31,Direct Mail
+10021,25-34,Breast Augmentation,Treated,7566.38,2025-08-19,Google Ads
+33140,45-54,Tummy Tuck,Treated,6848.83,2025-06-29,Organic
+10002,35-44,Chemical Peel,Consulted Only,0,2025-08-19,Google Ads
+10021,25-34,Rhinoplasty,Treated,10747.35,2025-01-06,Direct Mail
+90211,25-34,Microneedling,No Show,0,2024-11-18,Referral
+10021,35-44,Fillers,No Show,0,2024-09-24,Organic
+90211,25-34,Microneedling,Treated,397.61,2025-05-31,Direct Mail
+10022,35-44,Microneedling,No Show,0,2025-04-27,Instagram
+10021,25-34,Botox,Consulted Only,0,2024-11-04,Google Ads
+90211,45-54,Botox,Treated,476.84,2025-07-06,Referral
+90211,25-34,Tummy Tuck,Treated,6288.96,2025-02-19,Referral
+10021,25-34,Botox,Consulted Only,0,2025-01-12,Google Ads
+10003,35-44,Facelift,Treated,9181.92,2025-05-06,Referral
+90210,35-44,Fillers,Consulted Only,0,2025-07-03,Instagram
+10022,35-44,Brazilian Butt Lift,Treated,9563.14,2025-07-04,Direct Mail
+10021,55-64,Tummy Tuck,Treated,6483.93,2024-12-05,Facebook
+90210,35-44,Tummy Tuck,Treated,7333.96,2025-02-10,Google Ads
+90210,35-44,CoolSculpting,No Show,0,2024-11-24,Direct Mail
+10021,35-44,Chemical Peel,Treated,325.61,2025-03-24,Facebook
+90210,35-44,CoolSculpting,No Show,0,2025-01-27,Google Ads
+90210,35-44,CoolSculpting,Treated,2012.95,2025-01-18,Instagram
+10003,25-34,Fillers,Treated,765.53,2025-08-23,Organic
+90211,35-44,Fillers,Consulted Only,0,2024-12-17,Referral
+90211,25-34,Botox,Consulted Only,0,2024-12-01,Google Ads
+90210,55-64,Laser Hair Removal,Treated,523.45,2025-07-19,Referral
+90211,35-44,Laser Hair Removal,Treated,984.9,2025-06-12,Organic
+90210,45-54,Facelift,Treated,8827.15,2025-02-25,Direct Mail
+10022,45-54,Laser Hair Removal,Treated,595.23,2025-01-27,Instagram
+10022,35-44,Laser Hair Removal,Treated,532.14,2024-10-09,Referral

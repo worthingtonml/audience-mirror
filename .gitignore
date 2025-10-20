@@ -1,20 +1,11 @@
-# Virtual environment
-venv/
-__pycache__/
-*.pyc
-
-# Environment variables
 .env
 *.env
-
-# Database
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+.next/
 *.db
 *.sqlite
-
-# Uploads and data
-uploads/
-data/*.csv
-
-# IDE files
-.vscode/
 .DS_Store
