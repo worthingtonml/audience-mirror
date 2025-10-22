@@ -1004,29 +1004,29 @@ async def download_export(run_id: str, format: str = "full", top_n: int = 10, db
     # Generate appropriate CSV format
     if format == "facebook":
         # Facebook Custom Audiences format
-        data = [{"zip": getattr(segment, "zip", ""), "country": "US"} for segment in top_segments]
+        data = [{"zip": segment.get("zip", ""), "country": "US"} for segment in top_segments]
         filename = f"facebook_audience_{run_id}.csv"
 
     elif format == "google":
         # Google Ads location targeting with bid modifiers
         data = [{
-            "zip": getattr(segment, "zip", ""),
+            "zip": segment.get("zip", ""),
             "country": "US",
-            "bid_modifier": round(1.0 + (float(getattr(segment, "match_score", 0.0)) * 0.25), 2)
+            "bid_modifier": round(1.0 + (float(segment.get("match_score", 0.0)) * 0.25), 2)
         } for segment in top_segments]
         filename = f"google_ads_{run_id}.csv"
 
     else:  # full report
         # Comprehensive analysis report
         data = [{
-            "zip": getattr(segment, "zip", ""),
-            "match_score": round(float(getattr(segment, "match_score", 0.0)), 3),
-            "cohort": getattr(segment, "cohort", ""),
-            "expected_bookings_p50": g(segment, "expected_bookings.p50", None),
-            "distance_miles": round(float(getattr(segment, "distance_miles", 0.0)), 1),
-            "competitors": getattr(segment, "competitors", 0),
-            "primary_reason": (getattr(segment, "why", ["Strong signal"]) or ["Strong signal"])[0],
-            "bid_modifier": round(1.0 + (float(getattr(segment, "match_score", 0.0)) * 0.25), 2)
+            "zip": segment.get("zip", ""),
+            "match_score": round(float(segment.get("match_score", 0.0)), 3),
+            "cohort": segment.get("cohort", ""),
+            "expected_bookings_p50": (segment.get("expected_bookings", {}) or {}).get("p50"),
+            "distance_miles": round(float(segment.get("distance_miles", 0.0)), 1),
+            "competitors": segment.get("competitors", 0),
+            "primary_reason": (segment.get("why", ["Strong signal"]) or ["Strong signal"])[0],
+            "bid_modifier": round(1.0 + (float(segment.get("match_score", 0.0)) * 0.25), 2)
         } for segment in top_segments]
         filename = f"audience_analysis_{run_id}.csv"
 
@@ -2231,6 +2231,88 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
         )
         print(f"[PROFILE] {dominant_profile['profile_summary']}")
 
+        # Calculate actual demographics from uploaded data
+        demographics = {
+            'avg_age': None,
+            'age_range': None,
+            'gender_split': None
+        }
+
+        procedure_col = None
+        for col in ['procedure', 'procedure_norm', 'treatment', 'service', 'treatments_received']:
+            if col in patients_df.columns:
+                procedure_col = col
+                break
+        
+        age_col = None
+        for col in patients_df.columns:
+            col_lower = col.lower()
+            if any(x in col_lower for x in ['age', 'dob', 'birth']):
+                age_col = col
+                break
+
+        if age_col:
+            try:
+                if 'dob' in age_col.lower() or 'birth' in age_col.lower():
+                    patients_df['calculated_age'] = pd.to_datetime('today').year - pd.to_datetime(patients_df[age_col], errors='coerce').dt.year
+                    age_col = 'calculated_age'
+                
+                valid_ages = patients_df[age_col].dropna()
+                valid_ages = valid_ages[(valid_ages >= 18) & (valid_ages <= 100)]
+                
+                if len(valid_ages) > 0:
+                    demographics['avg_age'] = int(valid_ages.mean())
+                    demographics['age_range'] = {
+                        'min': int(valid_ages.min()),
+                        'max': int(valid_ages.max()),
+                        '25th': int(valid_ages.quantile(0.25)),
+                        '75th': int(valid_ages.quantile(0.75))
+                    }
+            except Exception as e:
+                logger.warning(f"Could not calculate age: {e}")
+
+        gender_col = None
+        for col in patients_df.columns:
+            if col.lower() in ['gender', 'sex']:
+                gender_col = col
+                break
+
+        if gender_col:
+            try:
+                gender_counts = patients_df[gender_col].value_counts(normalize=True)
+                demographics['gender_split'] = {
+                    str(gender): round(float(pct) * 100, 1) 
+                    for gender, pct in gender_counts.items()
+                }
+            except Exception as e:
+                logger.warning(f"Could not calculate gender split: {e}")
+
+        actual_treatments = {}
+        if procedure_col:
+            try:
+                treatment_counts = patients_df[procedure_col].value_counts()
+                actual_treatments = {str(k): int(v) for k, v in treatment_counts.items()}
+            except Exception as e:
+                logger.warning(f"Could not calculate treatments: {e}")
+
+        actual_revenue_stats = {"total": 0, "mean": 0, "median": 0, "by_treatment": {}}
+        if "revenue" in patients_df.columns:
+            try:
+                actual_revenue_stats = {
+                    "total": float(patients_df['revenue'].sum()),
+                    "mean": float(patients_df['revenue'].mean()),
+                    "median": float(patients_df['revenue'].median())
+                }
+                
+                if procedure_col:
+                    by_treatment = patients_df.groupby(procedure_col)['revenue'].agg(['sum', 'mean', 'count'])
+                    actual_revenue_stats['by_treatment'] = {
+                        str(k): {'total': float(v['sum']), 'average': float(v['mean']), 'count': int(v['count'])}
+                        for k, v in by_treatment.iterrows()
+                    }
+            except Exception as e:
+                logger.warning(f"Could not calculate revenue stats: {e}")
+
         return {
             "headline_metrics": headline_metrics,
             "dominant_profile": dominant_profile,  # ← NEW: Add profile data
@@ -2238,7 +2320,10 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
             "map_points": [],
             "confidence_info": {"level": "early", "message": "Limited data confidence"},
             "patient_count": len(patients_df),
-            "actual_total_revenue": total_revenue 
+            "actual_total_revenue": total_revenue,
+            "demographics": demographics,
+            "actual_treatments": actual_treatments,
+            "actual_revenue_stats": actual_revenue_stats
         }
 
     except Exception as e:

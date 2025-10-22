@@ -217,12 +217,12 @@ export default function PatientInsights() {
 
   const selectedCount = Object.values(selectedZips).filter(Boolean).length;
 
-  // Use ACTUAL historical revenue from backend, not predictions
-  const totalRevenue = analysisData.actual_total_revenue || 0;
+// Use ACTUAL historical revenue from backend, not predictions
+const totalRevenue = analysisData.actual_total_revenue || 0;
 
-  const totalBookings = (top_segments || [])
-    .filter((s: any) => selectedZips[s.zip])
-    .reduce((sum: number, s: any) => sum + (s.expected_bookings || 0), 0);
+const totalBookings = (top_segments || [])
+  .filter((s: any) => selectedZips[s.zip])
+  .reduce((sum: number, s: any) => sum + (s.expected_bookings || 0), 0);
   
   const budgetPercentage = campaign_metrics?.budget_percentage || 0.20;
   const recommendedBudget = totalBookings > 0 ? Math.round((totalRevenue * budgetPercentage) / 100) * 100 : 0;
@@ -554,34 +554,34 @@ export default function PatientInsights() {
             </div>
           )}
         </div>
-
+        
         {/* WHAT YOU'RE COMMITTING TO */}
         <div className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm hover:shadow-md transition-shadow duration-200">
           <h2 className="text-lg font-semibold text-slate-900 mb-4">What You're Committing To</h2>
           
           <div className="grid grid-cols-3 gap-6 mb-6">
             <div className="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-lg border border-slate-200/50 hover:shadow-sm transition-shadow">
-              <div className="text-2xl font-bold text-slate-900 mb-1">{successRate}%</div>
-              <div className="text-xs text-slate-600 mb-1">Success Rate</div>
-              <div className="text-xs text-emerald-600 font-medium">
-                {successRate} out of 100 practices like yours get bookings
+              <div className="text-2xl font-bold text-slate-900 mb-1">
+                ${(recommendedBudget / 1000).toFixed(1)}K
+              </div>
+              <div className="text-xs text-slate-600 mb-1">Monthly Investment</div>
+              <div className="text-xs text-slate-600">
+                To reach {totalBookings} patients
               </div>
             </div>
 
             <div className="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-lg border border-slate-200/50 hover:shadow-sm transition-shadow">
-              <div className="text-2xl font-bold text-slate-900 mb-1">${costPerBooking}</div>
-              <div className="text-xs text-slate-600 mb-1">Cost to Acquire</div>
-              <div className="text-xs text-slate-600">
-                Per patient (you'll profit ${profitPerPatient.toLocaleString()})
+              <div className="text-2xl font-bold text-emerald-600 mb-1">
+                {totalBookings}
               </div>
+              <div className="text-xs text-slate-600 mb-1">Expected Bookings</div>
+              <div className="text-xs text-slate-600">Based on your patient data</div>
             </div>
 
             <div className="text-center p-4 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-lg border border-slate-200/50 hover:shadow-sm transition-shadow">
               <div className="text-2xl font-bold text-slate-900 mb-1">{timelineText}</div>
               <div className="text-xs text-slate-600 mb-1">Time to Results</div>
-              <div className="text-xs text-slate-600">
-                First bookings expected
-              </div>
+              <div className="text-xs text-slate-600">First bookings expected</div>
             </div>
           </div>
 
@@ -590,22 +590,30 @@ export default function PatientInsights() {
               <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition-colors">
                 <Check className="h-3 w-3 text-emerald-600" />
               </div>
-              <span className="text-sm text-slate-700"><strong>No contracts</strong> — cancel anytime if it's not working</span>
+              <span className="text-sm text-slate-700"><strong>Proven ROI</strong> — built from your actual patient data</span>
             </div>
             <div className="flex items-center gap-3 group">
               <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition-colors">
                 <Check className="h-3 w-3 text-emerald-600" />
               </div>
-              <span className="text-sm text-slate-700"><strong>Takes 15 minutes</strong> to review ads and launch</span>
+              <span className="text-sm text-slate-700"><strong>Smart targeting</strong> — ads only shown in your best neighborhoods</span>
             </div>
             <div className="flex items-center gap-3 group">
               <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition-colors">
                 <Check className="h-3 w-3 text-emerald-600" />
               </div>
-              <span className="text-sm text-slate-700"><strong>We'll guide you</strong> through setup with step-by-step instructions</span>
+              <span className="text-sm text-slate-700"><strong>Full control</strong> — pause or change campaigns anytime</span>
+            </div>
+            <div className="flex items-center gap-3 group">
+              <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 group-hover:bg-emerald-200 transition-colors">
+                <Check className="h-3 w-3 text-emerald-600" />
+              </div>
+              <span className="text-sm text-slate-700"><strong>Guided setup</strong> — step-by-step support included</span>
             </div>
           </div>
         </div>
+
+
 
         {/* CTA */}
         <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-lg shadow-slate-200/50">
@@ -627,7 +635,7 @@ export default function PatientInsights() {
           </button>
 
           <div className="text-center text-xs text-slate-500">
-            No credit card required • Takes 2 minutes • Get {totalVariations} ad variations
+            Takes 2 minutes • Get {totalVariations} ad variations
           </div>
         </div>
 
