@@ -1,122 +1,132 @@
-"use client";
+'use client';
 
-import React, { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-export default function Page() {
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+
+export default function HomePage() {
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
-  const [drag, setDrag] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
 
-  const validate = (f: File) => {
-    if (!/\.(csv|xlsx|xls)$/i.test(f.name)) return "Please upload a CSV or Excel file";
-    if (f.size > 10 * 1024 * 1024) return "File too large. Max 10MB";
-    return null;
-  };
-
-  const onPick = (f?: File) => {
+  const onPick = (f: File | undefined) => {
     if (!f) return;
-    const v = validate(f);
-    if (v) { setError(v); return; }
-    setError(null);
+    if (f.size > 10 * 1024 * 1024) {
+      setError('File must be less than 10MB');
+      return;
+    }
     setFile(f);
+    setError(null);
   };
 
-  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault(); e.stopPropagation();
-    setDrag(false);
-    onPick(e.dataTransfer.files?.[0]);
-  };
-
-  const parseCSV = (text: string) => {
-    const lines = text.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-    
-    return lines.slice(1).map(line => {
-      const values = line.split(',');
-      const row: any = {};
-      headers.forEach((header, i) => {
-        row[header] = values[i]?.trim();
-      });
-      return row;
-    });
+  const handleSample = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch('/sample-patients.csv');
+      const blob = await response.blob();
+      const sampleFile = new File([blob], 'sample-patients.csv', { type: 'text/csv' });
+      setFile(sampleFile);
+      
+      // Auto-analyze sample data
+      await uploadAndAnalyze(sampleFile);
+    } catch (e: any) {
+      setError(e.message || 'Failed to load sample data');
+      setLoading(false);
+    }
   };
 
   const handleAnalyze = async () => {
     if (!file) return;
     setLoading(true);
     setError(null);
-    
     try {
-      // Step 1: Upload dataset to backend
-      const formData = new FormData();
-      formData.append('patients', file);
-      formData.append('practice_zip', '19103');
-      formData.append('vertical', 'medspa');
-      
-      const datasetRes = await fetch('http://127.0.0.1:8000/api/v1/datasets', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!datasetRes.ok) throw new Error('Dataset upload failed');
-      const { dataset_id } = await datasetRes.json();
-      
-      // Step 2: Start analysis run
-      const runRes = await fetch('http://127.0.0.1:8000/api/v1/runs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dataset_id, focus: 'non_inv' }),
-      });
-      
-      if (!runRes.ok) throw new Error('Analysis failed to start');
-      const { run_id } = await runRes.json();
-      
-      // Step 3: Store run_id and navigate
-      sessionStorage.setItem('runId', run_id);
-      sessionStorage.setItem('datasetId', dataset_id);
-      router.push('/patient-insights');
-      
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to analyze data");
+      await uploadAndAnalyze(file);
+    } catch (e: any) {
+      setError(e.message || 'Analysis failed');
       setLoading(false);
     }
   };
 
-  const handleSample = () => {
-    sessionStorage.removeItem('patientData');
-    router.push('/patient-insights?source=sample');
+  const uploadAndAnalyze = async (fileToUpload: File) => {
+    try {
+      // Get practice info from localStorage
+      const practiceZip = localStorage.getItem('practiceZip');
+
+      if (!practiceZip) {
+        throw new Error('Please set your practice ZIP code in Settings first');
+      }
+
+      // Step 1: Upload dataset
+      const formData = new FormData();
+      formData.append('patients', fileToUpload);
+      formData.append('practice_zip', practiceZip);
+      formData.append('vertical', 'medspa');
+
+      const uploadResponse = await fetch(`${API_URL}/api/v1/datasets`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload dataset');
+      }
+
+      const { dataset_id } = await uploadResponse.json();
+      sessionStorage.setItem('datasetId', dataset_id);
+
+      // Step 2: Start analysis
+      const runResponse = await fetch(`${API_URL}/api/v1/runs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dataset_id: dataset_id,
+          focus: 'non_inv',
+        }),
+      });
+
+      if (!runResponse.ok) {
+        throw new Error('Failed to start analysis');
+      }
+
+      const { run_id } = await runResponse.json();
+      sessionStorage.setItem('runId', run_id);
+
+      // Navigate to results page
+      router.push('/patient-insights');
+    } catch (e: any) {
+      throw e;
+    }
   };
 
   return (
-    <div className="min-h-screen w-full bg-white antialiased">
-      {/* Main */}
+    <div className="min-h-screen bg-white">
       <main className="frame py-12 md:py-16 lg:py-20">
         {/* Hero */}
-        <section className="mb-16 text-center md:mb-20 lg:mb-24">
-          <h1 className="text-balance text-[32px] font-bold leading-[1.1] tracking-tight md:text-[48px] lg:text-[64px]">
+        <section className="mx-auto mb-8 max-w-4xl text-center md:mb-10 lg:mb-12">
+          <h1 className="mb-3 text-[28px] font-bold leading-[1.2] text-gray-900 md:mb-4 md:text-[36px] lg:text-[44px]">
             Know your best patients.
             <br />
-            <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
               Find more like them.
             </span>
           </h1>
-          <p className="mx-auto mt-4 max-w-3xl text-balance text-[16px] font-normal leading-[1.5] text-gray-600 md:mt-6 md:text-[18px] lg:text-[20px]">
+          <p className="mx-auto max-w-2xl text-[15px] font-normal leading-[1.5] text-gray-600 md:text-[17px] lg:text-[18px]">
             We show you WHO your VIPs are—not just where they live. Upload your patient list and we identify behavioral patterns and psychographic profiles, then show you how to find thousands more like them.
           </p>
         </section>
 
         {/* Upload */}
-        <section className="mx-auto mb-20 w-full max-w-5xl md:mb-24 lg:mb-32">
-          <div className="rounded-[20px] bg-gray-50 px-8 py-16 md:px-12 md:py-20 lg:px-16 lg:py-24">
+        <section className="mx-auto mb-12 w-full max-w-5xl md:mb-16 lg:mb-20">
+          <div className="rounded-[20px] bg-gray-50 px-8 py-10 md:px-12 md:py-12 lg:px-16 lg:py-14">
             <div className="mx-auto max-w-xl">
               {!file ? (
                 <div className="text-center">
-                  <div className="mx-auto mb-8 grid h-20 w-20 place-items-center rounded-full bg-violet-100">
-                    <svg className="h-8 w-8 text-violet-600" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <div className="mx-auto mb-6 grid h-16 w-16 place-items-center rounded-full bg-violet-100">
+                    <svg className="h-7 w-7 text-violet-600" viewBox="0 0 24 24" fill="none" aria-hidden>
                       <path d="M12 15V3M12 3L8 7M12 3L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       <path d="M2 17L2 19C2 20.1046 2.89543 21 4 21L20 21C21.1046 21 22 20.1046 22 19V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                     </svg>
@@ -130,8 +140,8 @@ export default function Page() {
                     onChange={(e) => onPick(e.target.files?.[0] ?? undefined)}
                   />
 
-                  <h3 className="mb-3 text-[20px] font-semibold leading-[1.3] text-gray-900 md:text-[22px] lg:text-[24px]">Drop your patient file</h3>
-                  <p className="mb-8 text-[14px] font-normal leading-[1.4] text-gray-500 lg:text-[16px]">CSV or Excel · Max 10MB</p>
+                  <h3 className="mb-2 text-[18px] font-semibold leading-[1.3] text-gray-900 md:text-[20px] lg:text-[22px]">Drop your patient file</h3>
+                  <p className="mb-6 text-[14px] font-normal leading-[1.4] text-gray-500 lg:text-[15px]">CSV or Excel · Max 10MB</p>
 
                   <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
                     <button
@@ -209,11 +219,11 @@ export default function Page() {
 
         {/* How it works */}
         <section className="mx-auto max-w-6xl">
-          <h2 className="mb-12 text-center text-[12px] font-semibold uppercase leading-[1.3] tracking-[0.15em] text-gray-500 md:mb-16 md:text-[13px] lg:text-[14px]">
+          <h2 className="mb-8 text-center text-[12px] font-semibold uppercase leading-[1.3] tracking-[0.15em] text-gray-500 md:mb-10 md:text-[13px] lg:text-[14px]">
             How it works
           </h2>
 
-          <div className="grid grid-cols-1 gap-12 md:grid-cols-3 md:gap-10 lg:gap-16">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-8 lg:gap-12">
             <Step n="1" t="Upload data" d="Import a CSV or Excel file containing your patient ZIP codes, visit history, and revenue data to get started." />
             <Step n="2" t="See your top patients" d="We identify spending habits, visit frequency, and lifestyle traits to create clear profiles of your best patients." />
             <Step n="3" t="Find more like them" d="We show you where these high-value profiles live, with growth opportunities and expected bookings." />

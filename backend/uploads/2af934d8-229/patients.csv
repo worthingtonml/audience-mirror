@@ -1,0 +1,251 @@
+patient_id,encounter_date,age,gender,zip_code,procedure,revenue,visit_number,days_since_last_visit,satisfaction_score,referral_source
+LA-10001,2024-03-15,28,female,90210,Botox,425,8,45,10,instagram
+LA-10002,2023-08-22,31,female,90211,CoolSculpting,2200,4,62,9,instagram
+LA-10003,2024-01-10,26,female,90212,Lip Filler,550,6,28,10,instagram
+LA-10004,2023-11-05,35,female,90213,Botox,425,12,34,9,instagram
+LA-10005,2024-05-20,29,female,90214,Brazilian Butt Lift,9500,1,0,10,friend
+LA-10006,2023-09-14,32,male,90215,Botox,425,5,51,8,instagram
+LA-10007,2024-02-28,27,female,90069,Cheek Filler,600,7,41,10,instagram
+LA-10008,2023-07-19,33,female,90046,Botox,425,10,39,9,instagram
+LA-10009,2024-04-11,25,female,90048,Lip Filler,550,5,33,10,instagram
+LA-10010,2023-10-25,30,female,90049,Laser Hair Removal,750,8,67,9,google
+LA-10011,2024-06-03,28,female,90066,Botox,425,9,29,10,instagram
+LA-10012,2023-12-08,34,female,90067,CoolSculpting,2200,2,89,8,event
+LA-10013,2024-03-22,26,female,90068,Microneedling,325,4,38,9,instagram
+LA-10014,2023-08-30,36,male,90077,Botox,425,6,78,8,google
+LA-10015,2024-01-17,29,female,90210,Lip Filler,550,7,0,10,instagram
+LA-10016,2023-11-12,31,female,90211,Botox,425,11,47,9,instagram
+LA-10017,2024-05-27,27,female,90212,Laser Hair Removal,750,5,52,9,instagram
+LA-10018,2023-09-21,33,female,90213,Cheek Filler,600,6,71,10,instagram
+LA-10019,2024-02-05,25,female,90214,Botox,425,4,0,9,instagram
+LA-10020,2023-07-26,32,female,90215,CoolSculpting,2200,1,0,8,friend
+LA-10021,2024-04-18,28,female,90069,Lip Filler,550,8,36,10,instagram
+LA-10022,2023-10-02,35,male,90046,Botox,425,7,63,8,google
+LA-10023,2024-06-10,26,female,90048,Laser Resurfacing,1100,3,29,10,instagram
+LA-10024,2023-12-15,30,female,90049,Botox,425,10,58,9,instagram
+LA-10025,2024-03-29,29,female,90066,Tummy Tuck,7800,1,0,10,friend
+LA-10026,2023-08-07,34,female,90067,Lip Filler,550,5,89,9,instagram
+LA-10027,2024-01-24,27,female,90068,Botox,425,6,0,10,instagram
+LA-10028,2023-11-19,31,female,90077,Cheek Filler,600,7,62,10,instagram
+LA-10029,2024-05-04,28,female,90210,Laser Hair Removal,750,6,41,9,instagram
+LA-10030,2023-09-28,33,female,90211,Botox,425,11,56,9,instagram
+LA-10031,2024-02-12,25,female,90212,Lip Filler,550,5,0,10,instagram
+LA-10032,2023-07-03,32,male,90213,Laser Hair Removal,750,3,124,7,google
+LA-10033,2024-04-25,29,female,90214,Botox,425,8,38,10,instagram
+LA-10034,2023-10-09,35,female,90215,CoolSculpting,2200,2,78,8,event
+LA-10035,2024-06-17,26,female,90069,Cheek Filler,600,4,31,10,instagram
+LA-10036,2023-12-22,30,female,90046,Botox,425,10,67,9,instagram
+LA-10037,2024-03-06,28,female,90048,Lip Filler,550,7,43,10,instagram
+LA-10038,2023-08-14,34,female,90049,Laser Resurfacing,1100,2,92,9,friend
+LA-10039,2024-01-31,27,female,90066,Botox,425,6,0,10,instagram
+LA-10040,2023-11-26,31,female,90067,Cheek Filler,600,6,59,10,instagram
+LA-10041,2024-05-11,29,female,90068,Lip Filler,550,8,34,10,instagram
+LA-10042,2023-09-05,36,male,90077,Laser Hair Removal,750,2,103,7,google
+LA-10043,2024-02-19,25,female,90210,Botox,425,5,0,10,instagram
+LA-10044,2023-07-10,32,female,90211,CoolSculpting,2200,1,0,8,friend
+LA-10045,2024-04-02,28,female,90212,Cheek Filler,600,5,47,10,instagram
+LA-10046,2023-10-16,33,female,90213,Botox,425,11,71,9,instagram
+LA-10047,2024-06-24,26,female,90214,Lip Filler,550,6,28,10,instagram
+LA-10048,2023-12-29,30,female,90215,Botox,425,10,62,9,instagram
+LA-10049,2024-03-13,29,female,90069,Laser Hair Removal,750,5,0,9,instagram
+LA-10050,2023-08-21,34,female,90046,Mommy Makeover,12500,1,0,10,friend
+LA-10051,2024-02-07,27,female,90048,Botox,425,7,52,10,instagram
+LA-10052,2023-11-03,31,female,90049,Lip Filler,550,8,78,10,instagram
+LA-10053,2024-05-18,28,female,90066,Cheek Filler,600,6,36,10,instagram
+LA-10054,2023-09-12,35,male,90067,Botox,425,6,89,8,google
+LA-10055,2024-02-26,26,female,90068,Lip Filler,550,5,0,10,instagram
+LA-10056,2023-07-17,32,female,90077,Botox,425,12,124,9,instagram
+LA-10057,2024-04-09,29,female,90210,Laser Hair Removal,750,6,41,9,instagram
+LA-10058,2023-10-23,33,female,90211,CoolSculpting,2200,2,92,8,event
+LA-10059,2024-06-01,25,female,90212,Botox,425,6,29,10,instagram
+LA-10060,2023-12-06,30,female,90213,Cheek Filler,600,7,103,10,instagram
+LA-10061,2024-03-20,28,female,90214,Lip Filler,550,8,43,10,instagram
+LA-10062,2023-08-28,34,male,90215,Laser Hair Removal,750,3,114,7,google
+LA-10063,2024-01-14,27,female,90069,Botox,425,6,0,10,instagram
+LA-10064,2023-11-10,31,female,90046,Lip Filler,550,9,67,10,instagram
+LA-10065,2024-05-25,29,female,90048,Cheek Filler,600,7,34,10,instagram
+LA-10066,2023-09-19,33,female,90049,Botox,425,11,78,9,instagram
+LA-10067,2024-02-13,26,female,90066,Lip Filler,550,5,0,10,instagram
+LA-10068,2023-07-24,32,female,90067,Laser Resurfacing,1100,2,138,9,friend
+LA-10069,2024-04-16,28,female,90068,Botox,425,8,38,10,instagram
+LA-10070,2023-10-30,35,female,90077,CoolSculpting,2200,1,0,8,event
+LA-10071,2024-06-08,27,female,90210,Cheek Filler,600,5,31,10,instagram
+LA-10072,2023-12-13,30,female,90211,Botox,425,10,71,9,instagram
+LA-10073,2024-03-27,29,female,90212,Lip Filler,550,7,0,10,instagram
+LA-10074,2023-08-04,34,male,90213,Laser Hair Removal,750,3,127,7,google
+LA-10075,2024-01-21,26,female,90214,Botox,425,6,52,10,instagram
+LA-10076,2023-11-17,31,female,90215,Cheek Filler,600,8,62,10,instagram
+LA-10077,2024-05-02,28,female,90069,Lip Filler,550,8,36,10,instagram
+LA-10078,2023-09-26,33,female,90046,Botox,425,11,89,9,instagram
+LA-10079,2024-02-20,25,female,90048,Laser Hair Removal,750,4,0,9,instagram
+LA-10080,2023-07-31,32,female,90049,CoolSculpting,2200,1,0,8,friend
+LA-10081,2024-04-23,29,female,90066,Botox,425,8,41,10,instagram
+LA-10082,2023-10-07,35,female,90067,Lip Filler,550,6,103,9,instagram
+LA-10083,2024-06-15,27,female,90068,Cheek Filler,600,6,29,10,instagram
+LA-10084,2023-12-20,30,female,90077,Botox,425,10,78,9,instagram
+LA-10085,2024-03-04,28,female,90210,Lip Filler,550,7,0,10,instagram
+LA-10086,2023-08-11,34,male,90211,Laser Hair Removal,750,3,119,7,google
+LA-10087,2024-01-28,26,female,90212,Botox,425,6,47,10,instagram
+LA-10088,2023-11-24,31,female,90213,Breast Augmentation,8500,1,0,10,friend
+LA-10089,2024-05-09,29,female,90214,Cheek Filler,600,7,34,10,instagram
+LA-10090,2023-09-03,33,female,90215,Botox,425,11,92,9,instagram
+LA-10091,2024-02-27,25,female,90069,Lip Filler,550,5,0,10,instagram
+LA-10092,2023-07-08,32,female,90046,Laser Resurfacing,1100,2,149,9,friend
+LA-10093,2024-04-30,28,female,90048,Botox,425,8,38,10,instagram
+LA-10094,2023-10-14,35,female,90049,CoolSculpting,2200,2,103,8,event
+LA-10095,2024-06-22,27,female,90066,Cheek Filler,600,5,28,10,instagram
+LA-10096,2023-12-27,30,male,90067,Laser Hair Removal,750,2,81,7,google
+LA-10097,2024-03-11,29,female,90068,Botox,425,7,0,10,instagram
+LA-10098,2023-08-18,34,female,90077,Lip Filler,550,7,135,10,instagram
+LA-10099,2024-02-04,26,female,90210,Cheek Filler,600,4,0,10,instagram
+LA-10100,2023-11-01,31,female,90211,Botox,425,10,89,9,instagram
+LA-10101,2024-05-16,28,female,90212,Lip Filler,550,8,36,10,instagram
+LA-10102,2023-09-10,33,female,90213,Laser Hair Removal,750,5,108,9,instagram
+LA-10103,2024-02-14,25,female,90214,Botox,425,5,0,10,instagram
+LA-10104,2023-07-15,32,female,90215,CoolSculpting,2200,1,0,8,friend
+LA-10105,2024-04-07,29,female,90069,Cheek Filler,600,6,43,10,instagram
+LA-10106,2023-10-21,35,female,90046,Botox,425,11,97,9,instagram
+LA-10107,2024-06-29,27,female,90048,Lip Filler,550,6,29,10,instagram
+LA-10108,2023-12-04,30,male,90049,Laser Hair Removal,750,2,92,7,google
+LA-10109,2024-03-18,28,female,90066,Botox,425,7,0,10,instagram
+LA-10110,2023-08-25,34,female,90067,Lip Filler,550,7,127,10,instagram
+LA-10111,2024-01-11,26,female,90068,Cheek Filler,600,4,0,10,instagram
+LA-10112,2023-11-08,31,female,90077,Botox,425,10,81,9,instagram
+LA-10113,2024-05-23,29,female,90210,Lip Filler,550,8,36,10,instagram
+LA-10114,2023-09-17,33,female,90211,CoolSculpting,2200,2,119,8,event
+LA-10115,2024-02-21,25,female,90212,Botox,425,5,0,10,instagram
+LA-10116,2023-07-22,32,female,90213,Laser Hair Removal,750,6,149,9,instagram
+LA-10117,2024-04-14,28,female,90214,Cheek Filler,600,6,41,10,instagram
+LA-10118,2023-10-28,35,female,90215,Botox,425,11,103,9,instagram
+LA-10119,2024-06-06,27,female,90069,Lip Filler,550,6,31,10,instagram
+LA-10120,2023-12-11,30,male,90046,Laser Hair Removal,750,2,97,7,google
+LA-10121,2024-03-25,29,female,90048,Botox,425,8,0,10,instagram
+LA-10122,2023-08-01,34,female,90049,Tummy Tuck,7800,1,0,10,friend
+LA-10123,2024-01-18,26,female,90066,Lip Filler,550,5,47,10,instagram
+LA-10124,2023-11-15,31,female,90067,Botox,425,10,78,9,instagram
+LA-10125,2024-05-30,28,female,90068,Cheek Filler,600,7,34,10,instagram
+LA-10126,2023-09-24,33,female,90077,Lip Filler,550,8,108,10,instagram
+LA-10127,2024-02-28,25,female,90210,Botox,425,6,0,10,instagram
+LA-10128,2023-07-29,32,male,90211,Laser Hair Removal,750,3,138,7,google
+LA-10129,2024-04-21,29,female,90212,Cheek Filler,600,6,41,10,instagram
+LA-10130,2023-10-05,35,female,90213,Botox,425,11,114,9,instagram
+LA-10131,2024-06-13,27,female,90214,Lip Filler,550,6,29,10,instagram
+LA-10132,2023-12-18,30,female,90215,Laser Resurfacing,1100,2,89,9,friend
+LA-10133,2024-03-02,28,female,90069,Botox,425,7,0,10,instagram
+LA-10134,2023-08-08,34,female,90046,Lip Filler,550,7,127,10,instagram
+LA-10135,2024-01-25,26,female,90048,Cheek Filler,600,4,0,10,instagram
+LA-10136,2023-11-22,31,female,90049,Botox,425,10,71,9,instagram
+LA-10137,2024-05-07,29,female,90066,CoolSculpting,2200,1,0,8,event
+LA-10138,2023-09-01,33,male,90067,Laser Hair Removal,750,3,124,7,google
+LA-10139,2024-02-08,25,female,90068,Botox,425,5,0,10,instagram
+LA-10140,2023-07-05,32,female,90077,Lip Filler,550,8,162,10,instagram
+LA-10141,2024-04-28,28,female,90210,Cheek Filler,600,6,38,10,instagram
+LA-10142,2023-10-12,35,female,90211,Botox,425,11,108,9,instagram
+LA-10143,2024-06-20,27,female,90212,Lip Filler,550,6,29,10,instagram
+LA-10144,2023-12-25,30,female,90213,Laser Hair Removal,750,4,78,9,instagram
+LA-10145,2024-03-09,29,female,90214,Botox,425,8,0,10,instagram
+LA-10146,2023-08-15,34,male,90215,Laser Hair Removal,750,3,119,7,google
+LA-10147,2024-01-02,26,female,90069,Lip Filler,550,5,52,10,instagram
+LA-10148,2023-11-29,31,female,90046,Botox,425,10,62,9,instagram
+LA-10149,2024-05-14,28,female,90048,Cheek Filler,600,7,36,10,instagram
+LA-10150,2023-09-08,33,female,90049,Lip Filler,550,8,114,10,instagram
+LA-10151,2024-02-15,25,female,90066,Botox,425,5,0,10,instagram
+LA-10152,2023-07-12,32,female,90067,CoolSculpting,2200,1,0,8,friend
+LA-10153,2024-04-05,29,female,90068,Cheek Filler,600,6,43,10,instagram
+LA-10154,2023-10-19,35,male,90077,Laser Hair Removal,750,3,103,7,google
+LA-10155,2024-06-27,27,female,90210,Botox,425,7,29,10,instagram
+LA-10156,2023-12-02,30,female,90211,Lip Filler,550,9,97,10,instagram
+LA-10157,2024-03-16,28,female,90212,Laser Hair Removal,750,5,0,9,instagram
+LA-10158,2023-08-22,34,female,90213,Botox,425,12,135,9,instagram
+LA-10159,2024-01-09,26,female,90214,Cheek Filler,600,4,0,10,instagram
+LA-10160,2023-11-06,31,female,90215,Lip Filler,550,9,81,10,instagram
+LA-10161,2024-05-21,29,female,90069,Botox,425,8,36,10,instagram
+LA-10162,2023-09-15,33,female,90046,Laser Resurfacing,1100,2,119,9,friend
+LA-10163,2024-02-22,25,female,90048,Lip Filler,550,5,0,10,instagram
+LA-10164,2023-07-19,32,male,90049,Laser Hair Removal,750,3,162,7,google
+LA-10165,2024-04-12,28,female,90066,Botox,425,8,41,10,instagram
+LA-10166,2023-10-26,35,female,90067,CoolSculpting,2200,2,108,8,event
+LA-10167,2024-06-04,27,female,90068,Cheek Filler,600,5,31,10,instagram
+LA-10168,2023-12-09,30,female,90077,Botox,425,10,92,9,instagram
+LA-10169,2024-03-23,29,female,90210,Lip Filler,550,8,0,10,instagram
+LA-10170,2023-08-29,34,female,90211,Cheek Filler,600,7,127,10,instagram
+LA-10171,2024-01-16,26,female,90212,Botox,425,6,47,10,instagram
+LA-10172,2023-11-13,31,male,90213,Laser Hair Removal,750,3,71,7,google
+LA-10173,2024-05-28,28,female,90214,Lip Filler,550,8,34,10,instagram
+LA-10174,2023-09-22,33,female,90215,Botox,425,11,114,9,instagram
+LA-10175,2024-02-29,25,female,90069,Cheek Filler,600,4,0,10,instagram
+LA-10176,2023-07-26,32,female,90046,Lip Filler,550,8,149,10,instagram
+LA-10177,2024-04-19,29,female,90048,Botox,425,8,38,10,instagram
+LA-10178,2023-10-02,35,female,90049,Brazilian Butt Lift,9500,1,0,10,friend
+LA-10179,2024-06-11,27,female,90066,Cheek Filler,600,5,29,10,instagram
+LA-10180,2023-12-16,30,male,90067,Laser Hair Removal,750,2,103,7,google
+LA-10181,2024-03-30,28,female,90068,Botox,425,7,0,10,instagram
+LA-10182,2023-08-05,34,female,90077,Lip Filler,550,7,162,10,instagram
+LA-10183,2024-01-23,26,female,90210,Laser Hair Removal,750,4,52,9,instagram
+LA-10184,2023-11-20,31,female,90211,Botox,425,10,62,9,instagram
+LA-10185,2024-05-05,29,female,90212,Cheek Filler,600,7,36,10,instagram
+LA-10186,2023-09-29,33,female,90213,Lip Filler,550,8,119,10,instagram
+LA-10187,2024-02-16,25,female,90214,Botox,425,5,0,10,instagram
+LA-10188,2023-07-02,32,female,90215,CoolSculpting,2200,1,0,8,friend
+LA-10189,2024-04-26,28,female,90069,Cheek Filler,600,6,43,10,instagram
+LA-10190,2023-10-09,35,male,90046,Laser Hair Removal,750,3,135,7,google
+LA-10191,2024-06-18,27,female,90048,Botox,425,7,29,10,instagram
+LA-10192,2023-12-23,30,female,90049,Lip Filler,550,9,89,10,instagram
+LA-10193,2024-03-07,29,female,90066,Laser Hair Removal,750,5,0,9,instagram
+LA-10194,2023-08-12,34,female,90067,Botox,425,12,127,9,instagram
+LA-10195,2024-01-30,26,female,90068,Cheek Filler,600,4,0,10,instagram
+LA-10196,2023-11-27,31,female,90077,Lip Filler,550,9,71,10,instagram
+LA-10197,2024-05-12,28,female,90210,Botox,425,8,36,10,instagram
+LA-10198,2023-09-06,33,male,90211,Laser Hair Removal,750,3,119,7,google
+LA-10199,2024-02-23,25,female,90212,Lip Filler,550,5,0,10,instagram
+LA-10200,2023-07-16,32,female,90213,Laser Resurfacing,1100,2,162,9,friend
+LA-10201,2024-04-03,29,female,90214,Botox,425,8,41,10,instagram
+LA-10202,2023-10-13,35,female,90215,Cheek Filler,600,6,108,10,instagram
+LA-10203,2024-06-25,27,female,90069,Lip Filler,550,6,29,10,instagram
+LA-10204,2023-12-30,30,female,90046,Botox,425,10,78,9,instagram
+LA-10205,2024-03-14,28,female,90048,Laser Hair Removal,750,5,0,9,instagram
+LA-10206,2023-08-19,34,male,90049,Botox,425,6,135,8,google
+LA-10207,2024-02-01,26,female,90066,Cheek Filler,600,4,0,10,instagram
+LA-10208,2023-11-04,31,female,90067,Lip Filler,550,9,89,10,instagram
+LA-10209,2024-05-19,29,female,90068,Botox,425,8,36,10,instagram
+LA-10210,2023-09-13,33,female,90077,CoolSculpting,2200,2,119,8,event
+LA-10211,2024-02-09,25,female,90210,Lip Filler,550,5,0,10,instagram
+LA-10212,2023-07-23,32,female,90211,Botox,425,12,149,9,instagram
+LA-10213,2024-04-10,28,female,90212,Cheek Filler,600,6,41,10,instagram
+LA-10214,2023-10-20,35,male,90213,Laser Hair Removal,750,3,103,7,google
+LA-10215,2024-06-02,27,female,90214,Botox,425,7,31,10,instagram
+LA-10216,2023-12-07,30,female,90215,Lip Filler,550,9,97,10,instagram
+LA-10217,2024-03-21,29,female,90069,Mommy Makeover,12500,1,0,10,friend
+LA-10218,2023-08-26,34,female,90046,Botox,425,11,127,9,instagram
+LA-10219,2024-01-12,26,female,90048,Cheek Filler,600,4,0,10,instagram
+LA-10220,2023-11-11,31,female,90049,Lip Filler,550,9,71,10,instagram
+LA-10221,2024-05-26,28,female,90066,Botox,425,8,36,10,instagram
+LA-10222,2023-09-20,33,female,90067,Laser Hair Removal,750,5,119,9,instagram
+LA-10223,2024-02-17,25,female,90068,Lip Filler,550,5,0,10,instagram
+LA-10224,2023-07-30,32,male,90077,Laser Hair Removal,750,3,138,7,google
+LA-10225,2024-04-17,29,female,90210,Botox,425,8,41,10,instagram
+LA-10226,2023-10-27,35,female,90211,Cheek Filler,600,6,108,10,instagram
+LA-10227,2024-06-09,27,female,90212,Lip Filler,550,6,29,10,instagram
+LA-10228,2023-12-14,30,female,90213,Botox,425,10,89,9,instagram
+LA-10229,2024-03-28,28,female,90214,Laser Resurfacing,1100,2,0,9,friend
+LA-10230,2023-08-02,34,female,90215,Lip Filler,550,7,127,10,instagram
+LA-10231,2024-01-19,26,female,90069,Botox,425,6,47,10,instagram
+LA-10232,2023-11-18,31,male,90046,Laser Hair Removal,750,3,62,7,google
+LA-10233,2024-05-03,29,female,90048,Cheek Filler,600,7,36,10,instagram
+LA-10234,2023-09-27,33,female,90049,Botox,425,11,114,9,instagram
+LA-10235,2024-02-24,25,female,90066,Lip Filler,550,5,0,10,instagram
+LA-10236,2023-07-09,32,female,90067,CoolSculpting,2200,1,0,8,friend
+LA-10237,2024-04-24,28,female,90068,Botox,425,8,38,10,instagram
+LA-10238,2023-10-04,35,female,90077,Cheek Filler,600,6,135,10,instagram
+LA-10239,2024-06-16,27,female,90210,Lip Filler,550,6,29,10,instagram
+LA-10240,2023-12-21,30,female,90211,Botox,425,10,78,9,instagram
+LA-10241,2024-03-05,29,female,90212,Laser Hair Removal,750,5,0,9,instagram
+LA-10242,2023-08-09,34,male,90213,Laser Hair Removal,750,3,119,7,google
+LA-10243,2024-01-26,26,female,90214,Cheek Filler,600,4,0,10,instagram
+LA-10244,2023-11-25,31,female,90215,Lip Filler,550,9,62,10,instagram
+LA-10245,2024-05-10,28,female,90069,Botox,425,8,36,10,instagram
+LA-10246,2023-09-04,33,female,90046,Laser Resurfacing,1100,2,119,9,friend
+LA-10247,2024-02-18,25,female,90048,Lip Filler,550,5,0,10,instagram
+LA-10248,2023-07-06,32,female,90049,Botox,425,12,162,9,instagram
+LA-10249,2024-04-13,29,female,90066,Cheek Filler,600,6,41,10,instagram
+LA-10250,2023-10-11,35,male,90067,Laser Hair Removal,750,3,103,7,google

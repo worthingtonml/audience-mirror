@@ -1,0 +1,251 @@
+record_id,encounter_date,age,gender,city,insurance_type,chief_complaint,diagnosis_code,procedure_code,procedure_description,medication_given,allergies,provider_type,result_outcome,satisfaction_score,follow_up_recommended,payment_method,referral_source,days_since_last_visit
+REC-10001,2024-03-15,42,female,Austin,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,google,87
+REC-10002,2023-08-22,35,female,Nashville,commercial,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,HSA,friend,145
+REC-10003,2024-01-10,28,female,Denver,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,latex,NP,improved,8,yes,financing,instagram,new
+REC-10004,2023-11-05,51,female,Portland,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,9,no,card,neighborhood ad,62
+REC-10005,2024-05-20,39,female,Charlotte,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,8,yes,cash,google,234
+REC-10006,2023-09-14,45,male,Raleigh,medicare,Skin Texture,L98.9,15780,Chemical peel,none,,PA,stable,7,yes,card,walk-in,419
+REC-10007,2024-02-28,33,female,Indianapolis,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,card,friend,98
+REC-10008,2023-07-19,47,female,Columbus,commercial,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,HSA,google,176
+REC-10009,2024-04-11,29,female,San Antonio,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,lidocaine,MD,improved,9,yes,financing,instagram,new
+REC-10010,2023-10-25,38,female,Austin,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,8,yes,card,google,189
+REC-10011,2024-06-03,54,female,Nashville,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,card,neighborhood ad,45
+REC-10012,2023-12-08,41,female,Denver,none,Body Contour,E66.9,15830,CoolSculpting,none,none,NP,stable,7,yes,financing,event,312
+REC-10013,2024-03-22,36,female,Portland,none,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,9,no,card,google,124
+REC-10014,2023-08-30,49,male,Charlotte,medicare,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,card,walk-in,287
+REC-10015,2024-01-17,31,female,Raleigh,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,9,yes,cash,friend,new
+REC-10016,2023-11-12,44,female,Indianapolis,commercial,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,,MD,improved,10,no,HSA,google,67
+REC-10017,2024-05-27,37,female,Columbus,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,8,yes,card,instagram,156
+REC-10018,2023-09-21,52,female,San Antonio,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,9,no,card,neighborhood ad,234
+REC-10019,2024-02-05,28,female,Austin,none,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,latex,Esthetician,improved,8,yes,financing,google,new
+REC-10020,2023-07-26,46,female,Nashville,medicare,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,PA,improved,7,yes,card,walk-in,401
+REC-10021,2024-04-18,34,female,Denver,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,card,friend,89
+REC-10022,2023-10-02,48,male,Portland,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,9,no,HSA,google,198
+REC-10023,2024-06-10,40,female,Charlotte,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,card,instagram,34
+REC-10024,2023-12-15,35,female,Raleigh,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,,Esthetician,improved,8,yes,cash,google,278
+REC-10025,2024-03-29,53,female,Indianapolis,commercial,Body Contour,E66.9,15830,CoolSculpting,none,none,NP,stable,6,yes,financing,event,112
+REC-10026,2023-08-07,39,female,Columbus,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,neighborhood ad,298
+REC-10027,2024-01-24,30,female,San Antonio,none,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,8,no,card,google,new
+REC-10028,2023-11-19,45,female,Austin,medicare,Volume Loss,L90.8,15777,Dermal filler injection,none,none,MD,improved,10,no,HSA,friend,189
+REC-10029,2024-05-04,32,female,Nashville,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,lidocaine,Esthetician,improved,9,yes,card,instagram,67
+REC-10030,2023-09-28,50,female,Denver,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,card,google,223
+REC-10031,2024-02-12,27,female,Portland,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,financing,friend,new
+REC-10032,2023-07-03,43,male,Charlotte,commercial,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,Esthetician,stable,7,yes,card,walk-in,445
+REC-10033,2024-04-25,38,female,Raleigh,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,,MD,improved,10,no,card,google,98
+REC-10034,2023-10-09,47,female,Indianapolis,medicare,Hair Removal,L68.0,17380,Laser Hair Removal,none,none,PA,improved,8,yes,HSA,neighborhood ad,267
+REC-10035,2024-06-17,36,female,Columbus,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,instagram,45
+REC-10036,2023-12-22,41,female,San Antonio,commercial,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,latex,MD,improved,9,yes,financing,event,234
+REC-10037,2024-03-06,33,female,Austin,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,8,yes,cash,google,145
+REC-10038,2023-08-14,52,female,Nashville,commercial,Body Contour,E66.9,15830,CoolSculpting,none,none,NP,stable,7,yes,card,friend,312
+REC-10039,2024-01-31,29,female,Denver,none,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,8,no,card,google,new
+REC-10040,2023-11-26,46,female,Portland,medicare,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,9,no,HSA,walk-in,178
+REC-10041,2024-05-11,35,female,Charlotte,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,,MD,improved,10,no,card,instagram,89
+REC-10042,2023-09-05,49,male,Raleigh,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,7,yes,card,neighborhood ad,401
+REC-10043,2024-02-19,31,female,Indianapolis,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,financing,friend,new
+REC-10044,2023-07-10,44,female,Columbus,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,card,google,478
+REC-10045,2024-04-02,37,female,San Antonio,none,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,Esthetician,improved,8,yes,card,instagram,124
+REC-10046,2023-10-16,51,female,Austin,medicare,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,HSA,google,289
+REC-10047,2024-06-24,28,female,Nashville,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,lidocaine,PA,improved,9,yes,cash,friend,34
+REC-10048,2023-12-29,42,female,Denver,commercial,Wrinkles,L57.4,64612,Botox injection,none,,RN,improved,9,no,card,neighborhood ad,198
+REC-10049,2024-03-13,34,female,Portland,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,financing,event,new
+REC-10050,2023-08-21,48,female,Charlotte,commercial,Body Contour,E66.9,15830,CoolSculpting,none,none,NP,stable,6,yes,card,google,367
+REC-10051,2024-02-07,39,female,Raleigh,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,8,yes,card,instagram,156
+REC-10052,2023-11-03,53,female,Indianapolis,medicare,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,HSA,walk-in,245
+REC-10053,2024-05-18,32,female,Columbus,none,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,9,no,card,google,78
+REC-10054,2023-09-12,45,male,San Antonio,commercial,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,,MD,improved,10,no,card,friend,334
+REC-10055,2024-02-26,30,female,Austin,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,latex,Esthetician,improved,9,yes,financing,instagram,new
+REC-10056,2023-07-17,47,female,Nashville,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,card,neighborhood ad,456
+REC-10057,2024-04-09,36,female,Denver,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,card,google,112
+REC-10058,2023-10-23,50,female,Portland,medicare,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,Esthetician,stable,7,yes,HSA,event,278
+REC-10059,2024-06-01,27,female,Charlotte,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,cash,friend,45
+REC-10060,2023-12-06,43,female,Raleigh,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,none,none,PA,improved,8,yes,card,google,312
+REC-10061,2024-03-20,38,female,Indianapolis,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,,RN,improved,9,no,card,instagram,134
+REC-10062,2023-08-28,46,male,Columbus,commercial,Body Contour,E66.9,15830,CoolSculpting,none,none,NP,stable,7,yes,financing,walk-in,389
+REC-10063,2024-01-14,33,female,San Antonio,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,card,neighborhood ad,new
+REC-10064,2023-11-10,52,female,Austin,medicare,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,HSA,google,234
+REC-10065,2024-05-25,29,female,Nashville,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,lidocaine,Esthetician,improved,9,yes,card,friend,89
+REC-10066,2023-09-19,41,female,Denver,commercial,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,8,no,card,google,356
+REC-10067,2024-02-13,35,female,Portland,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,card,instagram,new
+REC-10068,2023-07-24,49,female,Charlotte,commercial,Wrinkles,L57.4,64612,Botox injection,none,,RN,improved,9,no,HSA,event,445
+REC-10069,2024-04-16,31,female,Raleigh,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,8,yes,financing,google,98
+REC-10070,2023-10-30,44,female,Indianapolis,medicare,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,latex,NP,improved,9,yes,card,friend,267
+REC-10071,2024-06-08,37,female,Columbus,none,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,9,no,card,neighborhood ad,56
+REC-10072,2023-12-13,51,female,San Antonio,commercial,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,6,yes,card,walk-in,289
+REC-10073,2024-03-27,28,female,Austin,none,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,Esthetician,improved,8,yes,cash,instagram,new
+REC-10074,2023-08-04,42,male,Nashville,commercial,Volume Loss,L90.8,15777,Dermal filler injection,none,none,MD,improved,10,no,HSA,google,423
+REC-10075,2024-01-21,34,female,Denver,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,,PA,improved,9,yes,card,friend,167
+REC-10076,2023-11-17,48,female,Portland,medicare,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,8,no,card,google,223
+REC-10077,2024-05-02,39,female,Charlotte,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,financing,instagram,78
+REC-10078,2023-09-26,53,female,Raleigh,commercial,Skin Texture,L98.9,15788,IPL photofacial,none,none,PA,improved,8,no,card,event,345
+REC-10079,2024-02-20,32,female,Indianapolis,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,card,google,new
+REC-10080,2023-07-31,45,female,Columbus,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,lidocaine,Esthetician,improved,8,yes,HSA,neighborhood ad,467
+REC-10081,2024-04-23,30,female,San Antonio,none,Wrinkles,L57.4,64612,Botox injection,none,,RN,improved,9,no,cash,friend,112
+REC-10082,2023-10-07,47,female,Austin,medicare,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,7,yes,card,walk-in,301
+REC-10083,2024-06-15,36,female,Nashville,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,card,instagram,45
+REC-10084,2023-12-20,50,female,Denver,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,card,google,267
+REC-10085,2024-03-04,27,female,Portland,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,9,yes,financing,friend,new
+REC-10086,2023-08-11,43,male,Charlotte,commercial,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,latex,PA,stable,7,yes,HSA,event,401
+REC-10087,2024-01-28,38,female,Raleigh,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,card,google,156
+REC-10088,2023-11-24,46,female,Indianapolis,medicare,Wrinkles,L57.4,64612,Botox injection,none,,RN,improved,9,no,card,neighborhood ad,198
+REC-10089,2024-05-09,33,female,Columbus,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,card,instagram,89
+REC-10090,2023-09-03,52,female,San Antonio,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,8,yes,card,friend,378
+REC-10091,2024-02-27,29,female,Austin,none,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,8,no,financing,google,new
+REC-10092,2023-07-08,41,female,Nashville,commercial,Volume Loss,L90.8,15777,Dermal filler injection,none,none,MD,improved,10,no,HSA,event,489
+REC-10093,2024-04-30,35,female,Denver,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,neighborhood ad,98
+REC-10094,2023-10-14,49,female,Portland,medicare,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,,NP,stable,6,yes,card,walk-in,312
+REC-10095,2024-06-22,31,female,Charlotte,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,lidocaine,Esthetician,improved,9,yes,cash,instagram,34
+REC-10096,2023-12-27,44,male,Raleigh,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,card,google,245
+REC-10097,2024-03-11,37,female,Indianapolis,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,card,friend,new
+REC-10098,2023-08-18,51,female,Columbus,commercial,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,Esthetician,improved,8,yes,HSA,event,445
+REC-10099,2024-02-04,28,female,San Antonio,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,financing,google,new
+REC-10100,2023-11-01,42,female,Austin,medicare,Hair Removal,L68.0,17380,Laser Hair Removal,none,,PA,improved,8,yes,card,neighborhood ad,278
+REC-10101,2024-05-16,34,female,Nashville,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,instagram,78
+REC-10102,2023-09-10,48,female,Denver,commercial,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,latex,NP,stable,7,yes,card,walk-in,367
+REC-10103,2024-02-14,39,female,Portland,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,card,friend,new
+REC-10104,2023-07-15,53,female,Charlotte,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,HSA,google,501
+REC-10105,2024-04-07,32,female,Raleigh,none,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,,PA,improved,8,no,financing,event,124
+REC-10106,2023-10-21,45,female,Indianapolis,medicare,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,8,yes,card,google,289
+REC-10107,2024-06-29,30,female,Columbus,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,cash,neighborhood ad,23
+REC-10108,2023-12-04,47,male,San Antonio,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,9,no,card,instagram,334
+REC-10109,2024-03-18,36,female,Austin,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,lidocaine,NP,improved,9,yes,card,friend,new
+REC-10110,2023-08-25,50,female,Nashville,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,8,yes,HSA,event,423
+REC-10111,2024-01-11,27,female,Denver,none,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,PA,improved,8,yes,financing,google,new
+REC-10112,2023-11-08,43,female,Portland,medicare,Volume Loss,L90.8,15777,Dermal filler injection,none,,MD,improved,10,no,card,walk-in,256
+REC-10113,2024-05-23,38,female,Charlotte,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,neighborhood ad,89
+REC-10114,2023-09-17,46,female,Raleigh,commercial,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,6,yes,card,instagram,356
+REC-10115,2024-02-21,33,female,Indianapolis,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,9,yes,cash,friend,new
+REC-10116,2023-07-22,52,female,Columbus,commercial,Wrinkles,L57.4,64612,Botox injection,none,latex,RN,improved,8,no,HSA,google,478
+REC-10117,2024-04-14,29,female,San Antonio,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,card,event,112
+REC-10118,2023-10-28,41,female,Austin,medicare,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,8,no,card,google,289
+REC-10119,2024-06-06,35,female,Nashville,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,,MD,improved,10,no,financing,neighborhood ad,56
+REC-10120,2023-12-11,49,male,Denver,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,none,none,Esthetician,improved,7,yes,card,walk-in,301
+REC-10121,2024-03-25,31,female,Portland,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,instagram,new
+REC-10122,2023-08-01,44,female,Charlotte,commercial,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,7,yes,HSA,friend,445
+REC-10123,2024-01-18,37,female,Raleigh,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,card,google,new
+REC-10124,2023-11-15,51,female,Indianapolis,medicare,Wrinkles,L57.4,64612,Botox injection,none,lidocaine,RN,improved,8,no,card,event,234
+REC-10125,2024-05-30,28,female,Columbus,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,9,yes,financing,neighborhood ad,67
+REC-10126,2023-09-24,42,female,San Antonio,commercial,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,,PA,improved,8,yes,card,google,367
+REC-10127,2024-02-28,34,female,Austin,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,cash,instagram,new
+REC-10128,2023-07-29,48,male,Nashville,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,9,no,HSA,friend,489
+REC-10129,2024-04-21,39,female,Denver,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,6,yes,card,walk-in,112
+REC-10130,2023-10-05,53,female,Portland,medicare,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,latex,Esthetician,improved,8,yes,card,event,312
+REC-10131,2024-06-13,32,female,Charlotte,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,google,45
+REC-10132,2023-12-18,45,female,Raleigh,commercial,Acne Scars,L90.5,15786,Laser resurfacing,none,,MD,improved,9,yes,financing,neighborhood ad,256
+REC-10133,2024-03-02,30,female,Indianapolis,none,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,8,no,card,instagram,new
+REC-10134,2023-08-08,47,female,Columbus,commercial,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,HSA,friend,445
+REC-10135,2024-01-25,36,female,San Antonio,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,9,yes,cash,google,new
+REC-10136,2023-11-22,50,female,Austin,medicare,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,card,walk-in,198
+REC-10137,2024-05-07,27,female,Nashville,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,lidocaine,NP,stable,7,yes,card,event,89
+REC-10138,2023-09-01,43,male,Denver,commercial,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,financing,neighborhood ad,389
+REC-10139,2024-02-08,38,female,Portland,none,Wrinkles,L57.4,64612,Botox injection,none,,RN,improved,9,no,card,instagram,new
+REC-10140,2023-07-05,46,female,Charlotte,commercial,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,Esthetician,improved,8,yes,HSA,google,512
+REC-10141,2024-04-28,33,female,Raleigh,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,card,friend,98
+REC-10142,2023-10-12,52,female,Indianapolis,medicare,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,PA,improved,8,yes,card,event,289
+REC-10143,2024-06-20,29,female,Columbus,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,latex,RN,improved,9,no,financing,neighborhood ad,34
+REC-10144,2023-12-25,41,female,San Antonio,commercial,Body Contour,E66.9,15830,CoolSculpting,none,none,NP,stable,6,yes,card,walk-in,223
+REC-10145,2024-03-09,35,female,Austin,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,,MD,improved,9,yes,card,instagram,new
+REC-10146,2023-08-15,49,male,Nashville,commercial,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,8,no,HSA,google,423
+REC-10147,2024-01-02,31,female,Denver,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,9,yes,cash,friend,new
+REC-10148,2023-11-29,44,female,Portland,medicare,Skin Texture,L98.9,15788,IPL photofacial,none,none,PA,improved,8,no,card,event,189
+REC-10149,2024-05-14,37,female,Charlotte,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,card,google,78
+REC-10150,2023-09-08,51,female,Raleigh,commercial,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,lidocaine,RN,improved,9,no,card,neighborhood ad,378
+REC-10151,2024-02-15,28,female,Indianapolis,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,7,yes,financing,walk-in,new
+REC-10152,2023-07-12,42,female,Columbus,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,none,,Esthetician,improved,8,yes,HSA,instagram,501
+REC-10153,2024-04-05,34,female,San Antonio,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,card,friend,124
+REC-10154,2023-10-19,48,male,Austin,medicare,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,8,no,card,google,301
+REC-10155,2024-06-27,39,female,Nashville,none,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,Esthetician,improved,8,yes,cash,event,23
+REC-10156,2023-12-02,53,female,Denver,commercial,Volume Loss,L90.8,15777,Dermal filler injection,none,latex,MD,improved,10,no,card,neighborhood ad,334
+REC-10157,2024-03-16,32,female,Portland,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,PA,improved,9,yes,card,instagram,new
+REC-10158,2023-08-22,45,female,Charlotte,commercial,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,HSA,friend,445
+REC-10159,2024-01-09,30,female,Raleigh,none,Body Contour,E66.9,15830,CoolSculpting,none,,NP,not improved,5,yes,financing,walk-in,new
+REC-10160,2023-11-06,47,female,Indianapolis,medicare,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,card,google,267
+REC-10161,2024-05-21,36,female,Columbus,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,event,89
+REC-10162,2023-09-15,50,female,San Antonio,commercial,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,lidocaine,PA,improved,8,no,HSA,neighborhood ad,367
+REC-10163,2024-02-22,27,female,Austin,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,cash,instagram,new
+REC-10164,2023-07-19,43,male,Nashville,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,none,none,Esthetician,improved,7,yes,card,friend,489
+REC-10165,2024-04-12,38,female,Denver,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,,RN,improved,9,no,card,google,112
+REC-10166,2023-10-26,46,female,Portland,medicare,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,6,yes,financing,walk-in,289
+REC-10167,2024-06-04,33,female,Charlotte,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,card,event,56
+REC-10168,2023-12-09,52,female,Raleigh,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,HSA,neighborhood ad,312
+REC-10169,2024-03-23,29,female,Indianapolis,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,latex,Esthetician,improved,9,yes,cash,instagram,new
+REC-10170,2023-08-29,41,female,Columbus,commercial,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,PA,improved,8,yes,card,google,423
+REC-10171,2024-01-16,35,female,San Antonio,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,,MD,improved,10,no,card,friend,new
+REC-10172,2023-11-13,49,male,Austin,medicare,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,card,walk-in,234
+REC-10173,2024-05-28,31,female,Nashville,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,not improved,4,yes,financing,event,67
+REC-10174,2023-09-22,44,female,Denver,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,8,yes,HSA,neighborhood ad,367
+REC-10175,2024-02-29,37,female,Portland,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,card,instagram,new
+REC-10176,2023-07-26,51,female,Charlotte,commercial,Wrinkles,L57.4,64612,Botox injection,none,lidocaine,RN,improved,9,no,card,google,489
+REC-10177,2024-04-19,28,female,Raleigh,none,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,8,no,cash,friend,112
+REC-10178,2023-10-02,42,female,Indianapolis,medicare,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,,MD,improved,10,no,card,event,334
+REC-10179,2024-06-11,34,female,Columbus,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,9,yes,card,neighborhood ad,45
+REC-10180,2023-12-16,48,male,San Antonio,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,8,no,HSA,walk-in,267
+REC-10181,2024-03-30,39,female,Austin,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,latex,NP,stable,7,yes,financing,instagram,new
+REC-10182,2023-08-05,53,female,Nashville,commercial,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,card,google,445
+REC-10183,2024-01-23,32,female,Denver,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,friend,new
+REC-10184,2023-11-20,45,female,Portland,medicare,Skin Texture,L98.9,15780,Chemical peel,none,,Esthetician,improved,8,yes,HSA,event,198
+REC-10185,2024-05-05,30,female,Charlotte,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,cash,neighborhood ad,89
+REC-10186,2023-09-29,47,female,Raleigh,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,PA,improved,8,yes,card,walk-in,356
+REC-10187,2024-02-16,36,female,Indianapolis,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,instagram,new
+REC-10188,2023-07-02,50,female,Columbus,commercial,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,6,yes,financing,friend,512
+REC-10189,2024-04-26,27,female,San Antonio,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,lidocaine,MD,improved,9,yes,card,google,98
+REC-10190,2023-10-09,43,male,Austin,medicare,Wrinkles,L57.4,64612,Botox injection,none,,RN,improved,8,no,HSA,event,312
+REC-10191,2024-06-18,38,female,Nashville,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,Esthetician,improved,9,yes,cash,neighborhood ad,34
+REC-10192,2023-12-23,46,female,Denver,commercial,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,8,no,card,walk-in,223
+REC-10193,2024-03-07,33,female,Portland,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,card,instagram,new
+REC-10194,2023-08-12,52,female,Charlotte,commercial,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,9,no,card,friend,445
+REC-10195,2024-01-30,29,female,Raleigh,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,latex,NP,not improved,5,yes,financing,google,new
+REC-10196,2023-11-27,41,female,Indianapolis,medicare,Hair Removal,L68.0,17380,Laser Hair Removal,none,none,Esthetician,improved,8,yes,HSA,event,189
+REC-10197,2024-05-12,35,female,Columbus,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,,NP,improved,9,yes,card,neighborhood ad,78
+REC-10198,2023-09-06,49,male,San Antonio,commercial,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,8,no,card,walk-in,401
+REC-10199,2024-02-23,31,female,Austin,none,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,Esthetician,improved,8,yes,cash,instagram,new
+REC-10200,2023-07-16,44,female,Nashville,commercial,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,HSA,friend,501
+REC-10201,2024-04-03,37,female,Denver,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,PA,improved,9,yes,card,google,124
+REC-10202,2023-10-13,51,female,Portland,medicare,Wrinkles,L57.4,64612,Botox injection,none,lidocaine,RN,improved,8,no,card,event,289
+REC-10203,2024-06-25,28,female,Charlotte,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,7,yes,financing,neighborhood ad,23
+REC-10204,2023-12-30,42,female,Raleigh,commercial,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,,MD,improved,9,yes,card,walk-in,198
+REC-10205,2024-03-14,34,female,Indianapolis,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,cash,instagram,new
+REC-10206,2023-08-19,48,male,Columbus,commercial,Skin Texture,L98.9,15788,IPL photofacial,none,none,PA,improved,8,no,HSA,friend,445
+REC-10207,2024-02-01,39,female,San Antonio,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,card,google,new
+REC-10208,2023-11-04,53,female,Austin,medicare,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,latex,Esthetician,improved,8,yes,card,event,278
+REC-10209,2024-05-19,32,female,Nashville,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,financing,neighborhood ad,78
+REC-10210,2023-09-13,45,female,Denver,commercial,Body Contour,E66.9,15830,CoolSculpting,none,,NP,stable,6,yes,card,walk-in,367
+REC-10211,2024-02-09,30,female,Portland,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,cash,instagram,new
+REC-10212,2023-07-23,47,female,Charlotte,commercial,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,8,no,HSA,friend,489
+REC-10213,2024-04-10,36,female,Raleigh,none,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,Esthetician,improved,8,yes,card,google,112
+REC-10214,2023-10-20,50,male,Indianapolis,medicare,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,card,event,289
+REC-10215,2024-06-02,27,female,Columbus,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,lidocaine,PA,improved,9,yes,card,neighborhood ad,56
+REC-10216,2023-12-07,43,female,San Antonio,commercial,Wrinkles,L57.4,64612,Botox injection,none,,RN,improved,9,no,financing,walk-in,312
+REC-10217,2024-03-21,38,female,Austin,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,not improved,4,yes,cash,instagram,new
+REC-10218,2023-08-26,46,female,Nashville,commercial,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,HSA,friend,423
+REC-10219,2024-01-12,33,female,Denver,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,google,new
+REC-10220,2023-11-11,52,female,Portland,medicare,Hair Removal,L68.0,17380,Laser Hair Removal,none,none,Esthetician,improved,8,yes,card,event,234
+REC-10221,2024-05-26,29,female,Charlotte,none,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,latex,PA,improved,8,no,card,neighborhood ad,89
+REC-10222,2023-09-20,41,female,Raleigh,commercial,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,HSA,walk-in,367
+REC-10223,2024-02-17,35,female,Indianapolis,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,,Esthetician,improved,9,yes,financing,instagram,new
+REC-10224,2023-07-30,49,male,Columbus,commercial,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,8,no,card,friend,467
+REC-10225,2024-04-17,31,female,San Antonio,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,7,yes,cash,google,112
+REC-10226,2023-10-27,44,female,Austin,medicare,Acne Scars,L90.5,15787,Microneedling,none,none,NP,improved,9,yes,card,event,289
+REC-10227,2024-06-09,37,female,Nashville,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,neighborhood ad,45
+REC-10228,2023-12-14,51,female,Denver,commercial,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,lidocaine,Esthetician,improved,8,yes,HSA,walk-in,267
+REC-10229,2024-03-28,28,female,Portland,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,none,MD,improved,10,no,financing,instagram,new
+REC-10230,2023-08-02,42,female,Charlotte,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,,PA,improved,8,yes,card,friend,445
+REC-10231,2024-01-19,34,female,Raleigh,none,Wrinkles,L57.4,64612,Botox injection,none,none,RN,improved,9,no,cash,google,new
+REC-10232,2023-11-18,48,male,Indianapolis,medicare,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,6,yes,card,event,223
+REC-10233,2024-05-03,39,female,Columbus,none,Acne Scars,L90.5,15786,Laser resurfacing,topical anesthetic,none,MD,improved,9,yes,card,neighborhood ad,78
+REC-10234,2023-09-27,53,female,San Antonio,commercial,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,8,no,HSA,walk-in,345
+REC-10235,2024-02-24,32,female,Austin,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,latex,Esthetician,improved,9,yes,financing,instagram,new
+REC-10236,2023-07-09,45,female,Nashville,commercial,Skin Texture,L98.9,15788,IPL photofacial,none,none,PA,improved,8,no,card,friend,501
+REC-10237,2024-04-24,30,female,Denver,none,Volume Loss,L90.8,15777,Dermal filler injection,topical anesthetic,,MD,improved,10,no,cash,google,98
+REC-10238,2023-10-04,47,female,Portland,medicare,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,card,event,334
+REC-10239,2024-06-16,36,female,Charlotte,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,not improved,5,yes,card,neighborhood ad,45
+REC-10240,2023-12-21,50,female,Raleigh,commercial,Hair Removal,L68.0,17380,Laser Hair Removal,none,none,Esthetician,improved,8,yes,HSA,walk-in,256
+REC-10241,2024-03-05,27,female,Indianapolis,none,Acne Scars,L90.5,15787,Microneedling,topical anesthetic,none,NP,improved,9,yes,financing,instagram,new
+REC-10242,2023-08-09,43,male,Columbus,commercial,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,lidocaine,RN,improved,8,no,card,google,445
+REC-10243,2024-01-26,38,female,San Antonio,none,Skin Texture,L98.9,15780,Chemical peel,topical anesthetic,none,Esthetician,improved,8,yes,cash,friend,new
+REC-10244,2023-11-25,46,female,Austin,medicare,Volume Loss,L90.8,15777,Dermal filler injection,none,,MD,improved,10,no,card,event,189
+REC-10245,2024-05-10,33,female,Nashville,none,Hair Removal,L68.0,17380,Laser Hair Removal,topical anesthetic,none,PA,improved,9,yes,card,neighborhood ad,89
+REC-10246,2023-09-04,52,female,Denver,commercial,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,none,RN,improved,9,no,HSA,walk-in,401
+REC-10247,2024-02-18,29,female,Portland,none,Body Contour,E66.9,15830,CoolSculpting,topical anesthetic,none,NP,stable,7,yes,financing,instagram,new
+REC-10248,2023-07-06,41,female,Charlotte,commercial,Acne Scars,L90.5,15786,Laser resurfacing,none,none,MD,improved,9,yes,card,friend,512
+REC-10249,2024-04-13,35,female,Raleigh,none,Wrinkles,L57.4,64612,Botox injection,topical anesthetic,latex,RN,improved,9,no,cash,google,112
+REC-10250,2023-10-11,49,male,Indianapolis,medicare,Skin Texture,L98.9,15788,IPL photofacial,topical anesthetic,none,PA,improved,8,no,card,event,312

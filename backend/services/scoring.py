@@ -369,14 +369,23 @@ def calculate_psychographic_scores(
 
     # Normalize to [0,1] across current run (keeps purely data-driven ordering)
     s = pd.to_numeric(zdf["score_raw"], errors="coerce")
+    
+    # Safety check: if zdf is empty, return neutral scores
+    if len(zdf) == 0 or len(s) == 0:
+        print(f"[WARN] Psychographic scoring: no data to score, returning neutral 0.5")
+        return pd.Series(0.5, index=zip_demographics.index)
+    
     lo, hi = float(s.min()), float(s.max())
     if not np.isfinite(lo) or not np.isfinite(hi) or hi <= lo:
-        norm = pd.Series(0.5, index=zdf.index)  # truly flat data → neutral
+        norm = pd.Series(0.5, index=zip_demographics.index)  # truly flat data → neutral
     else:
         norm = (s - lo) / (hi - lo)
-
-    # Return aligned to zip_demographics.index
-    norm.index = zip_demographics.index
+        # Ensure norm has the correct length before reassigning index
+        if len(norm) != len(zip_demographics.index):
+            print(f"[WARN] Psychographic scoring: length mismatch ({len(norm)} vs {len(zip_demographics.index)}), returning neutral")
+            return pd.Series(0.5, index=zip_demographics.index)
+        norm.index = zip_demographics.index
+    
     return norm
 
 

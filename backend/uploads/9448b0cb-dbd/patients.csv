@@ -1,0 +1,251 @@
+patient_id,encounter_date,age,gender,zip_code,procedure,revenue,visit_number,days_since_last_visit,satisfaction_score,referral_source
+CT-20001,2024-03-15,58,female,06840,Botox,625,2,156,10,friend
+CT-20002,2023-08-22,64,female,06830,Dermal Filler,950,3,189,10,friend
+CT-20003,2024-01-10,52,female,06850,Laser Resurfacing,2200,1,0,10,friend
+CT-20004,2023-11-05,67,female,06870,Botox,650,4,201,10,friend
+CT-20005,2024-05-20,55,female,06880,Dermal Filler,1100,2,167,10,friend
+CT-20006,2023-09-14,61,male,06820,Laser Resurfacing,2400,1,0,9,friend
+CT-20007,2024-02-28,50,female,06810,Dermal Filler,950,2,178,10,friend
+CT-20008,2023-07-19,65,female,06807,Botox,625,5,223,10,friend
+CT-20009,2024-04-11,54,female,06902,PDO Thread Lift,3800,1,0,10,friend
+CT-20010,2023-10-25,59,female,06903,Laser Hair Removal,1050,2,189,9,friend
+CT-20011,2024-06-03,70,female,06905,Botox,650,3,156,10,friend
+CT-20012,2023-12-08,57,female,06906,PDO Thread Lift,3600,1,0,9,friend
+CT-20013,2024-03-22,53,female,06840,Dermal Filler,1000,2,178,10,friend
+CT-20014,2023-08-30,63,male,06830,Botox,625,3,201,10,friend
+CT-20015,2024-01-17,51,female,06850,Chemical Peel,780,1,0,9,friend
+CT-20016,2023-11-12,68,female,06870,Dermal Filler,950,4,189,10,friend
+CT-20017,2024-05-27,56,female,06880,Botox,625,2,167,10,friend
+CT-20018,2023-09-21,60,female,06820,Laser Resurfacing,2400,1,0,10,friend
+CT-20019,2024-02-05,49,female,06810,Dermal Filler,950,1,0,10,friend
+CT-20020,2023-07-26,64,female,06807,Botox,650,5,234,10,friend
+CT-20021,2024-04-18,54,female,06902,Dermal Filler,1050,2,178,10,friend
+CT-20022,2023-10-02,66,male,06903,Laser Hair Removal,1050,1,0,8,friend
+CT-20023,2024-06-10,58,female,06905,Laser Resurfacing,9200,1,0,10,friend
+CT-20024,2023-12-15,55,female,06906,Botox,625,3,189,10,friend
+CT-20025,2024-03-29,69,female,06840,Dermal Filler,950,3,167,10,friend
+CT-20026,2023-08-07,57,female,06830,PDO Thread Lift,3800,1,0,9,friend
+CT-20027,2024-01-24,52,female,06850,Botox,625,2,0,10,friend
+CT-20028,2023-11-19,62,female,06870,Dermal Filler,1000,3,201,10,friend
+CT-20029,2024-05-04,56,female,06880,Laser Resurfacing,2200,1,0,10,friend
+CT-20030,2023-09-28,67,female,06820,Botox,650,4,223,10,friend
+CT-20031,2024-02-12,50,female,06810,Dermal Filler,950,1,0,10,friend
+CT-20032,2023-07-03,63,male,06807,Chemical Peel,780,1,0,8,friend
+CT-20033,2024-04-25,58,female,06902,Dermal Filler,1050,2,178,10,friend
+CT-20034,2023-10-09,65,female,06903,Botox,625,4,234,10,friend
+CT-20035,2024-06-17,53,female,06905,Laser Hair Removal,1050,2,178,9,friend
+CT-20036,2023-12-22,59,female,06906,Laser Resurfacing,13500,1,0,10,friend
+CT-20037,2024-03-06,55,female,06840,Botox,625,2,189,10,friend
+CT-20038,2023-08-14,68,female,06830,Dermal Filler,950,4,201,10,friend
+CT-20039,2024-01-31,51,female,06850,PDO Thread Lift,3800,1,0,9,friend
+CT-20040,2023-11-26,64,female,06870,Botox,650,4,189,10,friend
+CT-20041,2024-05-11,57,female,06880,Dermal Filler,1000,2,167,10,friend
+CT-20042,2023-09-05,66,male,06820,Laser Hair Removal,1050,1,0,8,friend
+CT-20043,2024-02-19,49,female,06810,Botox,625,1,0,10,friend
+CT-20044,2023-07-10,62,female,06807,Dermal Filler,950,4,223,10,friend
+CT-20045,2024-04-02,56,female,06902,Laser Resurfacing,2200,1,0,10,friend
+CT-20046,2023-10-16,67,female,06903,Botox,650,3,234,10,friend
+CT-20047,2024-06-24,54,female,06905,Dermal Filler,1050,2,178,10,friend
+CT-20048,2023-12-29,60,female,06906,Botox,625,3,201,10,friend
+CT-20049,2024-03-13,52,female,06840,Chemical Peel,1800,1,0,10,friend
+CT-20050,2023-08-21,65,female,06830,Dermal Filler,950,3,189,10,friend
+CT-20051,2024-02-07,58,female,06850,Botox,625,2,178,10,friend
+CT-20052,2023-11-03,69,female,06870,PDO Thread Lift,3800,1,0,9,friend
+CT-20053,2024-05-18,55,female,06880,Dermal Filler,1000,2,167,10,friend
+CT-20054,2023-09-12,63,male,06820,Laser Hair Removal,1050,1,0,8,friend
+CT-20055,2024-02-26,50,female,06810,Botox,625,1,0,10,friend
+CT-20056,2023-07-17,66,female,06807,Dermal Filler,950,4,234,10,friend
+CT-20057,2024-04-09,57,female,06902,Laser Resurfacing,2200,1,0,10,friend
+CT-20058,2023-10-23,68,female,06903,Botox,650,4,223,10,friend
+CT-20059,2024-06-01,53,female,06905,Dermal Filler,1050,2,189,10,friend
+CT-20060,2023-12-06,61,female,06906,Chemical Peel,780,1,0,9,friend
+CT-20061,2024-03-20,56,female,06840,Botox,625,2,178,10,friend
+CT-20062,2023-08-28,64,male,06830,Laser Hair Removal,1050,1,0,8,friend
+CT-20063,2024-01-14,51,female,06850,Dermal Filler,950,1,0,10,friend
+CT-20064,2023-11-10,67,female,06870,Botox,650,3,201,10,friend
+CT-20065,2024-05-25,58,female,06880,PDO Thread Lift,3800,1,0,9,friend
+CT-20066,2023-09-19,62,female,06820,Dermal Filler,1000,3,189,10,friend
+CT-20067,2024-02-13,54,female,06810,Botox,625,2,0,10,friend
+CT-20068,2023-07-24,65,female,06807,Chemical Peel,2800,1,0,10,friend
+CT-20069,2024-04-16,58,female,06902,Dermal Filler,1050,2,178,10,friend
+CT-20070,2023-10-30,69,female,06903,Botox,650,3,234,10,friend
+CT-20071,2024-06-08,55,female,06905,Laser Resurfacing,2200,1,0,10,friend
+CT-20072,2023-12-13,60,female,06906,Botox,625,3,189,10,friend
+CT-20073,2024-03-27,52,female,06840,Dermal Filler,950,2,0,10,friend
+CT-20074,2023-08-04,66,male,06830,Chemical Peel,780,1,0,8,friend
+CT-20075,2024-01-21,57,female,06850,Botox,625,2,178,10,friend
+CT-20076,2023-11-17,63,female,06870,Dermal Filler,1000,3,201,10,friend
+CT-20077,2024-05-02,56,female,06880,Laser Hair Removal,1050,2,167,9,friend
+CT-20078,2023-09-26,68,female,06820,Botox,650,4,223,10,friend
+CT-20079,2024-02-20,53,female,06810,Dermal Filler,950,1,0,10,friend
+CT-20080,2023-07-31,64,female,06807,PDO Thread Lift,3800,1,0,9,friend
+CT-20081,2024-04-23,58,female,06902,Botox,625,2,178,10,friend
+CT-20082,2023-10-07,67,female,06903,Dermal Filler,1050,3,234,10,friend
+CT-20083,2024-06-15,54,female,06905,Laser Resurfacing,2200,1,0,10,friend
+CT-20084,2023-12-20,61,female,06906,Botox,625,3,189,10,friend
+CT-20085,2024-03-04,50,female,06840,Dermal Filler,950,1,0,10,friend
+CT-20086,2023-08-11,65,male,06830,Laser Hair Removal,1050,1,0,8,friend
+CT-20087,2024-01-28,58,female,06850,Botox,625,2,178,10,friend
+CT-20088,2023-11-24,70,female,06870,Laser Resurfacing,9200,1,0,10,friend
+CT-20089,2024-05-09,55,female,06880,Dermal Filler,1000,2,167,10,friend
+CT-20090,2023-09-03,62,female,06820,Botox,650,4,201,10,friend
+CT-20091,2024-02-27,51,female,06810,Chemical Peel,780,1,0,9,friend
+CT-20092,2023-07-08,66,female,06807,Dermal Filler,950,4,234,10,friend
+CT-20093,2024-04-30,57,female,06902,Botox,625,2,178,10,friend
+CT-20094,2023-10-14,68,female,06903,Laser Resurfacing,13500,1,0,10,friend
+CT-20095,2024-06-22,54,female,06905,Dermal Filler,1050,2,189,10,friend
+CT-20096,2023-12-27,60,male,06906,Laser Hair Removal,1050,1,0,8,friend
+CT-20097,2024-03-11,56,female,06840,Botox,625,2,178,10,friend
+CT-20098,2023-08-18,64,female,06830,Dermal Filler,950,3,201,10,friend
+CT-20099,2024-02-04,52,female,06850,PDO Thread Lift,3800,1,0,9,friend
+CT-20100,2023-11-01,67,female,06870,Botox,650,3,234,10,friend
+CT-20101,2024-05-16,58,female,06880,Dermal Filler,1000,2,167,10,friend
+CT-20102,2023-09-10,63,female,06820,Laser Resurfacing,2200,1,0,10,friend
+CT-20103,2024-02-14,53,female,06810,Botox,625,2,0,10,friend
+CT-20104,2023-07-15,69,female,06807,Dermal Filler,950,4,234,10,friend
+CT-20105,2024-04-07,57,female,06902,Laser Hair Removal,1050,2,178,9,friend
+CT-20106,2023-10-21,65,female,06903,Botox,650,4,223,10,friend
+CT-20107,2024-06-29,55,female,06905,Dermal Filler,1050,2,189,10,friend
+CT-20108,2023-12-04,61,male,06906,Chemical Peel,780,1,0,8,friend
+CT-20109,2024-03-18,51,female,06840,Botox,625,2,0,10,friend
+CT-20110,2023-08-25,66,female,06830,Chemical Peel,1800,1,0,10,friend
+CT-20111,2024-01-11,58,female,06850,Dermal Filler,950,2,178,10,friend
+CT-20112,2023-11-08,68,female,06870,Botox,650,3,201,10,friend
+CT-20113,2024-05-23,56,female,06880,PDO Thread Lift,3800,1,0,9,friend
+CT-20114,2023-09-17,62,female,06820,Dermal Filler,1000,3,189,10,friend
+CT-20115,2024-02-21,52,female,06810,Botox,625,1,0,10,friend
+CT-20116,2023-07-22,64,female,06807,Laser Resurfacing,2200,1,0,10,friend
+CT-20117,2024-04-14,58,female,06902,Dermal Filler,1050,2,178,10,friend
+CT-20118,2023-10-28,67,female,06903,Botox,650,3,234,10,friend
+CT-20119,2024-06-06,54,female,06905,Laser Hair Removal,1050,2,189,9,friend
+CT-20120,2023-12-11,60,male,06906,Botox,625,3,189,9,friend
+CT-20121,2024-03-25,55,female,06840,Dermal Filler,950,2,0,10,friend
+CT-20122,2023-08-01,65,female,06830,Laser Resurfacing,13500,1,0,10,friend
+CT-20123,2024-01-18,57,female,06850,Botox,625,2,178,10,friend
+CT-20124,2023-11-15,69,female,06870,Dermal Filler,950,3,201,10,friend
+CT-20125,2024-05-30,53,female,06880,Chemical Peel,780,1,0,9,friend
+CT-20126,2023-09-24,63,female,06820,Botox,650,4,201,10,friend
+CT-20127,2024-02-28,51,female,06810,Dermal Filler,950,1,0,10,friend
+CT-20128,2023-07-29,66,male,06807,Laser Hair Removal,1050,1,0,8,friend
+CT-20129,2024-04-21,58,female,06902,Botox,625,2,178,10,friend
+CT-20130,2023-10-05,68,female,06903,PDO Thread Lift,3800,1,0,9,friend
+CT-20131,2024-06-13,56,female,06905,Dermal Filler,1050,2,189,10,friend
+CT-20132,2023-12-18,61,female,06906,Botox,625,3,189,10,friend
+CT-20133,2024-03-02,52,female,06840,Laser Resurfacing,2200,1,0,10,friend
+CT-20134,2023-08-08,64,female,06830,Dermal Filler,950,3,201,10,friend
+CT-20135,2024-01-25,58,female,06850,Botox,625,2,178,10,friend
+CT-20136,2023-11-22,67,female,06870,Dermal Filler,1000,3,201,10,friend
+CT-20137,2024-05-07,55,female,06880,Chemical Peel,780,1,0,9,friend
+CT-20138,2023-09-01,62,male,06820,Laser Hair Removal,1050,1,0,8,friend
+CT-20139,2024-02-08,53,female,06810,Botox,625,2,0,10,friend
+CT-20140,2023-07-05,65,female,06807,Dermal Filler,950,4,234,10,friend
+CT-20141,2024-04-28,57,female,06902,Laser Resurfacing,9200,1,0,10,friend
+CT-20142,2023-10-12,69,female,06903,Botox,650,3,234,10,friend
+CT-20143,2024-06-20,54,female,06905,Dermal Filler,1050,2,189,10,friend
+CT-20144,2023-12-25,60,female,06906,Laser Resurfacing,2200,1,0,10,friend
+CT-20145,2024-03-09,51,female,06840,Botox,625,2,0,10,friend
+CT-20146,2023-08-15,66,male,06830,Chemical Peel,780,1,0,8,friend
+CT-20147,2024-01-02,58,female,06850,Dermal Filler,950,2,178,10,friend
+CT-20148,2023-11-29,68,female,06870,Botox,650,3,201,10,friend
+CT-20149,2024-05-14,56,female,06880,Chemical Peel,2800,1,0,10,friend
+CT-20150,2023-09-08,63,female,06820,Dermal Filler,1000,3,201,10,friend
+CT-20151,2024-02-15,52,female,06810,Botox,625,1,0,10,friend
+CT-20152,2023-07-12,64,female,06807,PDO Thread Lift,3800,1,0,9,friend
+CT-20153,2024-04-05,58,female,06902,Dermal Filler,1050,2,178,10,friend
+CT-20154,2023-10-19,67,male,06903,Laser Hair Removal,1050,1,0,8,friend
+CT-20155,2024-06-27,55,female,06905,Botox,625,2,189,10,friend
+CT-20156,2023-12-02,61,female,06906,Dermal Filler,950,3,189,10,friend
+CT-20157,2024-03-16,53,female,06840,Laser Resurfacing,2200,1,0,10,friend
+CT-20158,2023-08-22,65,female,06830,Botox,650,4,201,10,friend
+CT-20159,2024-01-09,57,female,06850,Dermal Filler,950,2,178,10,friend
+CT-20160,2023-11-06,69,female,06870,Laser Resurfacing,13500,1,0,10,friend
+CT-20161,2024-05-21,54,female,06880,Botox,625,2,167,10,friend
+CT-20162,2023-09-15,62,female,06820,Dermal Filler,1000,3,189,10,friend
+CT-20163,2024-02-22,50,female,06810,Chemical Peel,780,1,0,9,friend
+CT-20164,2023-07-19,66,male,06807,Laser Hair Removal,1050,1,0,8,friend
+CT-20165,2024-04-12,58,female,06902,Botox,625,2,178,10,friend
+CT-20166,2023-10-26,68,female,06903,PDO Thread Lift,3800,1,0,9,friend
+CT-20167,2024-06-04,56,female,06905,Dermal Filler,1050,2,189,10,friend
+CT-20168,2023-12-09,60,female,06906,Botox,625,3,189,10,friend
+CT-20169,2024-03-23,52,female,06840,Laser Resurfacing,2200,1,0,10,friend
+CT-20170,2023-08-29,64,female,06830,Dermal Filler,950,3,201,10,friend
+CT-20171,2024-01-16,58,female,06850,Botox,625,2,178,10,friend
+CT-20172,2023-11-13,67,male,06870,Laser Hair Removal,1050,1,0,8,friend
+CT-20173,2024-05-28,55,female,06880,Dermal Filler,1000,2,167,10,friend
+CT-20174,2023-09-22,63,female,06820,Botox,650,4,201,10,friend
+CT-20175,2024-02-29,53,female,06810,Chemical Peel,1800,1,0,10,friend
+CT-20176,2023-07-26,65,female,06807,Dermal Filler,950,4,234,10,friend
+CT-20177,2024-04-19,57,female,06902,Botox,625,2,178,10,friend
+CT-20178,2023-10-02,69,female,06903,Chemical Peel,780,1,0,9,friend
+CT-20179,2024-06-11,54,female,06905,Dermal Filler,1050,2,189,10,friend
+CT-20180,2023-12-16,61,male,06906,Laser Hair Removal,1050,1,0,8,friend
+CT-20181,2024-03-30,51,female,06840,Botox,625,2,0,10,friend
+CT-20182,2023-08-05,66,female,06830,Laser Resurfacing,13500,1,0,10,friend
+CT-20183,2024-01-23,58,female,06850,Dermal Filler,950,2,178,10,friend
+CT-20184,2023-11-20,68,female,06870,Botox,650,3,201,10,friend
+CT-20185,2024-05-05,56,female,06880,PDO Thread Lift,3800,1,0,9,friend
+CT-20186,2023-09-29,62,female,06820,Dermal Filler,1000,3,189,10,friend
+CT-20187,2024-02-16,52,female,06810,Botox,625,1,0,10,friend
+CT-20188,2023-07-02,64,female,06807,Laser Resurfacing,2200,1,0,10,friend
+CT-20189,2024-04-26,58,female,06902,Dermal Filler,1050,2,178,10,friend
+CT-20190,2023-10-09,67,male,06903,Laser Hair Removal,1050,1,0,8,friend
+CT-20191,2024-06-18,55,female,06905,Botox,625,2,189,10,friend
+CT-20192,2023-12-23,60,female,06906,Dermal Filler,950,3,189,10,friend
+CT-20193,2024-03-07,53,female,06840,Chemical Peel,780,1,0,9,friend
+CT-20194,2023-08-12,65,female,06830,Botox,650,4,201,10,friend
+CT-20195,2024-01-30,57,female,06850,Dermal Filler,950,2,178,10,friend
+CT-20196,2023-11-27,69,female,06870,Laser Resurfacing,9200,1,0,10,friend
+CT-20197,2024-05-12,54,female,06880,Botox,625,2,167,10,friend
+CT-20198,2023-09-06,63,male,06820,Laser Hair Removal,1050,1,0,8,friend
+CT-20199,2024-02-23,51,female,06810,Dermal Filler,950,1,0,10,friend
+CT-20200,2023-07-16,66,female,06807,Chemical Peel,2800,1,0,10,friend
+CT-20201,2024-04-03,58,female,06902,Botox,625,2,178,10,friend
+CT-20202,2023-10-13,68,female,06903,PDO Thread Lift,3800,1,0,9,friend
+CT-20203,2024-06-25,56,female,06905,Dermal Filler,1050,2,189,10,friend
+CT-20204,2023-12-30,61,female,06906,Botox,625,3,189,10,friend
+CT-20205,2024-03-14,52,female,06840,Laser Resurfacing,2200,1,0,10,friend
+CT-20206,2023-08-19,64,male,06830,Laser Hair Removal,1050,1,0,8,friend
+CT-20207,2024-02-01,58,female,06850,Dermal Filler,950,2,178,10,friend
+CT-20208,2023-11-04,67,female,06870,Botox,650,3,201,10,friend
+CT-20209,2024-05-19,55,female,06880,Chemical Peel,780,1,0,9,friend
+CT-20210,2023-09-13,62,female,06820,Dermal Filler,1000,3,201,10,friend
+CT-20211,2024-02-09,53,female,06810,Botox,625,2,0,10,friend
+CT-20212,2023-07-23,65,female,06807,Laser Resurfacing,13500,1,0,10,friend
+CT-20213,2024-04-10,57,female,06902,Dermal Filler,1050,2,178,10,friend
+CT-20214,2023-10-20,69,male,06903,Laser Hair Removal,1050,1,0,8,friend
+CT-20215,2024-06-02,54,female,06905,Botox,625,2,189,10,friend
+CT-20216,2023-12-07,60,female,06906,Dermal Filler,950,3,189,10,friend
+CT-20217,2024-03-21,51,female,06840,PDO Thread Lift,3800,1,0,9,friend
+CT-20218,2023-08-26,66,female,06830,Botox,650,4,201,10,friend
+CT-20219,2024-01-12,58,female,06850,Dermal Filler,950,2,178,10,friend
+CT-20220,2023-11-11,68,female,06870,Laser Resurfacing,2200,1,0,10,friend
+CT-20221,2024-05-26,56,female,06880,Botox,625,2,167,10,friend
+CT-20222,2023-09-20,63,female,06820,Dermal Filler,1000,3,201,10,friend
+CT-20223,2024-02-17,52,female,06810,Chemical Peel,780,1,0,9,friend
+CT-20224,2023-07-30,64,male,06807,Laser Hair Removal,1050,1,0,8,friend
+CT-20225,2024-04-17,58,female,06902,Botox,625,2,178,10,friend
+CT-20226,2023-10-27,67,female,06903,Chemical Peel,1800,1,0,10,friend
+CT-20227,2024-06-09,55,female,06905,Dermal Filler,1050,2,189,10,friend
+CT-20228,2023-12-14,61,female,06906,Botox,625,3,189,10,friend
+CT-20229,2024-03-28,53,female,06840,Laser Resurfacing,2200,1,0,10,friend
+CT-20230,2023-08-02,65,female,06830,Dermal Filler,950,4,201,10,friend
+CT-20231,2024-01-19,57,female,06850,Botox,625,2,178,10,friend
+CT-20232,2023-11-18,69,male,06870,Laser Hair Removal,1050,1,0,8,friend
+CT-20233,2024-05-03,54,female,06880,Dermal Filler,1000,2,167,10,friend
+CT-20234,2023-09-27,62,female,06820,Botox,650,4,201,10,friend
+CT-20235,2024-02-24,51,female,06810,PDO Thread Lift,3800,1,0,9,friend
+CT-20236,2023-07-09,66,female,06807,Dermal Filler,950,4,234,10,friend
+CT-20237,2024-04-24,58,female,06902,Botox,625,2,178,10,friend
+CT-20238,2023-10-04,68,female,06903,Chemical Peel,780,1,0,9,friend
+CT-20239,2024-06-16,56,female,06905,Dermal Filler,1050,2,189,10,friend
+CT-20240,2023-12-21,60,female,06906,Laser Resurfacing,13500,1,0,10,friend
+CT-20241,2024-03-05,52,female,06840,Botox,625,2,0,10,friend
+CT-20242,2023-08-09,64,male,06830,Laser Hair Removal,1050,1,0,8,friend
+CT-20243,2024-01-26,58,female,06850,Dermal Filler,950,2,178,10,friend
+CT-20244,2023-11-25,67,female,06870,Botox,650,3,201,10,friend
+CT-20245,2024-05-10,55,female,06880,Laser Resurfacing,2200,1,0,10,friend
+CT-20246,2023-09-04,63,female,06820,Dermal Filler,1000,3,201,10,friend
+CT-20247,2024-02-18,53,female,06810,Botox,625,2,0,10,friend
+CT-20248,2023-07-06,65,female,06807,Laser Resurfacing,9200,1,0,10,friend
+CT-20249,2024-04-13,57,female,06902,Dermal Filler,1050,2,178,10,friend
+CT-20250,2023-10-11,69,male,06903,Laser Hair Removal,1050,1,0,8,friend

@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react'; 
-import { ArrowLeft, Copy, Check, Facebook, Instagram, Search, Target, Lightbulb, TrendingUp, FileText } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Facebook, Instagram, Search, Target, Lightbulb, TrendingUp, FileText, AlertCircle, ChevronDown } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
@@ -12,12 +12,18 @@ export default function CampaignGenerator() {
   const [loading, setLoading] = useState(true);
   const [campaignData, setCampaignData] = useState<any>(null);
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'ads' | 'creative' | 'offers' | 'landing'>('ads');
+  const [activeTab, setActiveTab] = useState<'ads' | 'messages'>('ads');
+  const [instagramAdCopy, setInstagramAdCopy] = useState<any>(null);
   const [expandedPlatforms, setExpandedPlatforms] = useState<Record<string, boolean>>({});
+  const [showDataQuality, setShowDataQuality] = useState(false);
+  const [showOptimizationTips, setShowOptimizationTips] = useState(false);
+  const [showChecklist, setShowChecklist] = useState(false);
+  const [showKPIs, setShowKPIs] = useState(false);
   
   useEffect(() => {
     const zipCodes = searchParams.get('zip')?.split(',') || [];
     const procedure = searchParams.get('procedure') || 'all';
+    const procedureDisplay = procedure === 'all' ? 'aesthetic treatments' : procedure;
     const runId = sessionStorage.getItem('runId');
     
     if (!runId) {
@@ -28,12 +34,20 @@ export default function CampaignGenerator() {
     fetch(`${API_URL}/api/v1/runs/${runId}/results`)
       .then(res => res.json())
       .then(data => {
+        console.log('API data:', data);
         if (data.status === 'done') {
-          const selectedSegments = data.top_segments.filter((seg: any) => 
-            zipCodes.includes(seg.zip)
-          );
+          const primaryCity = data.geographic_summary?.primary_city || 'your area';
 
-          // USE REAL DATA ONLY - no assumptions
+          let selectedSegments = data.top_segments?.filter((seg: any) => 
+            zipCodes.includes(seg.zip)
+          ) || [];
+
+          // ✅ FIX: If no segments selected, use top 5
+          if (selectedSegments.length === 0) {
+            console.warn('[CAMPAIGN] No segments selected, using top 5');
+            selectedSegments = (data.top_segments || []).slice(0, 5);
+          }
+
           const campaign = generateCampaignFromRealData({
             segments: selectedSegments,
             procedure,
@@ -43,10 +57,22 @@ export default function CampaignGenerator() {
             dominantProfile: data.dominant_profile,
             actualTreatments: data.actual_treatments,
             revenueStats: data.actual_revenue_stats,
-            totalPatients: data.patient_count
+            totalPatients: data.patient_count,
+            city: primaryCity
           });
 
           setCampaignData(campaign);
+
+          // Generate AI-powered Instagram ads
+          generateInstagramAds(selectedSegments, primaryCity).then(igAd => {
+            setInstagramAdCopy(igAd);
+            console.log('[Instagram AI]', igAd);
+          });
+          
+          // Save to localStorage for landing page builder
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('audienceMirrorCampaign', JSON.stringify(campaign));
+          }
         }
         setLoading(false);
       })
@@ -60,6 +86,47 @@ export default function CampaignGenerator() {
     navigator.clipboard.writeText(text);
     setCopiedIndex(id);
     setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  const generateInstagramAds = async (segments: any[], city: string) => {
+    // Generate Instagram ads for each segment
+    const instagramAds = await Promise.all(
+      segments.map(async (segment) => {
+        try {
+          const formData = new FormData();
+          formData.append('segment_name', segment.cohort || 'Unknown Segment');
+          formData.append('patient_count', segment.patient_count?.toString() || '0');
+          formData.append('avg_ltv', segment.avg_ltv?.toString() || '0');
+          formData.append('avg_ticket', segment.avg_ticket?.toString() || '0');
+          formData.append('top_procedures', segment.top_procedures?.join(',') || 'General Treatments');
+          formData.append('target_demographics', `Ages ${segment.avg_age || 35}, Income $${segment.avg_income || 75}k+`);
+          formData.append('practice_name', 'Your Practice');
+          formData.append('practice_city', city || 'your area');
+
+          const response = await fetch('http://localhost:8000/api/v1/campaigns/instagram', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error('Instagram API failed');
+          }
+
+          return await response.json();
+        } catch (error) {
+          console.error('[Instagram API Error]', error);
+          // Return fallback
+          return {
+            caption: '✨ Transform your look with expert treatments',
+            first_comment: 'Book your free consultation today',
+            hashtags: ['aesthetics', 'beauty', 'transformation'],
+            story_cta: 'Swipe up to book'
+          };
+        }
+      })
+    );
+
+    return instagramAds[0]; // Return first segment's Instagram ad for now
   };
 
   if (loading) {
@@ -107,439 +174,675 @@ export default function CampaignGenerator() {
           {campaignData.overview.totalZips} neighborhoods • {campaignData.overview.procedure} • {campaignData.overview.profileType}
         </p>
 
-        {/* Campaign Overview */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Investment & Returns</h2>
-          
-          <div className="grid grid-cols-3 gap-6 mb-6">
-            <div className="text-center p-4 bg-slate-50 rounded-lg">
-              <div className="text-2xl font-bold text-slate-900 mb-1">
-                ${(campaignData.overview.monthlyBudget / 1000).toFixed(1)}K
+        {/* Data Quality Indicator - Subtle */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="text-sm font-medium text-slate-900">Campaign Personalization</div>
+              <div className="text-xs text-slate-500">
+                {Object.values(campaignData.dataQuality).filter((d: any) => d.isReal).length}/
+                {Object.values(campaignData.dataQuality).length} metrics from your data
               </div>
-              <div className="text-xs text-slate-600">Monthly Budget</div>
             </div>
-
-            <div className="text-center p-4 bg-slate-50 rounded-lg">
-              <div className="text-2xl font-bold text-emerald-600 mb-1">
-                {campaignData.overview.expectedPatients}
-              </div>
-              <div className="text-xs text-slate-600">Expected Bookings</div>
-            </div>
-
-            <div className="text-center p-4 bg-slate-50 rounded-lg">
-              <div className="text-2xl font-bold text-emerald-600 mb-1">
-                ${(campaignData.overview.expectedRevenue / 1000).toFixed(0)}K
-              </div>
-              <div className="text-xs text-slate-600">Expected Revenue</div>
-            </div>
+            <button 
+              onClick={() => setShowDataQuality(!showDataQuality)}
+              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              {showDataQuality ? 'Hide details' : 'Show details'}
+            </button>
           </div>
 
-          <div className="text-sm text-slate-600 text-center">
-            That's a <strong className="text-slate-900">{campaignData.overview.roas}× return</strong> on investment
-          </div>
-        </div>
+          {showDataQuality && (
+            <div className="space-y-3 pt-4 border-t border-slate-100">
+              {[
+                { key: 'patientCount', label: 'Patient Count', format: (v: number) => v.toString() },
+                { key: 'age', label: 'Avg Patient Age', format: (v: number) => Math.round(v).toString() },
+                { key: 'ltv', label: 'Lifetime Value', format: (v: number) => `$${(v/1000).toFixed(1)}K` },
+                { key: 'frequency', label: 'Annual Visits', format: (v: number) => `${v.toFixed(1)}×` },
+                { key: 'income', label: 'Avg Income', format: (v: number) => `$${(v/1000).toFixed(0)}K` },
+                { key: 'profile', label: 'Patient Profile', format: (v: string) => v.split(' - ')[0] }
+              ].map(({ key, label, format }) => {
+                const data = campaignData.dataQuality[key];
+                return (
+                  <div key={key} className="flex items-center justify-between py-2">
+                    <div className="flex items-center gap-2">
+                      {data.isReal ? (
+                        <Check className="h-4 w-4 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 text-amber-500" />
+                      )}
+                      <span className="text-sm text-slate-700">{label}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold text-slate-900">{format(data.value)}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${
+                        data.isReal 
+                          ? 'bg-emerald-50 text-emerald-700' 
+                          : 'bg-amber-50 text-amber-700'
+                      }`}>
+                        {data.isReal ? 'Your data' : 'Industry avg'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
 
-        {/* Strategy Summary */}
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-6 mb-6">
-          <div className="flex items-start gap-3 mb-3">
-            <Target className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-slate-900 mb-2">Campaign Strategy Based on Your Data</h3>
-              <p className="text-sm text-slate-700">{campaignData.strategy.summary}</p>
+              {Object.values(campaignData.dataQuality).some((d: any) => !d.isReal) && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <div className="flex items-start gap-2 text-xs text-slate-600">
+                    <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <span>
+                      Some metrics use industry averages. For 100% personalized campaigns, ensure your CSV includes patient age, visit history, and revenue per visit.
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div className="bg-white/60 rounded-lg p-3">
-              <div className="text-xs text-slate-600 mb-1">Primary Message</div>
-              <div className="text-sm font-medium text-slate-900">{campaignData.strategy.primaryMessage}</div>
-            </div>
-            <div className="bg-white/60 rounded-lg p-3">
-              <div className="text-xs text-slate-600 mb-1">Key Differentiator</div>
-              <div className="text-sm font-medium text-slate-900">{campaignData.strategy.differentiator}</div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6 border-b border-slate-200">
+        <div className="flex gap-6 mb-6 border-b border-slate-200">
+          {(['ads', 'messages'] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-medium transition-colors capitalize ${
+                activeTab === tab
+                  ? 'text-slate-900 border-b-2 border-slate-900'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              {tab === 'ads' ? 'Ad Campaigns' : tab}
+            </button>
+          ))}
+          
+          {/* Landing Page Builder - Separate Action */}
           <button
-            onClick={() => setActiveTab('ads')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'ads'
-                ? 'text-slate-900 border-b-2 border-slate-900'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
+            onClick={() => router.push('/landing-page-builder')}
+            className="ml-auto px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
           >
-            Ad Campaigns
-          </button>
-          <button
-            onClick={() => setActiveTab('creative')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'creative'
-                ? 'text-slate-900 border-b-2 border-slate-900'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Creative Brief
-          </button>
-          <button
-            onClick={() => setActiveTab('offers')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'offers'
-                ? 'text-slate-900 border-b-2 border-slate-900'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Offer Strategy
-          </button>
-          <button
-            onClick={() => setActiveTab('landing')}
-            className={`px-4 py-2 text-sm font-medium transition-colors ${
-              activeTab === 'landing'
-                ? 'text-slate-900 border-b-2 border-slate-900'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Landing Page
+            Build Landing Page →
           </button>
         </div>
 
         {/* Tab Content */}
         {activeTab === 'ads' && (
-            <>
-                {campaignData.platforms.map((platform: any) => {
-                    const showAll = expandedPlatforms[platform.name] || false;
-                    const displayAds = showAll ? platform.ads : platform.ads.slice(0, 3);
-                
-                return (
-                    <div key={platform.name} className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                        {platform.icon}
-                        <div>
-                            <h2 className="text-lg font-semibold text-slate-900">{platform.name}</h2>
-                            <p className="text-sm text-slate-600">{platform.reasoning}</p>
-                        </div>
-                        </div>
-                        <div className="text-right">
-                        <div className="text-2xl font-bold text-slate-900">{platform.allocationPct}%</div>
-                        <div className="text-xs text-slate-600">${(platform.budget / 1000).toFixed(1)}K/mo</div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-4">
-                        {displayAds.map((ad: any, index: number) => (
-                        <div key={index} className="border border-slate-200 rounded-lg p-4">
-                            <div className="flex items-start justify-between mb-3">
-                            <div>
-                                <div className="text-sm font-semibold text-slate-900 mb-1">
-                                {ad.location}
-                                </div>
-                                <div className="text-xs text-slate-600">{ad.targeting}</div>
-                            </div>
-                            <div className="text-right">
-                                <div className="text-sm font-semibold text-slate-900">${ad.dailyBudget}/day</div>
-                                <div className="text-xs text-slate-600">{ad.competitiveNote}</div>
-                            </div>
-                            </div>
-
-                            <div className="mb-3">
-                            <div className="text-xs text-slate-500 uppercase mb-1">Audience</div>
-                            <div className="text-sm text-slate-700">{ad.demographics}</div>
-                            </div>
-
-                            <div className="mb-3">
-                            <div className="text-xs text-slate-500 uppercase mb-1">Headline</div>
-                            <div className="text-sm font-medium text-slate-900">{ad.headline}</div>
-                            </div>
-
-                            <div className="mb-3">
-                            <div className="text-xs text-slate-500 uppercase mb-1">Ad Copy</div>
-                            <div className="text-sm text-slate-900 bg-slate-50 p-3 rounded">
-                                {ad.copy}
-                            </div>
-                            </div>
-
-                            <button
-                            onClick={() => copyToClipboard(
-                                `Platform: ${platform.name}\nLocation: ${ad.location}\nTargeting: ${ad.targeting}\nAudience: ${ad.demographics}\nHeadline: ${ad.headline}\nCopy: ${ad.copy}\nBudget: $${ad.dailyBudget}/day`,
-                                `${platform.name}-${index}`
-                            )}
-                            className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
-                            >
-                            {copiedIndex === `${platform.name}-${index}` ? (
-                                <>
-                                <Check className="h-4 w-4" />
-                                Copied!
-                                </>
-                            ) : (
-                                <>
-                                <Copy className="h-4 w-4" />
-                                Copy campaign details
-                                </>
-                            )}
-                            </button>
-                        </div>
-                        ))}
-                    </div>
-
-                    {platform.ads.length > 3 && (
-                        <button
-                        onClick={() => setExpandedPlatforms(prev => ({
-                            ...prev,
-                            [platform.name]: !showAll
-                        }))}
-                        className="w-full mt-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
-                        >
-                        {showAll ? 'Show less' : `Show all ${platform.ads.length} neighborhoods`}
-                        </button>
-                    )}
-                    </div>
-                );
-                })}
-            </>
-            )}
-
-        {activeTab === 'creative' && (
-          <div className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-6">
-              <Lightbulb className="h-5 w-5 text-amber-600" />
-              <h2 className="text-lg font-semibold text-slate-900">Creative Direction</h2>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Visual Style</h3>
-                <p className="text-sm text-slate-700 mb-3">{campaignData.creative.visualStyle}</p>
-                <div className="flex flex-wrap gap-2">
-                  {campaignData.creative.visualKeywords.map((keyword: string, i: number) => (
-                    <span key={i} className="px-3 py-1 bg-slate-100 text-slate-700 text-xs rounded-full">
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Image Recommendations</h3>
-                <ul className="space-y-2">
-                  {campaignData.creative.imageGuidelines.map((guideline: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                      <Check className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                      <span>{guideline}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Tone of Voice</h3>
-                <p className="text-sm text-slate-700">{campaignData.creative.tone}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Messaging Do's & Don'ts</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-emerald-50 rounded-lg p-4">
-                    <div className="text-xs font-semibold text-emerald-900 uppercase mb-2">✓ Do</div>
-                    <ul className="space-y-1">
-                      {campaignData.creative.dos.map((item: string, i: number) => (
-                        <li key={i} className="text-sm text-emerald-900">{item}</li>
-                      ))}
-                    </ul>
+          <>
+            {/* Campaign Overview */}
+            <div className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Investment & Returns</h2>
+              
+              <div className="grid grid-cols-3 gap-6 mb-6">
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <div className="text-2xl font-bold text-slate-900 mb-1">
+                    ${(campaignData.overview.monthlyBudget / 1000).toFixed(1)}K
                   </div>
-                  <div className="bg-red-50 rounded-lg p-4">
-                    <div className="text-xs font-semibold text-red-900 uppercase mb-2">✗ Don't</div>
-                    <ul className="space-y-1">
-                      {campaignData.creative.donts.map((item: string, i: number) => (
-                        <li key={i} className="text-sm text-red-900">{item}</li>
-                      ))}
-                    </ul>
+                  <div className="text-xs text-slate-600">Monthly Budget</div>
+                </div>
+
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <div className="text-2xl font-bold text-emerald-600 mb-1">
+                    {campaignData.overview.expectedPatients}
                   </div>
+                  <div className="text-xs text-slate-600">Expected Bookings</div>
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {activeTab === 'offers' && (
-          <div className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-6">
-              <TrendingUp className="h-5 w-5 text-emerald-600" />
-              <h2 className="text-lg font-semibold text-slate-900">Offer Strategy</h2>
-            </div>
-
-            <div className="space-y-6">
-              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                <h3 className="text-sm font-semibold text-indigo-900 mb-2">Recommended Primary Offer</h3>
-                <p className="text-base font-semibold text-slate-900 mb-2">{campaignData.offers.primary.title}</p>
-                <p className="text-sm text-slate-700 mb-3">{campaignData.offers.primary.description}</p>
-                <div className="text-xs text-indigo-900">
-                  <strong>Why this works:</strong> {campaignData.offers.primary.reasoning}
+                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                  <div className="text-2xl font-bold text-emerald-600 mb-1">
+                    ${(campaignData.overview.expectedRevenue / 1000).toFixed(0)}K
+                  </div>
+                  <div className="text-xs text-slate-600">Expected Revenue</div>
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-3">Alternative Offers by Segment</h3>
-                <div className="space-y-3">
-                  {campaignData.offers.alternatives.map((offer: any, i: number) => (
-                    <div key={i} className="border border-slate-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <div className="text-sm font-semibold text-slate-900">{offer.segment}</div>
-                          <div className="text-sm text-slate-700 mt-1">{offer.offer}</div>
+              <div className="text-sm text-slate-600 text-center">
+                That's a <strong className="text-slate-900">{campaignData.overview.roas}× return</strong> on investment
+              </div>
+            </div>
+
+            {/* Strategy Summary */}
+            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-6 mb-6">
+              <div className="flex items-start gap-3 mb-3">
+                <Target className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-slate-900 mb-2">Campaign Strategy Based on Your Data</h3>
+                  <p className="text-sm text-slate-700">{campaignData.strategy.summary}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="bg-white/60 rounded-lg p-3">
+                  <div className="text-xs text-slate-600 mb-1">Target Profile</div>
+                  <div className="text-sm font-medium text-slate-900">{campaignData.overview.profileType}</div>
+                </div>
+                <div className="bg-white/60 rounded-lg p-3">
+                  <div className="text-xs text-slate-600 mb-1">Geography</div>
+                  {campaignData.overview.city || 'Your area'} ({campaignData.overview.totalZips} neighborhoods)
+                </div>
+              </div>
+            </div>
+
+            {/* Controls Bar */}
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={() => {
+                  // Format all campaigns for export
+                  const allCampaigns = campaignData.platforms.map((platform: any) => {
+                    const platformData = [
+                      `\n=== ${platform.name.toUpperCase()} ===`,
+                      `Budget: $${(platform.budget / 1000).toFixed(1)}K/month (${platform.allocationPct}%)`,
+                      `Strategy: ${platform.strategyDescription}`,
+                      `\nADS:\n`
+                    ];
+                    
+                    platform.ads.forEach((ad: any, idx: number) => {
+                      const exportCopy = platform.name === 'Instagram Ads' && instagramAdCopy?.caption
+                        ? instagramAdCopy.caption
+                        : ad.copy;
+
+                      platformData.push(
+                        `\n--- Ad ${idx + 1}: ${ad.location} ---`,
+                        `Targeting: ${ad.targeting}`,
+                        `Audience: ${ad.demographics}`,
+                        `Daily Budget: $${ad.dailyBudget}`,
+                        `Headline: ${ad.headline}`,
+                        `Copy: ${exportCopy}`,
+                        ad.optimizationTip ? `Tip: ${ad.optimizationTip}` : '',
+                        ''
+                      );
+                    });
+                    
+                    return platformData.join('\n');
+                  }).join('\n\n');
+
+                  const fullExport = [
+                    `CAMPAIGN EXPORT - ${campaignData.overview.procedure}`,
+                    `Generated: ${new Date().toLocaleDateString()}`,
+                    `\nOVERVIEW:`,
+                    `Monthly Budget: $${(campaignData.overview.monthlyBudget / 1000).toFixed(1)}K`,
+                    `Expected Bookings: ${campaignData.overview.expectedPatients}`,
+                    `Expected Revenue: $${(campaignData.overview.expectedRevenue / 1000).toFixed(1)}K`,
+                    `ROAS: ${campaignData.overview.roas}×`,
+                    `\nSTRATEGY:`,
+                    campaignData.strategy.summary,
+                    allCampaigns
+                  ].join('\n');
+
+                  navigator.clipboard.writeText(fullExport);
+                  setCopiedIndex('export-all');
+                  setTimeout(() => setCopiedIndex(null), 2000);
+                }}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                {copiedIndex === 'export-all' ? (
+                  <><Check className="h-4 w-4" />Copied to clipboard!</>
+                ) : (
+                  <><Copy className="h-4 w-4" />Export all campaigns</>
+                )}
+              </button>
+
+              <button
+                onClick={() => setShowOptimizationTips(!showOptimizationTips)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              >
+                <Lightbulb className="h-4 w-4" />
+                {showOptimizationTips ? 'Hide' : 'Show'} optimization tips
+              </button>
+            </div>
+
+            {campaignData.platforms.map((platform: any) => {
+              const showAll = expandedPlatforms[platform.name] || false;
+              const displayAds = showAll ? platform.ads : platform.ads.slice(0, 1);
+            
+              return (
+                <div key={platform.name} className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
+                  {/* Platform Header */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      {platform.icon}
+                      <div>
+                        <h2 className="text-lg font-semibold text-slate-900">{platform.name}</h2>
+                        <p className="text-sm text-slate-600">{platform.reasoning}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-slate-900">{platform.allocationPct}%</div>
+                      <div className="text-xs text-slate-600">${(platform.budget / 1000).toFixed(1)}K/mo</div>
+                    </div>
+                  </div>
+
+                  {/* Strategy Banner */}
+                  <div className={`rounded-lg p-4 mb-6 ${
+                    platform.name === 'Facebook Ads' ? 'bg-blue-50 border border-blue-100' :
+                    platform.name === 'Instagram Ads' ? 'bg-purple-50 border border-purple-100' :
+                    'bg-indigo-50 border border-indigo-100'
+                  }`}>
+                    <div className="flex items-start gap-3">
+                      <Target className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
+                        platform.name === 'Facebook Ads' ? 'text-blue-600' :
+                        platform.name === 'Instagram Ads' ? 'text-purple-600' :
+                        'text-indigo-600'
+                      }`} />
+                      <div>
+                        <div className={`text-sm font-semibold mb-1 ${
+                          platform.name === 'Facebook Ads' ? 'text-blue-900' :
+                          platform.name === 'Instagram Ads' ? 'text-purple-900' :
+                          'text-indigo-900'
+                        }`}>
+                          {platform.strategyTitle}
+                        </div>
+                        <div className={`text-sm ${
+                          platform.name === 'Facebook Ads' ? 'text-blue-800' :
+                          platform.name === 'Instagram Ads' ? 'text-purple-800' :
+                          'text-indigo-800'
+                        }`}>
+                          {platform.strategyDescription}
                         </div>
                       </div>
-                      <div className="text-xs text-slate-600 mt-2">{offer.rationale}</div>
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="space-y-4">
+                    {displayAds.map((ad: any, index: number) => (
+                      <div key={index} className="border border-slate-200 rounded-lg p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900 mb-1">{ad.location}</div>
+                            <div className="text-xs text-slate-600">{ad.targeting}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-sm font-semibold text-slate-900">${ad.dailyBudget}/day</div>
+                            <div className="text-xs text-slate-600">{ad.competitiveNote}</div>
+                          </div>
+                        </div>
+
+                        {/* In-line Optimization Tip */}
+                        {showOptimizationTips && ad.optimizationTip && (
+                          <div className="mb-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                            <div className="flex items-start gap-2">
+                              <Lightbulb className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                              <div className="text-xs italic text-amber-900">{ad.optimizationTip}</div>
+                            </div>
+                          </div>
+                        )}
+
+                      <div className="mb-3">
+                        <div className="text-xs text-slate-500 uppercase mb-1">Audience</div>
+                        <div className="text-sm text-slate-700">{ad.demographics}</div>
+                      </div>
+
+                      <div className="mb-3">
+                        <div className="text-xs text-slate-500 uppercase mb-1">Behavioral Profile</div>
+                        <div className="text-sm text-slate-700">{ad.behavioralTraits}</div>
+                      </div>
+
+                      <div className="mb-3">
+                        <div className="text-xs text-slate-500 uppercase mb-1">Headline</div>
+                        <div className="text-sm font-medium text-slate-900">{ad.headline}</div>
+                      </div>
+
+                      <div className="mb-3">
+                        <div className="text-xs text-slate-500 uppercase mb-1">Ad Copy</div>
+                        <div className="text-sm text-slate-900 bg-slate-50 p-3 rounded">
+                          {platform.name === 'Instagram Ads' && instagramAdCopy?.caption
+                            ? instagramAdCopy.caption
+                            : ad.copy}
+                        </div>
+                      </div>
+
+                        <button
+                          onClick={() => copyToClipboard(
+                            `Platform: ${platform.name}\nLocation: ${ad.location}\nTargeting: ${ad.targeting}\nAudience: ${ad.demographics}\nHeadline: ${ad.headline}\nCopy: ${platform.name === 'Instagram Ads' && instagramAdCopy?.caption ? instagramAdCopy.caption : ad.copy}\nBudget: $${ad.dailyBudget}/day\n\nTip: ${ad.optimizationTip || 'N/A'}`,
+                            `${platform.name}-${index}`
+                          )}
+                          className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                        >
+                          {copiedIndex === `${platform.name}-${index}` ? (
+                            <><Check className="h-4 w-4" />Copied!</>
+                          ) : (
+                            <><Copy className="h-4 w-4" />Copy campaign details</>
+                          )}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {platform.ads.length > 3 && (
+                    <button
+                      onClick={() => setExpandedPlatforms(prev => ({ ...prev, [platform.name]: !showAll }))}
+                      className="w-full mt-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
+                    >
+                      {showAll ? 'Show less' : `Show ${platform.ads.length - 1} more neighborhoods`}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </>
+        )}
+
+        {activeTab === 'messages' && (
+          <div className="space-y-6">
+            {/* Email Templates */}
+            <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">Email Templates</h2>
+                  <p className="text-sm text-slate-600 mt-1">Copy, customize, and send</p>
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Pricing Psychology</h3>
-                <p className="text-sm text-slate-700">{campaignData.offers.pricingPsychology}</p>
+              <div className="space-y-4">
+                {/* Referral Request Email */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Referral Request</div>
+                      <div className="text-xs text-slate-600">Send to satisfied patients</div>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(
+                        `Subject: Share the love - get $100 off your next visit\n\nHi [First Name],\n\nYou're one of our favorite patients, and we'd love to meet more people like you.\n\nRefer a friend and you both get $100 off your next ${campaignData.overview.procedure === 'All Procedures' ? 'treatment' : campaignData.overview.procedure}.\n\nJust have them mention your name when they book their free consultation.\n\nNo limit - refer 3 friends, get $300 off. Simple as that.\n\nThanks for being part of our practice,\n[Your Name]`,
+                        'email-referral'
+                      )}
+                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      {copiedIndex === 'email-referral' ? (
+                        <><Check className="h-4 w-4" />Copied</>
+                      ) : (
+                        <><Copy className="h-4 w-4" />Copy</>
+                      )}
+                    </button>
+                  </div>
+                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 space-y-2">
+                    <div><strong>Subject:</strong> Share the love - get $100 off your next visit</div>
+                    <div className="pt-2 border-t border-slate-200">
+                      Hi [First Name],<br/><br/>
+                      You're one of our favorite patients, and we'd love to meet more people like you.<br/><br/>
+                      Refer a friend and you both get $100 off your next {campaignData.overview.procedure === 'All Procedures' ? 'treatment' : campaignData.overview.procedure}.<br/><br/>
+                      Just have them mention your name when they book their free consultation.<br/><br/>
+                      No limit - refer 3 friends, get $300 off. Simple as that.<br/><br/>
+                      Thanks for being part of our practice,<br/>
+                      [Your Name]
+                    </div>
+                  </div>
+                </div>
+
+                {/* Win-Back Email */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Win-Back Campaign</div>
+                      <div className="text-xs text-slate-600">For patients who haven't visited in 6+ months</div>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(
+                        `Subject: We miss you - come back for 20% off\n\nHi [First Name],\n\nIt's been a while since we've seen you, and we wanted to check in.\n\nLife gets busy - we get it. But your skin (and confidence) deserve some attention.\n\nCome back this month and get 20% off any treatment. No catches, no fine print.\n\nBook your appointment by [Date] and let's get you feeling great again.\n\n[Book Now Button]\n\nLooking forward to seeing you,\n[Your Name]`,
+                        'email-winback'
+                      )}
+                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      {copiedIndex === 'email-winback' ? (
+                        <><Check className="h-4 w-4" />Copied</>
+                      ) : (
+                        <><Copy className="h-4 w-4" />Copy</>
+                      )}
+                    </button>
+                  </div>
+                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 space-y-2">
+                    <div><strong>Subject:</strong> We miss you - come back for 20% off</div>
+                    <div className="pt-2 border-t border-slate-200">
+                      Hi [First Name],<br/><br/>
+                      It's been a while since we've seen you, and we wanted to check in.<br/><br/>
+                      Life gets busy - we get it. But your skin (and confidence) deserve some attention.<br/><br/>
+                      Come back this month and get 20% off any treatment. No catches, no fine print.<br/><br/>
+                      Book your appointment by [Date] and let's get you feeling great again.<br/><br/>
+                      Looking forward to seeing you,<br/>
+                      [Your Name]
+                    </div>
+                  </div>
+                </div>
+
+                {/* Review Request Email */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Review Request</div>
+                      <div className="text-xs text-slate-600">Send 3-5 days after treatment</div>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(
+                        `Subject: How did we do?\n\nHi [First Name],\n\nWe hope you're loving your results!\n\nIf you have 30 seconds, we'd be grateful if you could leave us a quick review. It helps other people find us and decide if we're the right fit.\n\n[Google Review Link]\n\nThanks for trusting us with your care,\n[Your Name]\n\nP.S. If something wasn't perfect, please reply and let us know directly. We want to make it right.`,
+                        'email-review'
+                      )}
+                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      {copiedIndex === 'email-review' ? (
+                        <><Check className="h-4 w-4" />Copied</>
+                      ) : (
+                        <><Copy className="h-4 w-4" />Copy</>
+                      )}
+                    </button>
+                  </div>
+                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 space-y-2">
+                    <div><strong>Subject:</strong> How did we do?</div>
+                    <div className="pt-2 border-t border-slate-200">
+                      Hi [First Name],<br/><br/>
+                      We hope you're loving your results!<br/><br/>
+                      If you have 30 seconds, we'd be grateful if you could leave us a quick review. It helps other people find us and decide if we're the right fit.<br/><br/>
+                      [Google Review Link]<br/><br/>
+                      Thanks for trusting us with your care,<br/>
+                      [Your Name]<br/><br/>
+                      P.S. If something wasn't perfect, please reply and let us know directly. We want to make it right.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SMS Templates */}
+            <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900">SMS Templates</h2>
+                  <p className="text-sm text-slate-600 mt-1">Keep it short - under 160 characters</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Booking Confirmation */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Booking Confirmation</div>
+                      <div className="text-xs text-slate-600">Send immediately after booking</div>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(
+                        `You're all set! Your consultation is [Day] at [Time]. Reply CONFIRM or call [Phone] if you need to reschedule. See you soon!`,
+                        'sms-confirm'
+                      )}
+                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      {copiedIndex === 'sms-confirm' ? (
+                        <><Check className="h-4 w-4" />Copied</>
+                      ) : (
+                        <><Copy className="h-4 w-4" />Copy</>
+                      )}
+                    </button>
+                  </div>
+                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 font-mono">
+                    You're all set! Your consultation is [Day] at [Time]. Reply CONFIRM or call [Phone] if you need to reschedule. See you soon!
+                  </div>
+                  <div className="text-xs text-slate-600 mt-2">143 characters</div>
+                </div>
+
+                {/* Reminder */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Appointment Reminder</div>
+                      <div className="text-xs text-slate-600">Send 24 hours before</div>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(
+                        `Hi [First Name]! Reminder: Your appointment is tomorrow at [Time]. We're at [Address]. Reply YES to confirm or call [Phone] to reschedule.`,
+                        'sms-reminder'
+                      )}
+                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      {copiedIndex === 'sms-reminder' ? (
+                        <><Check className="h-4 w-4" />Copied</>
+                      ) : (
+                        <><Copy className="h-4 w-4" />Copy</>
+                      )}
+                    </button>
+                  </div>
+                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 font-mono">
+                    Hi [First Name]! Reminder: Your appointment is tomorrow at [Time]. We're at [Address]. Reply YES to confirm or call [Phone] to reschedule.
+                  </div>
+                  <div className="text-xs text-slate-600 mt-2">138 characters</div>
+                </div>
+
+                {/* Follow-Up */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Post-Treatment Follow-Up</div>
+                      <div className="text-xs text-slate-600">Send 2-3 days after treatment</div>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(
+                        `Hi [First Name]! How are you feeling after your treatment? Any questions or concerns? Reply here or call [Phone] anytime. - [Your Name]`,
+                        'sms-followup'
+                      )}
+                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      {copiedIndex === 'sms-followup' ? (
+                        <><Check className="h-4 w-4" />Copied</>
+                      ) : (
+                        <><Copy className="h-4 w-4" />Copy</>
+                      )}
+                    </button>
+                  </div>
+                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 font-mono">
+                    Hi [First Name]! How are you feeling after your treatment? Any questions or concerns? Reply here or call [Phone] anytime. - [Your Name]
+                  </div>
+                  <div className="text-xs text-slate-600 mt-2">135 characters</div>
+                </div>
+
+                {/* Referral SMS */}
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">Referral Request</div>
+                      <div className="text-xs text-slate-600">Send to VIP patients</div>
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(
+                        `[First Name], you're amazing! If you know anyone who'd love our results, refer them & you both get $100 off. Just have them mention your name when booking!`,
+                        'sms-referral'
+                      )}
+                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      {copiedIndex === 'sms-referral' ? (
+                        <><Check className="h-4 w-4" />Copied</>
+                      ) : (
+                        <><Copy className="h-4 w-4" />Copy</>
+                      )}
+                    </button>
+                  </div>
+                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 font-mono">
+                    [First Name], you're amazing! If you know anyone who'd love our results, refer them & you both get $100 off. Just have them mention your name when booking!
+                  </div>
+                  <div className="text-xs text-slate-600 mt-2">158 characters</div>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'landing' && (
-          <div className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
-            <div className="flex items-center gap-2 mb-6">
-              <FileText className="h-5 w-5 text-purple-600" />
-              <h2 className="text-lg font-semibold text-slate-900">Landing Page Copy</h2>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Headline</h3>
-                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                  <p className="text-xl font-bold text-slate-900">{campaignData.landing.headline}</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Subheadline</h3>
-                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                  <p className="text-base text-slate-700">{campaignData.landing.subheadline}</p>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Trust Builders</h3>
-                <ul className="space-y-2">
-                  {campaignData.landing.trustBuilders.map((item: string, i: number) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-slate-700">
-                      <Check className="h-4 w-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Call-to-Action</h3>
-                <div className="flex gap-3">
-                  <button className="flex-1 bg-slate-900 text-white py-3 px-6 rounded-lg font-semibold">
-                    {campaignData.landing.cta.primary}
-                  </button>
-                  <button className="flex-1 border-2 border-slate-900 text-slate-900 py-3 px-6 rounded-lg font-semibold">
-                    {campaignData.landing.cta.secondary}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-slate-900 mb-2">Form Fields (Keep it minimal)</h3>
-                <div className="space-y-2">
-                  {campaignData.landing.formFields.map((field: string, i: number) => (
-                    <div key={i} className="flex items-center gap-2 text-sm text-slate-700">
-                      <div className="w-2 h-2 bg-slate-400 rounded-full"></div>
-                      <span>{field}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => copyToClipboard(
-                `Headline: ${campaignData.landing.headline}\n\nSubheadline: ${campaignData.landing.subheadline}\n\nTrust Builders:\n${campaignData.landing.trustBuilders.map((t: string) => `- ${t}`).join('\n')}\n\nPrimary CTA: ${campaignData.landing.cta.primary}\nSecondary CTA: ${campaignData.landing.cta.secondary}`,
-                'landing-page'
-              )}
-              className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors mt-6"
-            >
-              {copiedIndex === 'landing-page' ? (
-                <>
-                  <Check className="h-4 w-4" />
-                  Copied landing page copy!
-                </>
-              ) : (
-                <>
-                  <Copy className="h-4 w-4" />
-                  Copy all landing page copy
-                </>
-              )}
-            </button>
-          </div>
-        )}
-
-        {/* KPIs to Track */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Success Metrics to Track</h2>
-          
-          <div className="grid grid-cols-2 gap-4">
-            {campaignData.kpis.map((kpi: any, i: number) => (
-              <div key={i} className="border border-slate-200 rounded-lg p-4">
-                <div className="text-sm font-semibold text-slate-900 mb-1">{kpi.metric}</div>
-                <div className="text-xl font-bold text-indigo-600 mb-1">{kpi.target}</div>
-                <div className="text-xs text-slate-600">{kpi.why}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Based on Your Data */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-indigo-200 rounded-xl p-8 mb-6">
-            <h3 className="text-xl font-semibold text-slate-900 mb-3">
-            This is based on YOUR patient data
-            </h3>
-            <p className="text-slate-700">
-            These projections use your actual patient behavior: ${(campaignData.overview.expectedRevenue / campaignData.overview.expectedPatients).toLocaleString()} average revenue per patient, 
-            and competitive landscape in your selected neighborhoods. 
-            Launch these campaigns, track results, and we'll refine the model based on 
-            your real performance data.
-            </p>
-        </div>
-
-        {/* Launch Checklist */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Launch Checklist</h2>
-          
-          <div className="space-y-3">
-            {campaignData.checklist.map((item: string, i: number) => (
-              <label key={i} className="flex items-start gap-3 cursor-pointer group">
-                <input type="checkbox" className="mt-1 w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500" />
-                <span className="text-sm text-slate-700 group-hover:text-slate-900">{item}</span>
-              </label>
-            ))}
-          </div>
-
+        {/* KPIs - Collapsible */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
           <button
-            onClick={() => router.push('/patient-insights')}
-            className="w-full mt-6 bg-slate-900 text-white py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors"
+            onClick={() => setShowKPIs(!showKPIs)}
+            className="w-full px-8 py-6 flex items-center justify-between hover:bg-slate-50 transition-colors"
           >
-            Done - Back to Dashboard
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${showKPIs ? 'bg-indigo-100' : 'bg-slate-100'}`}>
+                <TrendingUp className={`h-5 w-5 ${showKPIs ? 'text-indigo-600' : 'text-slate-600'}`} />
+              </div>
+              <div className="text-left">
+                <h2 className="text-lg font-semibold text-slate-900">Success Metrics to Track</h2>
+                <p className="text-sm text-slate-600">{campaignData.kpis.length} KPIs for measuring performance</p>
+              </div>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-slate-600 transition-transform ${showKPIs ? 'rotate-180' : ''}`} />
           </button>
+
+          {showKPIs && (
+            <div className="px-8 pb-8 pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-4">
+                {campaignData.kpis.map((kpi: any, i: number) => (
+                  <div key={i} className="border border-slate-200 rounded-lg p-4">
+                    <div className="text-sm font-semibold text-slate-900 mb-1">{kpi.metric}</div>
+                    <div className="text-xl font-bold text-indigo-600 mb-1">{kpi.target}</div>
+                    <div className="text-xs text-slate-600">{kpi.why}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Checklist - Collapsible */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <button
+            onClick={() => setShowChecklist(!showChecklist)}
+            className="w-full px-8 py-6 flex items-center justify-between hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-lg ${showChecklist ? 'bg-indigo-100' : 'bg-slate-100'}`}>
+                <Check className={`h-5 w-5 ${showChecklist ? 'text-indigo-600' : 'text-slate-600'}`} />
+              </div>
+              <div className="text-left">
+                <h2 className="text-lg font-semibold text-slate-900">Launch Checklist</h2>
+                <p className="text-sm text-slate-600">{campaignData.checklist.length} action items before going live</p>
+              </div>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-slate-600 transition-transform ${showChecklist ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showChecklist && (
+            <div className="px-8 pb-8 pt-4 border-t border-slate-100">
+              <div className="space-y-3">
+                {campaignData.checklist.map((item: string, i: number) => (
+                  <label key={i} className="flex items-start gap-3 cursor-pointer group">
+                    <input type="checkbox" className="mt-1 w-4 h-4 text-indigo-600 border-slate-300 rounded" />
+                    <span className="text-sm text-slate-700 group-hover:text-slate-900">{item}</span>
+                  </label>
+                ))}
+              </div>
+
+              <button
+                onClick={() => router.push('/patient-insights')}
+                className="w-full mt-6 bg-slate-900 text-white py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors"
+              >
+                Done - Back to Dashboard
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
+}
 
-  // Helper functions using REAL data only
+// ================================================================
+// FIXED DATA GENERATION - NO MORE $NaNK!
+// ================================================================
+
 function generateCampaignFromRealData(params: any) {
   const {
     segments,
@@ -550,22 +853,67 @@ function generateCampaignFromRealData(params: any) {
     dominantProfile,
     actualTreatments,
     revenueStats,
-    totalPatients
+    totalPatients,
+    city  
   } = params;
-
-  const avgAge = demographics?.avg_age || null;
-  const avgIncome = profileCharacteristics?.median_income;
-  const avgLTV = behaviorPatterns?.avg_lifetime_value;
-  const avgFrequency = behaviorPatterns?.avg_visits_per_year;
-  const topTreatments = Object.keys(actualTreatments || {}).slice(0, 3);
-  const profileType = dominantProfile?.combined || 'Your Patient Base';
+  const procedureDisplay = procedure === 'all' ? 'aesthetic treatments' : procedure;
+  console.log('[DEBUG] procedure:', procedure, 'procedureDisplay:', procedureDisplay);
   
-  const avgCompetition = segments.reduce((sum: number, s: any) => sum + (s.competitors || 0), 0) / segments.length;
-  const avgCPA = segments.reduce((sum: number, s: any) => sum + (s.cpa_target || 0), 0) / segments.length;
-  const totalBookings = segments.reduce((sum: number, s: any) => sum + (s.expected_bookings || 0), 0);
-  const totalRevenue = segments.reduce((sum: number, s: any) => sum + (s.expected_monthly_revenue || 0), 0);
-  const monthlyBudget = Math.round(avgCPA * totalBookings);
+  // ✅ Validate segments
+  if (!segments || segments.length === 0) {
+    console.error('[CAMPAIGN] No segments provided');
+    return null;
+  }
 
+  const validSegments = segments.filter((s: any) => s && typeof s === 'object');
+  console.log(`[CAMPAIGN] Processing ${validSegments.length} valid segments`);
+
+  // Track data quality
+  const dataQuality = {
+    age: { value: demographics?.avg_age || 35, isReal: !!demographics?.avg_age },
+    income: { value: profileCharacteristics?.median_income || 75000, isReal: !!profileCharacteristics?.median_income },
+    ltv: { value: behaviorPatterns?.avg_lifetime_value || 2500, isReal: !!behaviorPatterns?.avg_lifetime_value },
+    frequency: { value: behaviorPatterns?.avg_visits_per_year || 2.5, isReal: !!behaviorPatterns?.avg_visits_per_year },
+    profile: { value: dominantProfile?.combined || 'Your Patient Base', isReal: !!dominantProfile?.combined },
+    patientCount: { value: totalPatients || 50, isReal: !!totalPatients && totalPatients > 0 }
+  };
+
+  const avgAge = dataQuality.age.value;
+  const avgIncome = dataQuality.income.value;
+  const avgLTV = dataQuality.ltv.value;
+  const avgFrequency = dataQuality.frequency.value;
+  const topTreatments = Object.keys(actualTreatments || {}).slice(0, 3);
+  const profileType = dataQuality.profile.value;
+  
+  // ✅ Aggregate data across ALL segments for this profile
+  const allZips = validSegments.map((s: any) => s.zip).join(', ');
+  const totalBookings = validSegments.reduce((sum: number, s: any) => sum + (Number(s.expected_bookings) || 0), 0);
+  const totalRevenue = validSegments.reduce((sum: number, s: any) => sum + (Number(s.expected_monthly_revenue) || 0), 0);
+  
+  const avgCompetition = validSegments.length > 0
+    ? validSegments.reduce((sum: number, s: any) => sum + (Number(s.competitors) || 0), 0) / validSegments.length
+    : 2;
+
+  const cpaValues = validSegments
+    .map((s: any) => Number(s.cpa_target) || 0)
+    .filter((v: number) => v > 0);
+  
+  const avgCPA = cpaValues.length > 0
+    ? cpaValues.reduce((sum: number, val: number) => sum + val, 0) / cpaValues.length
+    : 150;
+
+  const monthlyBudget = totalBookings > 0 && avgCPA > 0
+    ? Math.round(avgCPA * totalBookings)
+    : 5000;
+
+  console.log(`[CAMPAIGN] Budget: ${totalBookings} bookings × $${avgCPA.toFixed(0)} CPA = $${monthlyBudget}`);
+
+  if (isNaN(monthlyBudget) || monthlyBudget <= 0) {
+    console.error('[CAMPAIGN] Invalid budget calculated');
+    return null;
+  }
+
+  // Platform allocation based on profile
   let fbPct = 0.35, igPct = 0.35, googlePct = 0.30;
   
   if (avgAge) {
@@ -579,82 +927,133 @@ function generateCampaignFromRealData(params: any) {
     igPct -= 0.05;
   }
 
+  // ✅ ONE AD PER PLATFORM (profile-based, not ZIP-based)
   const platforms = [
     {
       name: 'Facebook Ads',
       icon: <Facebook className="h-6 w-6 text-blue-600" />,
-      reasoning: `${Math.round(fbPct * 100)}% - ${avgAge ? (avgAge > 40 ? 'Your patients are ' + avgAge + '+ (FB core demo)' : 'Good local reach') : 'Local awareness'}`,
+      reasoning: `${Math.round(fbPct * 100)}% - ${avgAge ? (avgAge > 40 ? `Ages ${Math.round(avgAge)}+ demographic` : 'Local reach & awareness') : 'Local awareness'}`,
+      strategyTitle: avgFrequency > 3 ? 'Facebook: Loyalty & Repeat Visits' : 'Facebook: New Patient Acquisition',
+      strategyDescription: avgFrequency > 3
+        ? `Your ${profileType} patients visit ${avgFrequency.toFixed(1)}× yearly. Facebook's lookalike audiences will find similar high-frequency patients. Use retargeting to stay top-of-mind for repeat bookings.`
+        : avgLTV > 5000
+        ? `High-value ${profileType} patients ($${(avgLTV/1000).toFixed(1)}K LTV) need trust before booking. Facebook builds awareness through testimonials and educational content that leads to Google Search conversions.`
+        : `Target ${profileType} segment through Facebook's detailed demographic and interest targeting. Build local awareness that converts to consultations.`,
       budget: Math.round(monthlyBudget * fbPct),
       allocationPct: Math.round(fbPct * 100),
-      ads: segments.map((seg: any) => ({
-        location: seg.location_name || `ZIP ${seg.zip}`,
-        targeting: `${seg.zip} + ${seg.distance_miles < 5 ? '3' : '5'} mile radius`,
-        demographics: `Ages ${avgAge ? avgAge - 10 : 30}-${avgAge ? avgAge + 15 : 55}, Income $${seg.median_income >= 100000 ? '100k+' : '75k+'}`,
-        headline: seg.competitors === 0 ? `First ${procedure} in ${seg.zip}` : `Expert ${procedure} in ${seg.zip}`,
-        copy: seg.competitors === 0 
-          ? `Be the first in ${seg.zip} to experience ${procedure}. Limited introductory pricing. Book consultation →`
-          : `Join ${totalPatients}+ satisfied patients. ${profileType.split(' - ')[0]} trust us. Book today.`,
-        dailyBudget: Math.round((monthlyBudget * fbPct) / 30 / segments.length),
-        competitiveNote: seg.competitors > 3 ? 'High competition' : seg.competitors === 0 ? 'Virgin market' : 'Low competition'
-      }))
+      ads: [{
+        profileTarget: profileType,
+        geography: `${validSegments.length} neighborhoods: ${allZips}`,
+        demographics: `Ages ${avgAge ? Math.round(avgAge - 10) : 25}-${avgAge ? Math.round(avgAge + 15) : 50}, Income $${avgIncome >= 100000 ? '100k+' : '75k+'}`,
+        behavioralTraits: `Visits ${avgFrequency.toFixed(1)}× yearly, $${(avgLTV/1000).toFixed(1)}K lifetime value`,
+        headline: avgCompetition === 0
+          ? `Expert ${procedureDisplay} in ${city || 'your area'}`
+          : avgLTV > 5000
+          ? `Premium ${procedureDisplay} for Discerning Clients`
+          : `Trusted ${procedureDisplay} Specialist`,
+        copy: avgCompetition === 0
+          ? `Be among the first to experience ${procedureDisplay} from ${city || 'your area'}'s newest expert practice. Limited introductory pricing for early patients. Book your complimentary consultation today.`
+          : avgLTV > 5000
+          ? `${profileType} choose us for personalized care and natural results. Join ${totalPatients}+ satisfied patients who trust our expertise. Book your private consultation.`
+          : `Trusted by ${totalPatients}+ patients across ${city || 'your area'}. ${profileType} love our results. Book your free consultation and see why your neighbors choose us.`,
+        dailyBudget: Math.round((monthlyBudget * fbPct) / 30),
+        optimizationTip: avgFrequency > 3
+          ? `Your patients visit ${avgFrequency.toFixed(1)}× yearly. Highlight package deals and VIP memberships to maximize lifetime value.`
+          : avgLTV > 5000
+          ? `High-value patients ($${(avgLTV/1000).toFixed(1)}K LTV) respond to premium positioning. Avoid discount language—emphasize expertise and personalized care.`
+          : `${profileType} patients are active across ${validSegments.length} neighborhoods. Use location-based creative to increase relevance.`
+      }]
     },
     {
       name: 'Instagram Ads',
       icon: <Instagram className="h-6 w-6 text-pink-600" />,
-      reasoning: `${Math.round(igPct * 100)}% - ${avgAge ? (avgAge < 35 ? 'Your patients are ' + avgAge + '+ (IG strength)' : 'Visual results') : 'Visual platform'}`,
+      reasoning: `${Math.round(igPct * 100)}% - ${avgAge && avgAge < 35 ? `Ages ${Math.round(avgAge)} (IG core demographic)` : 'Visual proof & awareness'}`,
+      strategyTitle: avgAge && avgAge < 35 ? 'Instagram: Your Core Demographic' : 'Instagram: Visual Proof & Brand Building',
+      strategyDescription: avgAge && avgAge < 35
+        ? `Age ${Math.round(avgAge)} is Instagram's sweet spot. ${profileType} are highly active on Stories and Reels. Use before/after carousels to showcase results—they outperform single images by 60%.`
+        : topTreatments.length >= 2
+        ? `Your ${profileType} patients often combine ${topTreatments[0]} + ${topTreatments[1]}. Instagram showcases multi-treatment transformations. Carousel ads work best: problem → treatment A → treatment B → final result.`
+        : `Instagram builds awareness and desire for ${profileType}. Patients may not book immediately but will search your name on Google later. Focus on brand equity and visual proof.`,
       budget: Math.round(monthlyBudget * igPct),
       allocationPct: Math.round(igPct * 100),
-      ads: segments.map((seg: any) => ({
-        location: seg.location_name || `ZIP ${seg.zip}`,
-        targeting: `${seg.zip} + 3 mile radius`,
-        demographics: `Ages ${avgAge ? avgAge - 15 : 25}-${avgAge ? avgAge + 5 : 45}, Beauty enthusiasts`,
-        headline: `✨ Real ${procedure} Results`,
-        copy: `See transformations from ${seg.zip} patients. Swipe for before & after. Book now →`,
-        dailyBudget: Math.round((monthlyBudget * igPct) / 30 / segments.length),
-        competitiveNote: seg.competitors > 3 ? 'Stand out visually' : 'Build awareness'
-      }))
+      ads: [{
+        profileTarget: profileType,
+        geography: `${validSegments.length} neighborhoods: ${allZips}`,
+        demographics: `Ages ${avgAge ? Math.round(avgAge - 15) : 20}-${avgAge ? Math.round(avgAge + 5) : 40}, Beauty enthusiasts`,
+        behavioralTraits: `Visits ${avgFrequency.toFixed(1)}× yearly, $${(avgLTV/1000).toFixed(1)}K lifetime value`,
+        
+        headline: `✨ Real ${procedureDisplay} Results`,
+        copy: `See actual transformations from ${city || 'your area'} ${profileType}...`, 
+        
+        dailyBudget: Math.round((monthlyBudget * igPct) / 30),
+        optimizationTip: avgAge && avgAge < 35
+          ? `Age ${Math.round(avgAge)} expects instant booking. Show "Book appointment" CTA in first frame. Use Stories ads for 40% lower cost per lead.`
+          : topTreatments.length >= 2
+          ? `Cross-service behavior detected: ${profileType} often combine treatments. Create carousel ads showing combined results for higher engagement.`
+          : `${profileType} need visual proof. Use real patient photos (not stock images) to increase trust and conversions by 35%.`
+      }]
     },
     {
       name: 'Google Search',
       icon: <Search className="h-6 w-6 text-slate-700" />,
-      reasoning: `${Math.round(googlePct * 100)}% - ${avgCompetition > 3 ? 'Critical for high competition' : 'Capture high-intent'}`,
+      reasoning: `${Math.round(googlePct * 100)}% - ${avgCompetition > 3 ? 'High competition requires search dominance' : 'High-intent capture'}`,
+      strategyTitle: avgCompetition > 3 ? 'Google: Bottom-Funnel Capture' : 'Google: Low-Cost Conversions',
+      strategyDescription: avgCompetition > 3
+        ? `With ${Math.round(avgCompetition)} competitors per ZIP, Google Search is critical. ${profileType} research heavily before booking. These leads convert 2-3× faster than social traffic. Dominate the consideration phase.`
+        : avgFrequency > 3
+        ? `Low competition + high visit frequency (${avgFrequency.toFixed(1)}×/year) = focus on maintenance keywords. ${profileType} search for "touch-up" and "maintenance" terms. Capture repeat business through search.`
+        : `Low competition means CPC under $5. Capture 100% of local search demand before competitors enter. ${profileType} actively searching convert fastest—emphasize immediate availability.`,
       budget: Math.round(monthlyBudget * googlePct),
       allocationPct: Math.round(googlePct * 100),
-      ads: segments.map((seg: any) => ({
-        location: seg.location_name || `ZIP ${seg.zip}`,
-        targeting: `"${procedure} near me", "${procedure} ${seg.zip}"`,
-        demographics: `High-intent searchers in ${seg.zip}`,
-        headline: `${procedure} in ${seg.zip}`,
-        copy: seg.competitors === 0
-          ? `First ${procedure} in ${seg.zip}. Same-week appointments. Book online.`
-          : `Top-rated ${procedure}. ${seg.competitors > 3 ? 'Most experienced.' : 'Proven results.'} Book today.`,
-        dailyBudget: Math.round((monthlyBudget * googlePct) / 30 / segments.length),
-        competitiveNote: seg.competitors > 3 ? 'Bid aggressively' : 'Low CPC'
-      }))
+      ads: [{
+        profileTarget: profileType,
+        geography: `${validSegments.length} neighborhoods: ${allZips}`,
+        demographics: `High-intent searchers across ${city || 'your area'}`,
+        behavioralTraits: `Visits ${avgFrequency.toFixed(1)}× yearly, $${(avgLTV/1000).toFixed(1)}K lifetime value`,
+        headline: `${procedureDisplay} in ${city || 'your area'}`,
+        copy: avgCompetition === 0
+          ? `Expert ${procedureDisplay} in ${city || 'your area'}. Same-week appointments available. Book your free consultation online.`
+          : avgCompetition > 3
+          ? `Top-rated ${procedureDisplay} in ${city || 'your area'}. Most experienced team. Proven results. Book your consultation today.`
+          : `${city || 'your area'}'s trusted ${procedureDisplay} specialist. ${totalPatients}+ satisfied patients. Same-week appointments. Book now.`,
+        dailyBudget: Math.round((monthlyBudget * googlePct) / 30),
+        optimizationTip: avgCompetition > 3
+          ? `High competition (${Math.round(avgCompetition)} competitors/area) requires aggressive bidding. Focus on unique differentiators in ad copy: certifications, guarantees, or exclusive techniques.`
+          : avgFrequency > 3
+          ? `${profileType} visit ${avgFrequency.toFixed(1)}×/year. Bid on maintenance keywords: "${procedureDisplay} maintenance", "${procedureDisplay} touch-up", "${procedureDisplay} how often".`
+          : `Low competition = CPC under $5. Capture all local search volume. Emphasize availability: "Same-week appointments" increases CTR by 25%.`
+      }]
     }
   ];
 
+  const roas = totalRevenue > 0 && monthlyBudget > 0 
+    ? (totalRevenue / monthlyBudget).toFixed(1)
+    : '5.0';
+
   return {
+    dataQuality,
     overview: {
-      totalZips: segments.length,
+      totalZips: validSegments.length,
       procedure: procedure === 'all' ? 'All Procedures' : procedure,
       profileType,
       monthlyBudget,
       expectedPatients: totalBookings,
       expectedRevenue: totalRevenue,
-      roas: (totalRevenue / monthlyBudget).toFixed(1)
+      roas,
+      city
     },
     strategy: {
-      summary: `Your patients: ${profileType}${avgLTV ? `, $${(avgLTV/1000).toFixed(1)}K LTV` : ''}${avgFrequency ? `, ${avgFrequency.toFixed(1)}× yearly` : ''}. ${avgCompetition > 3 ? 'High competition requires search focus.' : 'Low competition allows brand building.'}`,
-      primaryMessage: avgCompetition > 3 ? 'Most experienced in area' : 'Locally trusted',
-      differentiator: avgLTV > 5000 ? 'Premium experience' : 'Exceptional care'
+      summary: `${profileType}${avgLTV ? `, $${(avgLTV/1000).toFixed(1)}K LTV` : ''}${avgFrequency ? `, ${avgFrequency.toFixed(1)}× yearly` : ''}. ${avgCompetition > 3 ? 'High competition requires search focus.' : 'Low competition allows brand building.'}`,
+      primaryMessage: avgCompetition > 3 ? 'Most experienced in market' : 'Locally trusted expert',
+      differentiator: avgLTV > 5000 ? 'Premium personalized care' : 'Exceptional results & value'
     },
     platforms,
+    // ... rest of the creative/offers/landing/kpis/checklist objects stay the same
     creative: {
       visualStyle: avgIncome > 120000 ? 'Luxury aesthetic - clean, minimal' : 'Aspirational yet approachable',
       visualKeywords: avgIncome > 120000 ? ['Minimal', 'Elegant', 'High-end'] : ['Warm', 'Inviting', 'Professional'],
       imageGuidelines: [
-        `Show real ${procedure} results`,
+        `Show real ${procedureDisplay} results`,
         avgAge ? `Feature patients ages ${avgAge - 10}-${avgAge + 15}` : 'Feature diverse patients',
         'Bright, natural lighting',
         'Show your actual office'
@@ -673,12 +1072,12 @@ function generateCampaignFromRealData(params: any) {
         {
           segment: avgFrequency > 3 ? 'Frequent visitors' : 'New patients',
           offer: avgFrequency > 3 ? 'VIP Membership - 15% off' : 'New Patient - 20% off',
-          rationale: avgFrequency > 3 ? `Patients visit ${avgFrequency.toFixed(1)}× yearly - reward loyalty` : 'Lower barrier for new patients'
+          rationale: avgFrequency > 3 ? `Patients visit ${avgFrequency.toFixed(1)}× yearly` : 'Lower barrier for new patients'
         },
         {
           segment: avgLTV > 5000 ? 'High-value' : 'Budget-conscious',
-          offer: avgLTV > 5000 ? 'Package deal - 10% off upfront' : 'Payment plans - 0% APR',
-          rationale: avgLTV > 5000 ? `High LTV ($${(avgLTV/1000).toFixed(1)}K) can afford packages` : 'Remove price objection'
+          offer: avgLTV > 5000 ? 'Package deal - 10% off' : 'Payment plans - 0% APR',
+          rationale: avgLTV > 5000 ? `High LTV ($${(avgLTV/1000).toFixed(1)}K)` : 'Remove price objection'
         }
       ],
       pricingPsychology: revenueStats?.mean > 2000
@@ -686,17 +1085,16 @@ function generateCampaignFromRealData(params: any) {
         : 'Lead with monthly payments rather than total price.'
     },
     landing: {
-      headline: avgCompetition === 0 ? `First ${procedure} Serving Your Area` : `${profileType.split(' - ')[0]}' Choice for ${procedure}`,
+      headline: avgCompetition === 0 ? `First ${procedureDisplay} Serving ${city || 'your area'}` : `${profileType.split(' - ')[0]}' Choice for ${procedureDisplay}`,
       subheadline: avgCompetition === 0 ? 'Be among the first. Limited introductory pricing.' : `Join ${totalPatients}+ satisfied patients.`,
       trustBuilders: [
         `${totalPatients}+ successful treatments`,
-        avgCompetition > 3 ? `Most experienced among ${Math.round(avgCompetition)} local providers` : 'Board-certified practitioners',
+        avgCompetition > 3 ? `Most experienced among ${Math.round(avgCompetition)} providers` : 'Board-certified practitioners',
         'Same-week appointments',
-        'Free consultation',
-        '4.9★ rating'
+        'Free consultation'
       ],
       cta: { primary: 'Book Free Consultation', secondary: 'Call Now' },
-      formFields: ['Name', 'Phone', 'Email', 'Preferred time', `Interested in (${procedure})`]
+      formFields: ['Name', 'Phone', 'Email', 'Preferred time']
     },
     kpis: [
       { metric: 'Cost Per Lead', target: `$${Math.round(avgCPA * 0.6)}`, why: 'Track ad efficiency' },
@@ -714,11 +1112,7 @@ function generateCampaignFromRealData(params: any) {
       'Configure daily budget caps',
       'Set up consultation reminders',
       'Create retargeting audiences',
-      'Schedule weekly reviews',
-      'Prepare lead response templates',
-      'Set up lead tracking system'
+      'Schedule weekly reviews'
     ]
   };
-}
-
 }

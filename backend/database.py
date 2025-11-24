@@ -38,6 +38,7 @@ class Dataset(Base):
     vertical = Column(String, default="medspa")
     created_at = Column(DateTime, default=datetime.utcnow)
     patient_count = Column(Integer, default=0)
+    dominant_profile = Column(JSON)
     unique_zips = Column(Integer, default=0)
 
 class AnalysisRun(Base):
@@ -56,7 +57,8 @@ class AnalysisRun(Base):
     confidence_info = Column(JSON, nullable=True)
     procedure = Column(String, nullable=True)
     patient_count = Column(Integer, nullable=True)
-
+    dominant_profile = Column(JSON, nullable=True)
+    strategic_insights = Column(JSON, nullable=True) 
 # ---- Session helper ----
 def get_db():
     db = SessionLocal()

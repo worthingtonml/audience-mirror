@@ -1,0 +1,6 @@
+patient_id,first_name,last_name,email,phone,zip_code,city,state,date_of_birth,first_visit,last_visit,total_visits,total_spent,favorite_treatment,last_treatment,treatments_received,no_show_count,referral_source,vip_status,gender,age_group
+6001,Margaret,Sullivan,msullivan@email.com,215-555-0101,19103,Philadelphia,PA,1968-03-15,2023-05-15,2024-11-28,3,1800,Botox,Botox,"Botox",1,Website,No,F,55-64
+6002,Thomas,O'Brien,tobrien@email.com,610-555-0102,19087,Wayne,PA,1972-07-22,2023-06-20,2024-10-15,2,1200,Botox,Botox,"Botox",0,Referral,No,M,45-54
+6003,Elizabeth,Walsh,ewalsh@email.com,215-555-0103,19106,Philadelphia,PA,1975-11-08,2023-07-10,2024-09-22,2,950,Botox,Botox,"Botox",1,Google,No,F,45-54
+6004,Robert,Murphy,rmurphy@email.com,484-555-0104,19010,Bryn Mawr,PA,1980-05-30,2023-08-25,2024-11-20,4,2800,Botox,Botox,"Botox,Chemical Peel",0,Website,No,M,35-44
+6005,Patricia,Kelly,pkelly@email.com,215-555-0105,19103,Philadelphia,PA,1978-09-12,2023-09-05,2024-08-10,1,450,Botox,Botox,"Botox",2,Facebook,No,F,45-54
