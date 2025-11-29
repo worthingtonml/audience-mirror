@@ -1,0 +1,203 @@
+"""
+Churn Risk Scoring for Audience Mirror
+Calculates patient-level churn risk based on actual visit patterns.
+"""
+
+from datetime import datetime, date
+from typing import Optional
+import pandas as pd
+
+
+def calculate_procedure_intervals(df: pd.DataFrame) -> dict:
+    """
+    Calculate expected intervals from actual patient data.
+    Uses median days_since_last_visit for repeat visitors per procedure.
+    """
+    intervals = {}
+    
+    # Only use repeat visitors (they have a real interval)
+    if "visit_number" in df.columns and "days_since_last_visit" in df.columns:
+        repeat_visitors = df[(df["visit_number"] > 1) & (df["days_since_last_visit"] > 0)].copy()
+        
+        if len(repeat_visitors) > 0:
+            # Calculate median interval per procedure
+            if "procedure" in repeat_visitors.columns:
+                intervals = (
+                    repeat_visitors
+                    .groupby("procedure")["days_since_last_visit"]
+                    .median()
+                    .to_dict()
+                )
+            
+            # Global default from all repeat visitors
+            intervals["default"] = repeat_visitors["days_since_last_visit"].median()
+    
+    # Fallback if no data
+    if "default" not in intervals or pd.isna(intervals["default"]):
+        intervals["default"] = 90
+    
+    return intervals
+
+
+def calculate_churn_risk(
+    encounter_date,
+    procedure: str,
+    visit_number: int = 1,
+    days_since_last_visit: int = 0,
+    procedure_intervals: dict = None,
+    reference_date: Optional[date] = None
+) -> dict:
+    """
+    Calculate churn risk for a single patient.
+    Uses data-driven intervals when available.
+    """
+    if reference_date is None:
+        reference_date = date.today()
+    
+    # Parse encounter date
+    if isinstance(encounter_date, str):
+        try:
+            encounter = datetime.strptime(encounter_date, "%Y-%m-%d").date()
+        except:
+            encounter = reference_date
+    elif isinstance(encounter_date, datetime):
+        encounter = encounter_date.date()
+    elif isinstance(encounter_date, date):
+        encounter = encounter_date
+    else:
+        encounter = reference_date
+    
+    days_since = (reference_date - encounter).days
+    
+    # Get expected interval from data (or use patient's own pattern)
+    if procedure_intervals and procedure in procedure_intervals:
+        expected_interval = procedure_intervals[procedure]
+    elif procedure_intervals and "default" in procedure_intervals:
+        expected_interval = procedure_intervals["default"]
+    else:
+        expected_interval = 90  # Fallback
+    
+    # For patients with visit history, blend with their actual pattern
+    if visit_number > 1 and days_since_last_visit > 0:
+        # 60% weight on patient's own pattern, 40% on procedure average
+        expected_interval = int(0.4 * expected_interval + 0.6 * days_since_last_visit)
+    
+    # Calculate overdue ratio
+    overdue_ratio = days_since / expected_interval if expected_interval > 0 else 0
+    
+    # Risk thresholds
+    if overdue_ratio < 1.0:
+        risk_level, risk_score = "on_schedule", 0
+    elif overdue_ratio < 1.3:
+        risk_level, risk_score = "low", 25
+    elif overdue_ratio < 1.6:
+        risk_level, risk_score = "medium", 50
+    elif overdue_ratio < 2.0:
+        risk_level, risk_score = "high", 75
+    else:
+        risk_level, risk_score = "critical", 100
+    
+    return {
+        "risk_level": risk_level,
+        "risk_score": risk_score,
+        "days_since_visit": days_since,
+        "days_overdue": days_since - expected_interval,
+        "expected_interval": expected_interval,
+        "overdue_ratio": round(overdue_ratio, 2),
+    }
+
+
+def analyze_patient_churn(df: pd.DataFrame, reference_date: Optional[date] = None) -> pd.DataFrame:
+    """
+    Analyze churn risk for all patients in a DataFrame.
+    Calculates procedure intervals from the data itself.
+    """
+    if reference_date is None:
+        reference_date = date.today()
+    
+    # Calculate intervals from THIS dataset
+    procedure_intervals = calculate_procedure_intervals(df)
+    print(f"[CHURN] Calculated intervals from data: {procedure_intervals}")
+    
+    results = []
+    for _, row in df.iterrows():
+        # Find the encounter date column
+        enc_date = row.get("encounter_date") or row.get("last_visit") or row.get("visit_date")
+        proc = row.get("procedure", "default")
+        
+        risk = calculate_churn_risk(
+            encounter_date=enc_date,
+            procedure=proc,
+            visit_number=row.get("visit_number", 1),
+            days_since_last_visit=row.get("days_since_last_visit", 0),
+            procedure_intervals=procedure_intervals,
+            reference_date=reference_date
+        )
+        
+        results.append({
+            "patient_id": row.get("patient_id", ""),
+            "procedure": proc,
+            "last_visit": enc_date,
+            "visit_number": row.get("visit_number", 1),
+            **risk
+        })
+    
+    return pd.DataFrame(results)
+
+
+def get_churn_summary(df: pd.DataFrame, reference_date: Optional[date] = None) -> dict:
+    """
+    Get aggregate churn statistics for a patient cohort.
+    All intervals calculated from actual patient data.
+    """
+    churn_df = analyze_patient_churn(df, reference_date)
+    total = len(churn_df)
+    
+    if total == 0:
+        return {
+            "total_patients": 0,
+            "at_risk_count": 0,
+            "at_risk_percent": 0,
+            "critical_count": 0,
+            "high_count": 0,
+            "medium_count": 0,
+            "avg_days_overdue": 0,
+            "high_risk_patients": [],
+            "risk_distribution": {},
+            "procedure_intervals": {}
+        }
+    
+    # Count by risk level
+    risk_counts = churn_df["risk_level"].value_counts().to_dict()
+    
+    at_risk = risk_counts.get("medium", 0) + risk_counts.get("high", 0) + risk_counts.get("critical", 0)
+    
+    # Average days overdue for at-risk patients
+    at_risk_df = churn_df[churn_df["risk_level"].isin(["medium", "high", "critical"])]
+    avg_days_overdue = at_risk_df["days_overdue"].mean() if len(at_risk_df) > 0 else 0
+    
+    # Get highest-risk patients
+    high_risk_patients = churn_df[
+        churn_df["risk_level"].isin(["high", "critical"])
+    ].sort_values("risk_score", ascending=False).head(10).to_dict("records")
+    
+    # Include the calculated intervals for transparency
+    procedure_intervals = calculate_procedure_intervals(df)
+    
+    return {
+        "total_patients": total,
+        "at_risk_count": at_risk,
+        "at_risk_percent": round(at_risk / total * 100, 1),
+        "critical_count": risk_counts.get("critical", 0),
+        "high_count": risk_counts.get("high", 0),
+        "medium_count": risk_counts.get("medium", 0),
+        "low_count": risk_counts.get("low", 0),
+        "on_schedule_count": risk_counts.get("on_schedule", 0),
+        "avg_days_overdue": round(avg_days_overdue, 0),
+        "high_risk_patients": high_risk_patients,
+        "risk_distribution": {
+            level: round(risk_counts.get(level, 0) / total * 100, 1)
+            for level in ["critical", "high", "medium", "low", "on_schedule"]
+        },
+        "procedure_intervals": {k: round(v, 0) for k, v in procedure_intervals.items()}
+    }

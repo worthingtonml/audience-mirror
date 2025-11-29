@@ -48,6 +48,7 @@ from services.scoring import (
     calibrate_booking_predictions, generate_segment_explanations, validate_zip_recommendation_accuracy,
     generate_llm_explanations
 )
+from services.churn_scoring import calculate_churn_risk, get_churn_summary, analyze_patient_churn
 from services.validate import validate_algorithm_accuracy
 from database import get_db, Dataset, AnalysisRun, create_tables
 
@@ -2553,6 +2554,8 @@ async def generate_instagram_campaign(
                 return json.loads(cached)
         except Exception as e:
             print(f"[CACHE ERROR] {e}")
+            
+
     
     # Generate with LLM
     try:
@@ -2599,4 +2602,229 @@ async def generate_instagram_campaign(
             "hashtags": ["aesthetics", "beauty", "transformation", practice_city.lower().replace(' ', '')],
             "story_cta": "Swipe up to book your consultation"
         }  
+@app.post("/api/v1/campaigns/google")
+@limiter.limit("100/hour")
+async def generate_google_campaign(
+    request: fastapi.Request,
+    segment_name: str = Form(...),
+    patient_count: int = Form(...),
+    avg_ltv: float = Form(...),
+    avg_ticket: float = Form(...),
+    top_procedures: str = Form(...),
+    target_demographics: str = Form(...),
+    practice_name: str = Form("Your Practice"),
+    practice_city: str = Form("Your City"),
+):
+    cache_key = hashlib.md5(
+        f"google-v1-{segment_name}-{patient_count}-{avg_ltv}-{top_procedures}".encode()
+    ).hexdigest()
+    
+    if CACHE_ENABLED and redis_client:
+        try:
+            cached = redis_client.get(f"google:{cache_key}")
+            if cached:
+                return json.loads(cached)
+        except Exception as e:
+            print(f"[CACHE ERROR] {e}")
+    
+    try:
+        context = CampaignContext(
+            segment_name=segment_name,
+            patient_count=patient_count,
+            avg_ltv=avg_ltv,
+            avg_ticket=avg_ticket,
+            top_procedures=top_procedures.split(','),
+            target_zips=[],
+            target_demographics=target_demographics,
+            practice_name=practice_name,
+            practice_city=practice_city,
+            recommended_budget=avg_ltv * 0.1,
+            competition_level="moderate"
+        )
         
+        result = llm_service.generate_google_ad(context)
+        
+        if CACHE_ENABLED and redis_client:
+            redis_client.setex(f"google:{cache_key}", 86400, json.dumps(result))
+        
+        return result
+        
+    except Exception as e:
+        procedures_list = top_procedures.split(',')
+        return {
+            "headlines": [f"Best {procedures_list[0]} in {practice_city}", f"Top-Rated {procedures_list[0]}", "Book Your Free Consult"],
+            "descriptions": [f"Expert {procedures_list[0]} treatments. Trusted by {patient_count}+ patients. Book today!"],
+            "keywords": [procedures_list[0].lower(), f"{procedures_list[0].lower()} near me", f"{procedures_list[0].lower()} {practice_city.lower()}"]
+        }       
+        
+@app.post("/api/v1/campaigns/email")
+@limiter.limit("100/hour")
+async def generate_email_campaign(
+    request: fastapi.Request,
+    segment_name: str = Form(...),
+    procedure: str = Form("aesthetic treatments"),
+    sequence_type: str = Form("nurture"),  # nurture, reactivation, upsell, post_visit
+    practice_name: str = Form("Your Practice"),
+    practice_city: str = Form("Your City"),
+):
+    """
+    Generate email sequence for a patient segment using Claude AI.
+    """
+    from services.campaign_generator import generate_email_sequence
+    
+    # Create cache key
+    cache_key = hashlib.md5(
+        f"email-v1-{segment_name}-{procedure}-{sequence_type}".encode()
+    ).hexdigest()
+    
+    # Check cache first
+    if CACHE_ENABLED and redis_client:
+        try:
+            cached = redis_client.get(f"email:{cache_key}")
+            if cached:
+                print(f"[CACHE HIT] Email sequence for {segment_name}")
+                return json.loads(cached)
+        except Exception as e:
+            print(f"[CACHE ERROR] {e}")
+    
+    try:
+        print(f"[LLM] Generating {sequence_type} email sequence for {segment_name}...")
+        result = generate_email_sequence(
+            cohort=segment_name,
+            procedure=procedure,
+            sequence_type=sequence_type
+        )
+        
+        # Add practice info to result
+        result["practice_name"] = practice_name
+        result["practice_city"] = practice_city
+        
+        # Cache for 24 hours
+        if CACHE_ENABLED and redis_client:
+            try:
+                redis_client.setex(f"email:{cache_key}", 86400, json.dumps(result))
+                print(f"[CACHE] Stored email sequence for {segment_name}")
+            except Exception as e:
+                print(f"[CACHE ERROR] Failed to store: {e}")
+        
+        return result
+        
+    except Exception as e:
+        print(f"[LLM ERROR] Email generation failed: {e}")
+        return {
+            "sequence": [
+                {
+                    "email_number": 1,
+                    "send_delay": "immediately",
+                    "subject_line": f"Your {procedure} consultation awaits",
+                    "preview_text": "See what personalized treatment could do for you",
+                    "body": f"Hi,\n\nThank you for your interest in {procedure}. Book a free consultation to discuss your options.\n\nBest,\n{practice_name}",
+                    "cta_text": "Book Free Consultation",
+                    "cta_type": "book_consultation"
+                }
+            ],
+            "sequence_strategy": "Single touchpoint - expand sequence for better results."
+        }
+
+
+@app.post("/api/v1/campaigns/sms")
+@limiter.limit("100/hour")
+async def generate_sms_campaign(
+    request: fastapi.Request,
+    segment_name: str = Form(...),
+    procedure: str = Form("your treatment"),
+    campaign_type: str = Form("reactivation"),  # appointment_reminder, reactivation, flash_offer, post_visit, waitlist
+    practice_name: str = Form("Your Practice"),
+    practice_phone: str = Form("[Phone]"),
+):
+    """
+    Generate SMS messages for a patient segment using Claude AI.
+    """
+    from services.campaign_generator import generate_sms_campaign as gen_sms
+    
+    # Create cache key
+    cache_key = hashlib.md5(
+        f"sms-v1-{segment_name}-{procedure}-{campaign_type}".encode()
+    ).hexdigest()
+    
+    # Check cache first
+    if CACHE_ENABLED and redis_client:
+        try:
+            cached = redis_client.get(f"sms:{cache_key}")
+            if cached:
+                print(f"[CACHE HIT] SMS campaign for {segment_name}")
+                return json.loads(cached)
+        except Exception as e:
+            print(f"[CACHE ERROR] {e}")
+    
+    try:
+        print(f"[LLM] Generating {campaign_type} SMS campaign for {segment_name}...")
+        result = gen_sms(
+            cohort=segment_name,
+            procedure=procedure,
+            campaign_type=campaign_type
+        )
+        
+        # Replace placeholders with practice info
+        for msg in result.get("messages", []):
+            msg["text"] = msg["text"].replace("[Business Name]", practice_name)
+            msg["text"] = msg["text"].replace("[Phone]", practice_phone)
+            msg["character_count"] = len(msg["text"])
+        
+        # Cache for 24 hours
+        if CACHE_ENABLED and redis_client:
+            try:
+                redis_client.setex(f"sms:{cache_key}", 86400, json.dumps(result))
+                print(f"[CACHE] Stored SMS campaign for {segment_name}")
+            except Exception as e:
+                print(f"[CACHE ERROR] Failed to store: {e}")
+        
+        return result
+        
+    except Exception as e:
+        print(f"[LLM ERROR] SMS generation failed: {e}")
+        return {
+            "messages": [
+                {
+                    "variant": "A",
+                    "text": f"{practice_name}: Ready to book {procedure}? Reply YES or call {practice_phone}!",
+                    "character_count": 70
+                }
+            ],
+            "recommended_send_time": "Tuesday-Thursday, 10am-2pm",
+            "compliance_note": "Ensure patient has opted in to SMS marketing."
+        }
+
+@app.post("/api/v1/segments/churn-analysis")
+@limiter.limit("100/hour")
+async def analyze_segment_churn(
+    request: fastapi.Request,
+    run_id: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Analyze churn risk for patients in a completed analysis run.
+    """
+    from services.churn_scoring import get_churn_summary
+    
+    # Get the run
+    analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == run_id).first()
+    if not analysis_run or analysis_run.status != "done":
+        raise HTTPException(status_code=404, detail="Run not found or not completed")
+    
+    # Get the dataset to load patient data
+    dataset = db.query(Dataset).filter(Dataset.id == analysis_run.dataset_id).first()
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    # Load patient data
+    df = pd.read_csv(dataset.patients_path)
+    
+    # Run churn analysis
+    summary = get_churn_summary(df)
+    
+    return {
+        "success": True,
+        "run_id": run_id,
+        **summary
+    }

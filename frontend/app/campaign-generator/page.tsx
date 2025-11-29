@@ -14,11 +14,20 @@ export default function CampaignGenerator() {
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'ads' | 'messages'>('ads');
   const [instagramAdCopy, setInstagramAdCopy] = useState<any>(null);
+  const [googleAdCopy, setGoogleAdCopy] = useState<any>(null);
   const [expandedPlatforms, setExpandedPlatforms] = useState<Record<string, boolean>>({});
   const [showDataQuality, setShowDataQuality] = useState(false);
   const [showOptimizationTips, setShowOptimizationTips] = useState(false);
   const [showChecklist, setShowChecklist] = useState(false);
   const [showKPIs, setShowKPIs] = useState(false);
+  const [emailSequence, setEmailSequence] = useState<any>(null);
+  const [smsMessages, setSmsMessages] = useState<any>(null);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [smsLoading, setSmsLoading] = useState(false);
+  const [emailSequenceType, setEmailSequenceType] = useState('nurture');
+  const [smsType, setSmsType] = useState('reactivation');
+  const [showEmails, setShowEmails] = useState(true);
+  const [showSms, setShowSms] = useState(true);
   
   useEffect(() => {
     const zipCodes = searchParams.get('zip')?.split(',') || [];
@@ -67,6 +76,12 @@ export default function CampaignGenerator() {
           generateInstagramAds(selectedSegments, primaryCity).then(igAd => {
             setInstagramAdCopy(igAd);
             console.log('[Instagram AI]', igAd);
+          });
+          
+          // Generate AI-powered Google Search ads
+          generateGoogleAds(selectedSegments, primaryCity).then(googleAd => {
+            setGoogleAdCopy(googleAd);
+            console.log('[Google AI]', googleAd);
           });
           
           // Save to localStorage for landing page builder
@@ -127,6 +142,110 @@ export default function CampaignGenerator() {
     );
 
     return instagramAds[0]; // Return first segment's Instagram ad for now
+  };
+  
+  const generateGoogleAds = async (segments: any[], city: string) => {
+    const segment = segments[0];
+    if (!segment) return null;
+    
+    try {
+      const formData = new FormData();
+      formData.append('segment_name', segment.cohort || 'Primary Segment');
+      formData.append('patient_count', segment.patient_count?.toString() || '0');
+      formData.append('avg_ltv', segment.avg_ltv?.toString() || '0');
+      formData.append('avg_ticket', segment.avg_ticket?.toString() || '0');
+      formData.append('top_procedures', segment.top_procedures?.join(',') || 'General Treatments');
+      formData.append('target_demographics', `Ages ${segment.avg_age || 35}, Income $${segment.avg_income || 75}k+`);
+      formData.append('practice_name', 'Your Practice');
+      formData.append('practice_city', city || 'your area');
+
+      const response = await fetch('http://localhost:8000/api/v1/campaigns/google', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Google Ads API failed');
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('[Google Ads API Error]', error);
+      // Return fallback
+      const primaryProcedure = segment.top_procedures?.[0] || 'aesthetic treatments';
+      return {
+        headlines: [
+          `${primaryProcedure} in ${city || 'your area'}`,
+          `Top-rated ${primaryProcedure}`,
+          'Book a free consult'
+        ],
+        descriptions: [
+          `Expert ${primaryProcedure}. Trusted locally. Book today.`,
+          `Same-week appointments in ${city || 'your area'}.`
+        ],
+        keywords: [
+          primaryProcedure,
+          `${primaryProcedure} near me`,
+          `${primaryProcedure} ${city || 'your area'}`
+        ]
+      };
+    }
+  };
+
+  const generateEmailSequence = async (sequenceType: string) => {
+    setEmailLoading(true);
+    try {
+      const segment = campaignData?.overview?.profileType || 'Comfort Spenders';
+      const procedure = campaignData?.overview?.procedure || 'aesthetic treatments';
+      
+      const formData = new FormData();
+      formData.append('segment_name', segment);
+      formData.append('procedure', procedure);
+      formData.append('sequence_type', sequenceType);
+      formData.append('practice_name', 'Your Practice');
+      formData.append('practice_city', campaignData?.overview?.city || 'Your City');
+
+      const response = await fetch(`${API_URL}/api/v1/campaigns/email`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('Email API failed');
+      const data = await response.json();
+      setEmailSequence(data);
+    } catch (error) {
+      console.error('[Email API Error]', error);
+    } finally {
+      setEmailLoading(false);
+    }
+  };
+
+  const generateSmsMessages = async (campaignType: string) => {
+    setSmsLoading(true);
+    try {
+      const segment = campaignData?.overview?.profileType || 'Comfort Spenders';
+      const procedure = campaignData?.overview?.procedure || 'aesthetic treatments';
+      
+      const formData = new FormData();
+      formData.append('segment_name', segment);
+      formData.append('procedure', procedure);
+      formData.append('campaign_type', campaignType);
+      formData.append('practice_name', 'Your Practice');
+      formData.append('practice_phone', '(555) 123-4567');
+
+      const response = await fetch(`${API_URL}/api/v1/campaigns/sms`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('SMS API failed');
+      const data = await response.json();
+      setSmsMessages(data);
+    } catch (error) {
+      console.error('[SMS API Error]', error);
+    } finally {
+      setSmsLoading(false);
+    }
   };
 
   if (loading) {
@@ -269,9 +388,9 @@ export default function CampaignGenerator() {
         {/* Tab Content */}
         {activeTab === 'ads' && (
           <>
-            {/* Campaign Overview */}
+            {/* Campaign Overview with KPIs */}
             <div className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">Investment & Returns</h2>
+              <h2 className="text-lg font-semibold text-slate-900 mb-4">Investment & Expected Returns</h2>
               
               <div className="grid grid-cols-3 gap-6 mb-6">
                 <div className="text-center p-4 bg-slate-50 rounded-lg">
@@ -281,14 +400,14 @@ export default function CampaignGenerator() {
                   <div className="text-xs text-slate-600">Monthly Budget</div>
                 </div>
 
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                <div className="text-center p-4 bg-emerald-50 rounded-lg">
                   <div className="text-2xl font-bold text-emerald-600 mb-1">
                     {campaignData.overview.expectedPatients}
                   </div>
                   <div className="text-xs text-slate-600">Expected Bookings</div>
                 </div>
 
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
+                <div className="text-center p-4 bg-emerald-50 rounded-lg">
                   <div className="text-2xl font-bold text-emerald-600 mb-1">
                     ${(campaignData.overview.expectedRevenue / 1000).toFixed(0)}K
                   </div>
@@ -296,8 +415,18 @@ export default function CampaignGenerator() {
                 </div>
               </div>
 
-              <div className="text-sm text-slate-600 text-center">
+              <div className="text-sm text-slate-600 text-center mb-6 pb-6 border-b border-slate-100">
                 That's a <strong className="text-slate-900">{campaignData.overview.roas}× return</strong> on investment
+              </div>
+
+              {/* Inline KPIs */}
+              <div className="grid grid-cols-3 gap-4">
+                {campaignData.kpis.slice(0, 6).map((kpi: any, i: number) => (
+                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                    <span className="text-xs text-slate-600">{kpi.metric}</span>
+                    <span className="text-sm font-bold text-indigo-600">{kpi.target}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -337,8 +466,14 @@ export default function CampaignGenerator() {
                     ];
                     
                     platform.ads.forEach((ad: any, idx: number) => {
+                      const exportHeadline = platform.name === 'Google Search' && googleAdCopy?.headlines
+                        ? googleAdCopy.headlines.join(' | ')
+                        : ad.headline;
+
                       const exportCopy = platform.name === 'Instagram Ads' && instagramAdCopy?.caption
                         ? instagramAdCopy.caption
+                        : platform.name === 'Google Search' && googleAdCopy?.descriptions
+                        ? googleAdCopy.descriptions.join(' ')
                         : ad.copy;
 
                       platformData.push(
@@ -346,7 +481,7 @@ export default function CampaignGenerator() {
                         `Targeting: ${ad.targeting}`,
                         `Audience: ${ad.demographics}`,
                         `Daily Budget: $${ad.dailyBudget}`,
-                        `Headline: ${ad.headline}`,
+                        `Headline: ${exportHeadline}`,
                         `Copy: ${exportCopy}`,
                         ad.optimizationTip ? `Tip: ${ad.optimizationTip}` : '',
                         ''
@@ -444,68 +579,99 @@ export default function CampaignGenerator() {
                   </div>
 
                   <div className="space-y-4">
-                    {displayAds.map((ad: any, index: number) => (
-                      <div key={index} className="border border-slate-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div>
-                            <div className="text-sm font-semibold text-slate-900 mb-1">{ad.location}</div>
-                            <div className="text-xs text-slate-600">{ad.targeting}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-semibold text-slate-900">${ad.dailyBudget}/day</div>
-                            <div className="text-xs text-slate-600">{ad.competitiveNote}</div>
-                          </div>
-                        </div>
+                    {displayAds.map((ad: any, index: number) => {
+                      const isInstagram = platform.name === 'Instagram Ads';
+                      const isGoogle = platform.name === 'Google Search';
+                      const googleHeadlines = isGoogle && googleAdCopy?.headlines ? googleAdCopy.headlines : null;
+                      const googleDescriptions = isGoogle && googleAdCopy?.descriptions ? googleAdCopy.descriptions : null;
+                      const displayCopy = isGoogle && googleDescriptions
+                        ? googleDescriptions.join(' ')
+                        : isInstagram && instagramAdCopy?.caption
+                        ? instagramAdCopy.caption
+                        : ad.copy;
 
-                        {/* In-line Optimization Tip */}
-                        {showOptimizationTips && ad.optimizationTip && (
-                          <div className="mb-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
-                            <div className="flex items-start gap-2">
-                              <Lightbulb className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                              <div className="text-xs italic text-amber-900">{ad.optimizationTip}</div>
+                      const clipboardHeadline = googleHeadlines ? googleHeadlines.join(' | ') : ad.headline;
+                      const clipboardCopy = displayCopy;
+
+                      return (
+                        <div key={index} className="border border-slate-200 rounded-lg p-4">
+                          <div className="flex items-start justify-between mb-3">
+                            <div>
+                              <div className="text-sm font-semibold text-slate-900 mb-1">{ad.location}</div>
+                              <div className="text-xs text-slate-600">{ad.targeting}</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-semibold text-slate-900">${ad.dailyBudget}/day</div>
+                              <div className="text-xs text-slate-600">{ad.competitiveNote}</div>
                             </div>
                           </div>
-                        )}
 
-                      <div className="mb-3">
-                        <div className="text-xs text-slate-500 uppercase mb-1">Audience</div>
-                        <div className="text-sm text-slate-700">{ad.demographics}</div>
-                      </div>
+                          {/* In-line Optimization Tip */}
+                          {showOptimizationTips && ad.optimizationTip && (
+                            <div className="mb-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                              <div className="flex items-start gap-2">
+                                <Lightbulb className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                                <div className="text-xs italic text-amber-900">{ad.optimizationTip}</div>
+                              </div>
+                            </div>
+                          )}
 
-                      <div className="mb-3">
-                        <div className="text-xs text-slate-500 uppercase mb-1">Behavioral Profile</div>
-                        <div className="text-sm text-slate-700">{ad.behavioralTraits}</div>
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="text-xs text-slate-500 uppercase mb-1">Headline</div>
-                        <div className="text-sm font-medium text-slate-900">{ad.headline}</div>
-                      </div>
-
-                      <div className="mb-3">
-                        <div className="text-xs text-slate-500 uppercase mb-1">Ad Copy</div>
-                        <div className="text-sm text-slate-900 bg-slate-50 p-3 rounded">
-                          {platform.name === 'Instagram Ads' && instagramAdCopy?.caption
-                            ? instagramAdCopy.caption
-                            : ad.copy}
+                        <div className="mb-3">
+                          <div className="text-xs text-slate-500 uppercase mb-1">Audience</div>
+                          <div className="text-sm text-slate-700">{ad.demographics}</div>
                         </div>
-                      </div>
 
-                        <button
-                          onClick={() => copyToClipboard(
-                            `Platform: ${platform.name}\nLocation: ${ad.location}\nTargeting: ${ad.targeting}\nAudience: ${ad.demographics}\nHeadline: ${ad.headline}\nCopy: ${platform.name === 'Instagram Ads' && instagramAdCopy?.caption ? instagramAdCopy.caption : ad.copy}\nBudget: $${ad.dailyBudget}/day\n\nTip: ${ad.optimizationTip || 'N/A'}`,
-                            `${platform.name}-${index}`
-                          )}
-                          className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
-                        >
-                          {copiedIndex === `${platform.name}-${index}` ? (
-                            <><Check className="h-4 w-4" />Copied!</>
+                        <div className="mb-3">
+                          <div className="text-xs text-slate-500 uppercase mb-1">Behavioral Profile</div>
+                          <div className="text-sm text-slate-700">{ad.behavioralTraits}</div>
+                        </div>
+
+                        <div className="mb-3">
+                          <div className="text-xs text-slate-500 uppercase mb-1">{googleHeadlines ? 'Headlines' : 'Headline'}</div>
+                          {googleHeadlines ? (
+                            <div className="space-y-1">
+                              {googleHeadlines.map((headline: string, i: number) => (
+                                <div key={i} className="text-sm font-medium text-slate-900">• {headline}</div>
+                              ))}
+                            </div>
                           ) : (
-                            <><Copy className="h-4 w-4" />Copy campaign details</>
+                            <div className="text-sm font-medium text-slate-900">{ad.headline}</div>
                           )}
-                        </button>
-                      </div>
-                    ))}
+                        </div>
+
+                          <div className="mb-3">
+                            <div className="text-xs text-slate-500 uppercase mb-1">Ad Copy</div>
+                            {googleDescriptions ? (
+                              <div className="space-y-1 bg-slate-50 p-3 rounded">
+                                {googleDescriptions.map((desc: string, i: number) => (
+                                  <div key={i} className="text-sm text-slate-900">• {desc}</div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="text-sm text-slate-900 bg-slate-50 p-3 rounded">
+                                {isInstagram && instagramAdCopy?.caption
+                                  ? instagramAdCopy.caption
+                                  : ad.copy}
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => copyToClipboard(
+                              `Platform: ${platform.name}\nLocation: ${ad.location}\nTargeting: ${ad.targeting}\nAudience: ${ad.demographics}\nHeadline: ${clipboardHeadline}\nCopy: ${clipboardCopy}\nBudget: $${ad.dailyBudget}/day\n\nTip: ${ad.optimizationTip || 'N/A'}`,
+                              `${platform.name}-${index}`
+                            )}
+                            className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
+                          >
+                            {copiedIndex === `${platform.name}-${index}` ? (
+                              <><Check className="h-4 w-4" />Copied!</>
+                            ) : (
+                              <><Copy className="h-4 w-4" />Copy campaign details</>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {platform.ads.length > 3 && (
@@ -524,320 +690,209 @@ export default function CampaignGenerator() {
 
         {activeTab === 'messages' && (
           <div className="space-y-6">
-            {/* Email Templates */}
-            <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">Email Templates</h2>
-                  <p className="text-sm text-slate-600 mt-1">Copy, customize, and send</p>
+            {/* AI Email Sequence Generator */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowEmails(!showEmails)}
+                      className="p-1 hover:bg-slate-100 rounded"
+                    >
+                      <ChevronDown className={`h-5 w-5 text-slate-600 transition-transform ${showEmails ? 'rotate-180' : ''}`} />
+                    </button>
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-900">Email Nurture Sequence</h2>
+                      <p className="text-sm text-slate-600">3-email series tailored to {campaignData?.overview?.profileType || 'your patients'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={emailSequenceType}
+                      onChange={(e) => setEmailSequenceType(e.target.value)}
+                      className="text-sm border border-slate-300 rounded-lg px-3 py-2"
+                    >
+                      <option value="nurture">New Lead Nurture</option>
+                      <option value="reactivation">Win-Back / Reactivation</option>
+                      <option value="upsell">Upsell Existing Patients</option>
+                      <option value="post_visit">Post-Treatment Follow-up</option>
+                    </select>
+                    <button
+                      onClick={() => generateEmailSequence(emailSequenceType)}
+                      disabled={emailLoading}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {emailLoading ? (
+                        <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> Generating...</>
+                      ) : (
+                        'Generate Sequence'
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                {/* Referral Request Email */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900">Referral Request</div>
-                      <div className="text-xs text-slate-600">Send to satisfied patients</div>
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(
-                        `Subject: Share the love - get $100 off your next visit\n\nHi [First Name],\n\nYou're one of our favorite patients, and we'd love to meet more people like you.\n\nRefer a friend and you both get $100 off your next ${campaignData.overview.procedure === 'All Procedures' ? 'treatment' : campaignData.overview.procedure}.\n\nJust have them mention your name when they book their free consultation.\n\nNo limit - refer 3 friends, get $300 off. Simple as that.\n\nThanks for being part of our practice,\n[Your Name]`,
-                        'email-referral'
+              {showEmails && (
+                <div className="p-6">
+                  {emailSequence ? (
+                    <div className="space-y-4">
+                      {emailSequence.sequence_strategy && (
+                        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                          <div className="text-sm font-medium text-indigo-900">Strategy</div>
+                          <div className="text-sm text-indigo-700 mt-1">{emailSequence.sequence_strategy}</div>
+                        </div>
                       )}
-                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                    >
-                      {copiedIndex === 'email-referral' ? (
-                        <><Check className="h-4 w-4" />Copied</>
-                      ) : (
-                        <><Copy className="h-4 w-4" />Copy</>
-                      )}
-                    </button>
-                  </div>
-                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 space-y-2">
-                    <div><strong>Subject:</strong> Share the love - get $100 off your next visit</div>
-                    <div className="pt-2 border-t border-slate-200">
-                      Hi [First Name],<br/><br/>
-                      You're one of our favorite patients, and we'd love to meet more people like you.<br/><br/>
-                      Refer a friend and you both get $100 off your next {campaignData.overview.procedure === 'All Procedures' ? 'treatment' : campaignData.overview.procedure}.<br/><br/>
-                      Just have them mention your name when they book their free consultation.<br/><br/>
-                      No limit - refer 3 friends, get $300 off. Simple as that.<br/><br/>
-                      Thanks for being part of our practice,<br/>
-                      [Your Name]
+                      {emailSequence.sequence?.map((email: any, i: number) => (
+                        <div key={i} className="border border-slate-200 rounded-lg overflow-hidden">
+                          <div className="flex items-center justify-between p-4 bg-slate-50">
+                            <div>
+                              <div className="text-sm font-semibold text-slate-900">Email {email.email_number}: {email.subject_line}</div>
+                              <div className="text-xs text-slate-500 mt-0.5">Send: {email.send_delay}</div>
+                            </div>
+                            <button
+                              onClick={() => copyToClipboard(
+                                `Subject: ${email.subject_line}\nPreview: ${email.preview_text}\n\n${email.body}\n\n[${email.cta_text}]`,
+                                `email-${i}`
+                              )}
+                              className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                            >
+                              {copiedIndex === `email-${i}` ? <><Check className="h-4 w-4" />Copied</> : <><Copy className="h-4 w-4" />Copy</>}
+                            </button>
+                          </div>
+                          <div className="p-4 space-y-3">
+                            <div>
+                              <div className="text-xs text-slate-500 uppercase mb-1">Subject</div>
+                              <div className="text-sm font-medium text-slate-900">{email.subject_line}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-slate-500 uppercase mb-1">Preview</div>
+                              <div className="text-sm text-slate-600">{email.preview_text}</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-slate-500 uppercase mb-1">Body</div>
+                              <div className="text-sm text-slate-800 whitespace-pre-wrap bg-slate-50 rounded p-3">{email.body}</div>
+                            </div>
+                            <div className="pt-2">
+                              <span className="inline-block bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded">{email.cta_text}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  ) : (
+                    <div className="text-center py-8 text-slate-500">
+                      <div className="text-sm">Select a sequence type and click "Generate Sequence"</div>
+                    </div>
+                  )}
                 </div>
-
-                {/* Win-Back Email */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900">Win-Back Campaign</div>
-                      <div className="text-xs text-slate-600">For patients who haven't visited in 6+ months</div>
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(
-                        `Subject: We miss you - come back for 20% off\n\nHi [First Name],\n\nIt's been a while since we've seen you, and we wanted to check in.\n\nLife gets busy - we get it. But your skin (and confidence) deserve some attention.\n\nCome back this month and get 20% off any treatment. No catches, no fine print.\n\nBook your appointment by [Date] and let's get you feeling great again.\n\n[Book Now Button]\n\nLooking forward to seeing you,\n[Your Name]`,
-                        'email-winback'
-                      )}
-                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                    >
-                      {copiedIndex === 'email-winback' ? (
-                        <><Check className="h-4 w-4" />Copied</>
-                      ) : (
-                        <><Copy className="h-4 w-4" />Copy</>
-                      )}
-                    </button>
-                  </div>
-                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 space-y-2">
-                    <div><strong>Subject:</strong> We miss you - come back for 20% off</div>
-                    <div className="pt-2 border-t border-slate-200">
-                      Hi [First Name],<br/><br/>
-                      It's been a while since we've seen you, and we wanted to check in.<br/><br/>
-                      Life gets busy - we get it. But your skin (and confidence) deserve some attention.<br/><br/>
-                      Come back this month and get 20% off any treatment. No catches, no fine print.<br/><br/>
-                      Book your appointment by [Date] and let's get you feeling great again.<br/><br/>
-                      Looking forward to seeing you,<br/>
-                      [Your Name]
-                    </div>
-                  </div>
-                </div>
-
-                {/* Review Request Email */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900">Review Request</div>
-                      <div className="text-xs text-slate-600">Send 3-5 days after treatment</div>
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(
-                        `Subject: How did we do?\n\nHi [First Name],\n\nWe hope you're loving your results!\n\nIf you have 30 seconds, we'd be grateful if you could leave us a quick review. It helps other people find us and decide if we're the right fit.\n\n[Google Review Link]\n\nThanks for trusting us with your care,\n[Your Name]\n\nP.S. If something wasn't perfect, please reply and let us know directly. We want to make it right.`,
-                        'email-review'
-                      )}
-                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                    >
-                      {copiedIndex === 'email-review' ? (
-                        <><Check className="h-4 w-4" />Copied</>
-                      ) : (
-                        <><Copy className="h-4 w-4" />Copy</>
-                      )}
-                    </button>
-                  </div>
-                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 space-y-2">
-                    <div><strong>Subject:</strong> How did we do?</div>
-                    <div className="pt-2 border-t border-slate-200">
-                      Hi [First Name],<br/><br/>
-                      We hope you're loving your results!<br/><br/>
-                      If you have 30 seconds, we'd be grateful if you could leave us a quick review. It helps other people find us and decide if we're the right fit.<br/><br/>
-                      [Google Review Link]<br/><br/>
-                      Thanks for trusting us with your care,<br/>
-                      [Your Name]<br/><br/>
-                      P.S. If something wasn't perfect, please reply and let us know directly. We want to make it right.
-                    </div>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
 
-            {/* SMS Templates */}
-            <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-lg font-semibold text-slate-900">SMS Templates</h2>
-                  <p className="text-sm text-slate-600 mt-1">Keep it short - under 160 characters</p>
+            {/* AI SMS Generator */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setShowSms(!showSms)}
+                      className="p-1 hover:bg-slate-100 rounded"
+                    >
+                      <ChevronDown className={`h-5 w-5 text-slate-600 transition-transform ${showSms ? 'rotate-180' : ''}`} />
+                    </button>
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-900">SMS Outreach</h2>
+                      <p className="text-sm text-slate-600">Short, high-conversion text messages</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={smsType}
+                      onChange={(e) => setSmsType(e.target.value)}
+                      className="text-sm border border-slate-300 rounded-lg px-3 py-2"
+                    >
+                      <option value="reactivation">Win-Back / Reactivation</option>
+                      <option value="appointment_reminder">Appointment Reminder</option>
+                      <option value="flash_offer">Flash Offer / Promo</option>
+                      <option value="post_visit">Post-Treatment Check-in</option>
+                      <option value="waitlist">Waitlist Notification</option>
+                    </select>
+                    <button
+                      onClick={() => generateSmsMessages(smsType)}
+                      disabled={smsLoading}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {smsLoading ? (
+                        <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> Generating...</>
+                      ) : (
+                        'Generate SMS'
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                {/* Booking Confirmation */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900">Booking Confirmation</div>
-                      <div className="text-xs text-slate-600">Send immediately after booking</div>
+              {showSms && (
+                <div className="p-6">
+                  {smsMessages ? (
+                    <div className="space-y-4">
+                      {smsMessages.recommended_send_time && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                          <div className="text-sm font-medium text-green-900">Best Send Time</div>
+                          <div className="text-sm text-green-700 mt-1">{smsMessages.recommended_send_time}</div>
+                        </div>
+                      )}
+                      <div className="grid gap-4">
+                        {smsMessages.messages?.map((msg: any, i: number) => (
+                          <div key={i} className="border border-slate-200 rounded-lg overflow-hidden">
+                            <div className="flex items-center justify-between p-3 bg-slate-50">
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm font-semibold text-slate-900">Variant {msg.variant}</span>
+                                <span className="text-xs text-slate-500 bg-slate-200 px-2 py-0.5 rounded">{msg.character_count} chars</span>
+                              </div>
+                              <button
+                                onClick={() => copyToClipboard(msg.text, `sms-${i}`)}
+                                className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
+                              >
+                                {copiedIndex === `sms-${i}` ? <><Check className="h-4 w-4" />Copied</> : <><Copy className="h-4 w-4" />Copy</>}
+                              </button>
+                            </div>
+                            <div className="p-4">
+                              <div className="text-sm text-slate-800 font-mono bg-slate-50 rounded p-3">{msg.text}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {smsMessages.compliance_note && (
+                        <div className="text-xs text-slate-500 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                          <strong>Compliance:</strong> {smsMessages.compliance_note}
+                        </div>
+                      )}
                     </div>
-                    <button
-                      onClick={() => copyToClipboard(
-                        `You're all set! Your consultation is [Day] at [Time]. Reply CONFIRM or call [Phone] if you need to reschedule. See you soon!`,
-                        'sms-confirm'
-                      )}
-                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                    >
-                      {copiedIndex === 'sms-confirm' ? (
-                        <><Check className="h-4 w-4" />Copied</>
-                      ) : (
-                        <><Copy className="h-4 w-4" />Copy</>
-                      )}
-                    </button>
-                  </div>
-                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 font-mono">
-                    You're all set! Your consultation is [Day] at [Time]. Reply CONFIRM or call [Phone] if you need to reschedule. See you soon!
-                  </div>
-                  <div className="text-xs text-slate-600 mt-2">143 characters</div>
-                </div>
-
-                {/* Reminder */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900">Appointment Reminder</div>
-                      <div className="text-xs text-slate-600">Send 24 hours before</div>
+                  ) : (
+                    <div className="text-center py-8 text-slate-500">
+                      <div className="text-sm">Select a campaign type and click "Generate SMS"</div>
                     </div>
-                    <button
-                      onClick={() => copyToClipboard(
-                        `Hi [First Name]! Reminder: Your appointment is tomorrow at [Time]. We're at [Address]. Reply YES to confirm or call [Phone] to reschedule.`,
-                        'sms-reminder'
-                      )}
-                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                    >
-                      {copiedIndex === 'sms-reminder' ? (
-                        <><Check className="h-4 w-4" />Copied</>
-                      ) : (
-                        <><Copy className="h-4 w-4" />Copy</>
-                      )}
-                    </button>
-                  </div>
-                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 font-mono">
-                    Hi [First Name]! Reminder: Your appointment is tomorrow at [Time]. We're at [Address]. Reply YES to confirm or call [Phone] to reschedule.
-                  </div>
-                  <div className="text-xs text-slate-600 mt-2">138 characters</div>
+                  )}
                 </div>
-
-                {/* Follow-Up */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900">Post-Treatment Follow-Up</div>
-                      <div className="text-xs text-slate-600">Send 2-3 days after treatment</div>
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(
-                        `Hi [First Name]! How are you feeling after your treatment? Any questions or concerns? Reply here or call [Phone] anytime. - [Your Name]`,
-                        'sms-followup'
-                      )}
-                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                    >
-                      {copiedIndex === 'sms-followup' ? (
-                        <><Check className="h-4 w-4" />Copied</>
-                      ) : (
-                        <><Copy className="h-4 w-4" />Copy</>
-                      )}
-                    </button>
-                  </div>
-                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 font-mono">
-                    Hi [First Name]! How are you feeling after your treatment? Any questions or concerns? Reply here or call [Phone] anytime. - [Your Name]
-                  </div>
-                  <div className="text-xs text-slate-600 mt-2">135 characters</div>
-                </div>
-
-                {/* Referral SMS */}
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <div className="text-sm font-semibold text-slate-900">Referral Request</div>
-                      <div className="text-xs text-slate-600">Send to VIP patients</div>
-                    </div>
-                    <button
-                      onClick={() => copyToClipboard(
-                        `[First Name], you're amazing! If you know anyone who'd love our results, refer them & you both get $100 off. Just have them mention your name when booking!`,
-                        'sms-referral'
-                      )}
-                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                    >
-                      {copiedIndex === 'sms-referral' ? (
-                        <><Check className="h-4 w-4" />Copied</>
-                      ) : (
-                        <><Copy className="h-4 w-4" />Copy</>
-                      )}
-                    </button>
-                  </div>
-                  <div className="bg-slate-50 rounded p-3 text-sm text-slate-800 font-mono">
-                    [First Name], you're amazing! If you know anyone who'd love our results, refer them & you both get $100 off. Just have them mention your name when booking!
-                  </div>
-                  <div className="text-xs text-slate-600 mt-2">158 characters</div>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         )}
 
-        {/* KPIs - Collapsible */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
-          <button
-            onClick={() => setShowKPIs(!showKPIs)}
-            className="w-full px-8 py-6 flex items-center justify-between hover:bg-slate-50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${showKPIs ? 'bg-indigo-100' : 'bg-slate-100'}`}>
-                <TrendingUp className={`h-5 w-5 ${showKPIs ? 'text-indigo-600' : 'text-slate-600'}`} />
-              </div>
-              <div className="text-left">
-                <h2 className="text-lg font-semibold text-slate-900">Success Metrics to Track</h2>
-                <p className="text-sm text-slate-600">{campaignData.kpis.length} KPIs for measuring performance</p>
-              </div>
-            </div>
-            <ChevronDown className={`h-5 w-5 text-slate-600 transition-transform ${showKPIs ? 'rotate-180' : ''}`} />
-          </button>
+        {/* Back Button */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={() => router.push('/patient-insights')}
+              className="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+            >
+              ← Back to Patient Insights
+            </button>
+          </div>
 
-          {showKPIs && (
-            <div className="px-8 pb-8 pt-4 border-t border-slate-100">
-              <div className="grid grid-cols-2 gap-4">
-                {campaignData.kpis.map((kpi: any, i: number) => (
-                  <div key={i} className="border border-slate-200 rounded-lg p-4">
-                    <div className="text-sm font-semibold text-slate-900 mb-1">{kpi.metric}</div>
-                    <div className="text-xl font-bold text-indigo-600 mb-1">{kpi.target}</div>
-                    <div className="text-xs text-slate-600">{kpi.why}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Checklist - Collapsible */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <button
-            onClick={() => setShowChecklist(!showChecklist)}
-            className="w-full px-8 py-6 flex items-center justify-between hover:bg-slate-50 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${showChecklist ? 'bg-indigo-100' : 'bg-slate-100'}`}>
-                <Check className={`h-5 w-5 ${showChecklist ? 'text-indigo-600' : 'text-slate-600'}`} />
-              </div>
-              <div className="text-left">
-                <h2 className="text-lg font-semibold text-slate-900">Launch Checklist</h2>
-                <p className="text-sm text-slate-600">{campaignData.checklist.length} action items before going live</p>
-              </div>
-            </div>
-            <ChevronDown className={`h-5 w-5 text-slate-600 transition-transform ${showChecklist ? 'rotate-180' : ''}`} />
-          </button>
-
-          {showChecklist && (
-            <div className="px-8 pb-8 pt-4 border-t border-slate-100">
-              <div className="space-y-3">
-                {campaignData.checklist.map((item: string, i: number) => (
-                  <label key={i} className="flex items-start gap-3 cursor-pointer group">
-                    <input type="checkbox" className="mt-1 w-4 h-4 text-indigo-600 border-slate-300 rounded" />
-                    <span className="text-sm text-slate-700 group-hover:text-slate-900">{item}</span>
-                  </label>
-                ))}
-              </div>
-
-              <button
-                onClick={() => router.push('/patient-insights')}
-                className="w-full mt-6 bg-slate-900 text-white py-3 rounded-lg font-semibold hover:bg-slate-800 transition-colors"
-              >
-                Done - Back to Dashboard
-              </button>
-            </div>
-          )}
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
 // ================================================================
 // FIXED DATA GENERATION - NO MORE $NaNK!

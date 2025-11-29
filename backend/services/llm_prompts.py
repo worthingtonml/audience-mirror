@@ -86,3 +86,33 @@ OUTPUT FORMAT (valid JSON only, no markdown):
 }}
 
 Write copy that stops the scroll and drives consultation bookings."""
+
+    @staticmethod
+    def google_ad_copy(context: CampaignContext) -> str:
+        """Generate Google Search ad copy"""
+        procedures_text = ', '.join(context.top_procedures[:3])
+        
+        return f"""Write Google Search ad copy for an aesthetic medical practice.
+
+PRACTICE CONTEXT:
+- Practice: {context.practice_name} in {context.practice_city}
+- Target Segment: {context.segment_name}
+- Demographics: {context.target_demographics}
+- Top Procedures: {procedures_text}
+- Average Spend: ${context.avg_ticket:,.0f}
+
+GOOGLE ADS REQUIREMENTS:
+- Headlines: 30 characters max each, high-intent keywords
+- Descriptions: 90 characters max each
+- Include location for local searches
+- Focus on trust signals (experience, results, reviews)
+- Strong call-to-action
+- Keywords should match search intent
+
+OUTPUT FORMAT (valid JSON only, no markdown):
+{{
+  "headlines": ["Headline 1", "Headline 2", "Headline 3"],
+  "descriptions": ["Description 1 with CTA", "Description 2 with value prop"],
+  "keywords": ["keyword 1", "keyword 2", "keyword 3", "keyword 4", "keyword 5"]
+}}
+Write copy that converts high-intent searchers into consultations."""

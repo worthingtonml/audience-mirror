@@ -59,6 +59,11 @@ class LLMService:
     def generate_instagram_ad(self, context) -> Dict:
         prompt = PromptLibrary.instagram_ad_copy(context)
         return self._call(prompt, expect_json=True)
+    
+    def generate_google_ad(self, context) -> Dict:
+        prompt = PromptLibrary.google_ad_copy(context)
+        return self._call(prompt, expect_json=True)
 
 # Singleton instance
 llm_service = LLMService()
+

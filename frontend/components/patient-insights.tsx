@@ -131,6 +131,8 @@ export default function PatientInsights() {
   const [openAccordions, setOpenAccordions] = useState<Record<string, boolean>>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [season] = useState(getCurrentSeason());
+  const [churnData, setChurnData] = useState<any>(null);
+  const [churnLoading, setChurnLoading] = useState(false);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -145,6 +147,35 @@ export default function PatientInsights() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Fetch churn analysis when run is ready
+  useEffect(() => {
+    if (!currentRunId || loading) return;
+    
+    const fetchChurnData = async () => {
+      setChurnLoading(true);
+      try {
+        const formData = new FormData();
+        formData.append('run_id', currentRunId);
+        
+        const response = await fetch(`${API_URL}/api/v1/segments/churn-analysis`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setChurnData(data);
+        }
+      } catch (e) {
+        console.error('Failed to fetch churn data:', e);
+      } finally {
+        setChurnLoading(false);
+      }
+    };
+    
+    fetchChurnData();
+  }, [currentRunId, loading]);
 
   // Poll analysis results
   useEffect(() => {
@@ -1278,6 +1309,58 @@ export default function PatientInsights() {
                         advantage.
                       </div>
                     </div>
+
+                    {/* Churn Risk - Dynamic from API */}
+                    {churnData && (
+                      <div className={`p-4 bg-white rounded-lg border-l-2 ${
+                        churnData.at_risk_percent > 50 ? 'border-[#DC2626]' : 
+                        churnData.at_risk_percent > 30 ? 'border-[#F59E0B]' : 'border-[#16A34A]'
+                      }`}>
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="text-sm font-semibold text-[#111827]">
+                            Patient Churn Risk
+                          </div>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                            churnData.at_risk_percent > 50 ? 'bg-red-50 text-red-700' : 
+                            churnData.at_risk_percent > 30 ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'
+                          }`}>
+                            {churnData.at_risk_percent > 50 ? 'High Risk' : 
+                             churnData.at_risk_percent > 30 ? 'Medium Risk' : 'Low Risk'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-[#6B7280] mb-3">
+                          {churnData.at_risk_count} of {churnData.total_patients} patients ({churnData.at_risk_percent.toFixed(0)}%) 
+                          are overdue for their next visit. {churnData.critical_count > 0 && 
+                            `${churnData.critical_count} are critical (2x+ overdue).`}
+                        </p>
+                        <div className="text-xs text-[#111827] mb-3">
+                          <span className="font-semibold">Mitigation:</span> Launch win-back 
+                          campaign targeting {churnData.critical_count + churnData.high_count} high-priority 
+                          patients. Average {churnData.avg_days_overdue.toFixed(0)} days overdue.
+                        </div>
+                        {churnData.high_risk_patients?.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-[#E5E7EB]">
+                            <div className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-2">
+                              Top At-Risk Patients
+                            </div>
+                            <div className="space-y-1">
+                              {churnData.high_risk_patients.slice(0, 5).map((p: any, idx: number) => (
+                                <div key={idx} className="flex justify-between text-xs">
+                                  <span className="text-[#6B7280]">Patient {p.patient_id} - {p.procedure}</span>
+                                  <span className="font-medium text-[#DC2626]">{p.days_overdue} days overdue</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {churnLoading && (
+                      <div className="p-4 bg-white rounded-lg border-l-2 border-[#E5E7EB] animate-pulse">
+                        <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
