@@ -1,6 +1,10 @@
 // app/api/patient-intel/route.ts
 import { NextResponse, type NextRequest } from "next/server";
-import { analyzePatientData, type PatientIntelResult } from "@/lib/patient-intelligence";
+import { 
+  analyzePatientData, 
+  generateHeroInsights,  // 🎯 ADDED THIS
+  type PatientIntelResult 
+} from "@/lib/patient-intelligence";
 
 /* ===================== Types ===================== */
 
@@ -332,7 +336,6 @@ const generateAdvancedClusters = (
     .filter(Boolean) as Psychographics["clusters"];
 };
 
-// Generate dummy data for testing if no data provided
 const generateDummyData = (): Patient[] => {
   return Array.from({ length: 50 }, (_, i) => ({
     patient_id: `P${i}`,
@@ -358,7 +361,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       useTestData?: boolean;
     };
 
-    // Use provided data, or generate dummy data for testing
     const patients = patientData || (useTestData ? generateDummyData() : []);
     
     if (!patients || patients.length === 0) {
@@ -368,7 +370,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }, { status: 400 });
     }
 
-    // Transform to PatientRecord format for analyzePatientData
     const patientRecords: PatientRecord[] = patients.map((p) => ({
       patient_id: p.patient_id ?? `patient_${Math.random().toString(36).slice(2)}`,
       patient_zip: p.zip_code ?? "00000",
@@ -380,11 +381,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const analysis = analyzePatientData(patientRecords, procedure);
     const psychographics = analyzePsychographics(patients);
+    const heroInsights = generateHeroInsights(patientRecords); // 🎯 ADDED THIS
 
     return NextResponse.json({
       success: true,
       summary: analysis.summary,
       insights: {
+        heroInsights,  // 🎯 ADDED THIS
         patterns: (analysis.insights.patterns ?? []).slice(0, 5),
         opportunities: (analysis.insights.opportunities ?? []).slice(0, 3),
         expansion: {
@@ -420,10 +423,12 @@ export async function GET(): Promise<NextResponse> {
   }));
 
   const quick = analyzePatientData(records);
+  const heroInsights = generateHeroInsights(records); // 🎯 ADDED THIS
 
   return NextResponse.json({
     success: true,
     message: "Patient Intelligence API is working",
+    heroInsights,  // 🎯 ADDED THIS
     sampleInsight: quick.insights?.patterns?.[0] ?? null,
     summary: quick.summary,
   });

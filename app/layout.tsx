@@ -1,6 +1,7 @@
 // app/layout.tsx
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Sidebar from "@/components/sidebar";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -17,8 +18,6 @@ export const metadata: Metadata = {
   description: "Prescriptive campaigns",
 };
 
-// app/layout.tsx
-// app/layout.tsx
 export const viewport = {
   width: "device-width",
   initialScale: 1,
@@ -27,10 +26,16 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="h-full w-full overflow-x-clip">
-      <body className="h-full w-full overflow-x-clip antialiased">
-        <div id="__page" className="isolate min-h-dvh w-[100svw] overflow-x-clip">
-          {children}
+    <html lang="en" className="h-full">
+      <body className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+        <div className="flex h-screen overflow-hidden">
+          {/* Sidebar - hidden on mobile */}
+          <Sidebar />
+          
+          {/* Main content */}
+          <main className="flex-1 overflow-y-auto bg-slate-50">
+            {children}
+          </main>
         </div>
       </body>
     </html>

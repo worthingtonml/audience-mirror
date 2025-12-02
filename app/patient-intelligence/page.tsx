@@ -201,8 +201,4 @@ export default function PatientIntelligence() {
       </div>
     </div>
   )
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> dababd8 (feat: Add campaign-intel API route)
