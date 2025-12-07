@@ -100,6 +100,76 @@ function generateGrowthCopy(analysisData: any): string {
   return `Revenue is growing year-over-year. Average lifetime value is ~$${ltvK}K per patient—this segment is your growth engine. Protect this momentum.`;
 }
 
+// Segment-specific psychographic profiles
+const SEGMENT_PSYCHOGRAPHICS: Record<string, string[]> = {
+  "Millennial Explorer": [
+    "Discovery-minded — open to trying new treatments",
+    "Social media influenced — responds to before/after content",
+    "Values convenience — prefers online booking and reminders"
+  ],
+  "Young Professional - Regular Visitor": [
+    "Routine-oriented — values consistency and maintenance plans",
+    "Time-conscious — appreciates efficiency and punctuality",
+    "Loyalty-driven — responds to membership and rewards programs"
+  ],
+  "Mid-Career Explorer": [
+    "Research-driven — compares options before committing",
+    "Results-focused — wants to see proven outcomes",
+    "Budget-aware — responds to value bundles and packages"
+  ],
+  "Professional Maintainer": [
+    "Results-focused — wants proven, predictable outcomes",
+    "Values expertise — trusts provider recommendations",
+    "Willing to invest — responds to premium service messaging"
+  ],
+  "Executive Regular - High Value": [
+    "VIP expectations — values personalized attention",
+    "Discretion matters — appreciates privacy and exclusivity",
+    "Price-insensitive — focuses on quality over cost"
+  ],
+  "Established Affluent - VIP Client": [
+    "Luxury-oriented — expects white-glove service",
+    "Relationship-driven — loyal to trusted providers",
+    "Early adopter — interested in newest treatments first"
+  ],
+  "Mature Premium Client": [
+    "Experience-focused — values comfort and expertise",
+    "Trust-driven — needs established rapport before trying new services",
+    "Results-oriented — anti-aging outcomes are top priority"
+  ],
+  "Established Regular": [
+    "Habit-driven — prefers familiar treatments and routines",
+    "Value-conscious — appreciates loyalty discounts",
+    "Low-maintenance — wants reliable, no-fuss service"
+  ],
+  "Premium Client": [
+    "Quality-first — willing to pay more for better results",
+    "Trend-aware — interested in popular treatments",
+    "Referral-likely — shares experiences with friends"
+  ],
+  "Regular Client": [
+    "Consistency-focused — values reliable service",
+    "Deal-responsive — engages with promotions and packages",
+    "Relationship-builders — appreciates personal recognition"
+  ],
+  "Entry Client": [
+    "Price-sensitive — responds to intro offers and discounts",
+    "Curious but cautious — needs reassurance and education",
+    "Convertible — nurture toward higher-value services"
+  ],
+  "Unknown Profile": [
+    "Needs more data — gather preferences on next visit",
+    "Potential high-value — assess spending capacity",
+    "Engagement opportunity — use welcome sequence to learn more"
+  ]
+};
+
+const DEFAULT_PSYCHOGRAPHICS = [
+  "Quality-focused — responds to expertise messaging",
+  "Results-driven — values proven outcomes",
+  "Convenience-oriented — prefers easy booking and reminders"
+];
+
 function generateStrengthCopy(analysisData: any): string {
   const uplift =
     Math.round(
@@ -541,9 +611,7 @@ export default function PatientInsights() {
                 <span className="font-semibold">
                   {procedureDisplayText.toLowerCase()}
                 </span>
-                . Use this page to decide **where** to invest, **what** to
-                say, and **how fast** you can grow—then launch campaigns in
-                a couple of clicks.
+                Use this page to decide <span className="font-semibold">where</span> to invest, <span className="font-semibold">what</span> to say, and <span className="font-semibold">how fast</span> you can grow—then launch campaigns in a couple of clicks.
               </p>
             </div>
           </div>
@@ -558,80 +626,71 @@ export default function PatientInsights() {
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
           {/* HERO CARD */}
           <section>
-            <div className="bg-white rounded-2xl p-8 md:p-10 shadow-sm border border-[#E5E7EB]">
-              <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
-                <div className="space-y-2">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9CA3AF]">
-                    Projected Annual Revenue
-                  </div>
-                  <div className="flex items-baseline gap-4">
-                    <div className="text-[54px] md:text-[72px] leading-none font-semibold text-[#4338CA] tracking-tight">
-                      ${(totalRevenue / 1000).toFixed(0)}K
-                    </div>
-                    <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-semibold uppercase ${overallRiskLevel.color} tracking-wide`}>
-                      <span className={`h-1.5 w-1.5 rounded-full ${overallRiskLevel.dotColor}`} />
-                      {overallRiskLevel.label}
-                    </span>
+            <div className="bg-gradient-to-r from-[#4F46E5] via-[#6366F1] to-[#8B5CF6] rounded-2xl p-8 md:p-10 shadow-lg">
+              {/* Top row: Label */}
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-200 mb-2">
+                Your Best Patients Are
+              </div>
+
+              {/* Segment name */}
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+                {segmentName}
+              </h1>
+
+              {/* Description */}
+              <p className="text-sm md:text-base text-indigo-100 leading-relaxed max-w-3xl mb-6">
+                Your best patients are {segmentName}. They spend ${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.
+              </p>
+
+              {/* Stats row */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+                <div>
+                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Lifetime Value</div>
+                  <div className="text-2xl md:text-3xl font-bold text-white">
+                    {(analysisData?.behavior_patterns?.avg_lifetime_value || 3600) >= 1000 
+                      ? `$${((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) / 1000).toFixed(1)}K`
+                      : `$${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toFixed(0)}`}
                   </div>
                 </div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#EEF2FF] px-3 py-1.5 text-[11px] font-medium text-[#4338CA]">
-                  <TrendingUp className="h-3.5 w-3.5" />
-                  <span>Focus: keep this revenue, then grow it</span>
+                <div>
+                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Visit Frequency</div>
+                  <div className="text-2xl md:text-3xl font-bold text-white">
+                    {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}×
+                  </div>
+                  <div className="text-[10px] text-indigo-200">per year</div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Projected Revenue</div>
+                  <div className="text-2xl md:text-3xl font-bold text-white">
+                    ${(totalRevenue / 1000).toFixed(0)}K
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Churn Rate</div>
+                  <div className={`text-2xl md:text-3xl font-bold ${
+                    churnData?.at_risk_percent > 50 
+                      ? 'text-red-300' 
+                      : churnData?.at_risk_percent > 30 
+                      ? 'text-amber-300' 
+                      : 'text-emerald-300'
+                  }`}>
+                    {churnData ? `${churnData.at_risk_percent.toFixed(0)}%` : '—'}
+                  </div>
+                  <div className="text-[10px] text-indigo-200">at risk</div>
                 </div>
               </div>
 
-              <div className="max-w-3xl mb-8">
-                <p className="text-sm md:text-base text-[#4B5563] leading-relaxed">
-                  {heroCopy}
-                </p>
+              <div className="h-px bg-white/20 my-6" />
+              
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-indigo-200 mb-2">
+                What This Means
               </div>
+              <p className="text-sm text-indigo-100 leading-relaxed">
+                {`These ${patientCount} patients average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} visits per year. `}
+                {churnData && `${churnData.at_risk_percent.toFixed(0)}% haven't returned within their expected visit interval, putting $${((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0)}K in revenue at risk.`}
+              </p>
 
-              <div className="h-px bg-[#E5E7EB] mb-8" />
-
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
-                <div>
-                  <div className="text-3xl md:text-4xl font-semibold text-[#111827] mb-1">
-                    {patientCount}
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold">
-                    Patients in this segment
-                  </div>
-                </div>
-                <div>
-                  <div className="text-3xl md:text-4xl font-semibold text-[#4338CA] mb-1">
-                    $
-                    {(
-                      (analysisData?.behavior_patterns?.avg_lifetime_value ||
-                        3600) / 1000
-                    ).toFixed(1)}
-                    K
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold">
-                    Avg lifetime value
-                  </div>
-                </div>
-                <div>
-                  <div className="text-3xl md:text-4xl font-semibold text-[#111827] mb-1">
-                    {(
-                      analysisData?.behavior_patterns?.avg_visits_per_year ||
-                      2.8
-                    ).toFixed(1)}
-                    ×
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold">
-                    Annual visits
-                  </div>
-                </div>
-                <div>
-                  <div className="text-3xl md:text-4xl font-semibold text-[#111827] mb-1">
-                    {totalBookings}
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold">
-                    Target zips in plan
-                  </div>
-                </div>
-              </div>
+              
             </div>
           </section>
 
@@ -745,20 +804,31 @@ export default function PatientInsights() {
               </span>
             </div>
 
-            <div className="bg-[#4338CA] text-white rounded-2xl p-8 md:p-10 shadow-lg relative overflow-hidden">
-              <div className="absolute -right-20 -top-16 h-56 w-56 rounded-full bg-gradient-to-br from-white/10 to-white/0" />
-              <div className="relative space-y-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[10px] font-semibold uppercase tracking-[0.16em]">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                  Strategy · Retention
+            <div className="bg-white rounded-2xl p-8 md:p-10 shadow-sm border border-[#E5E7EB]">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEF2FF] text-[10px] font-semibold uppercase tracking-[0.16em] text-[#4338CA]">
+                  <span className={`h-1.5 w-1.5 rounded-full ${(churnData?.at_risk_percent || 0) > 50 ? 'bg-red-500' : (churnData?.at_risk_percent || 0) > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+                  {(churnData?.at_risk_percent || 0) > 50 
+                    ? 'Strategy · Reactivation' 
+                    : (churnData?.at_risk_percent || 0) > 30 
+                    ? 'Strategy · Retention' 
+                    : 'Strategy · Growth'}
                 </div>
 
                 <div className="space-y-3">
-                  <h3 className="text-2xl md:text-3xl font-semibold tracking-tight">
-                    Get Referrals
+                  <h3 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#111827]">
+                    {(churnData?.at_risk_percent || 0) > 50 
+                      ? 'Win back lapsed patients' 
+                      : (churnData?.at_risk_percent || 0) > 30 
+                      ? 'Prevent at-risk churn' 
+                      : 'Get referrals'}
                   </h3>
-                  <p className="text-sm md:text-base text-indigo-100 leading-relaxed max-w-xl">
-                    {referralCopy}
+                  <p className="text-sm md:text-base text-[#6B7280] leading-relaxed max-w-xl">
+                    {(churnData?.at_risk_percent || 0) > 50 
+                      ? `${churnData?.at_risk_percent.toFixed(0)}% of this segment (${Math.round(patientCount * (churnData?.at_risk_percent || 0) / 100)} patients) haven't returned within their expected interval. A ${analysisData?.available_procedures?.[0] || 'treatment'} reactivation offer could recover $${((totalRevenue * (churnData?.at_risk_percent || 0) / 100) / 1000).toFixed(0)}K in at-risk revenue.`
+                      : (churnData?.at_risk_percent || 0) > 30 
+                      ? `${churnData?.at_risk_percent.toFixed(0)}% of this segment is showing early churn signals. Proactive outreach now — before they lapse — is 3x more effective than win-back campaigns later.`
+                      : referralCopy}
                   </p>
                 </div>
 
@@ -766,15 +836,15 @@ export default function PatientInsights() {
                   <button
                     onClick={generateCampaign}
                     disabled={selectedCount === 0}
-                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-white text-[#4338CA] text-sm md:text-base font-semibold shadow-md hover:bg-indigo-50 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#4338CA] text-white text-sm md:text-base font-semibold shadow-md hover:bg-[#3730A3] transition-colors disabled:opacity-50"
                   >
-                    Set up now
+                    {(churnData?.at_risk_percent || 0) > 50 ? 'Launch win-back' : (churnData?.at_risk_percent || 0) > 30 ? 'Send retention offer' : 'Set up now'}
                     <ArrowRight className="h-4 w-4" />
                   </button>
-                  <p className="text-xs md:text-sm text-indigo-100/80 max-w-md">
+                  <p className="text-xs md:text-sm text-[#6B7280] max-w-md">
                     Email templates, incentive structure, and compliance checks
                     are prebuilt. Review, tweak your offer, then launch in under{' '}
-                    <span className="font-semibold">2 minutes</span>.
+                    <span className="font-semibold text-[#111827]">2 minutes</span>.
                   </p>
                 </div>
               </div>
@@ -800,12 +870,10 @@ export default function PatientInsights() {
                     Strategy · Expansion
                   </div>
                   <h3 className="text-xl md:text-2xl font-semibold text-[#111827] mb-3">
-                    Expand markets
+                    Expand to new ZIPs
                   </h3>
                   <p className="text-sm text-[#6B7280] leading-relaxed mb-6">
-                    High-density lookalike patients live just outside your
-                    current core ZIPs. Start with 2–3 adjacent neighborhoods and
-                    reuse the same creative to scale efficiently.
+                    {`Your ${patientCount} ${segmentName} patients are concentrated in ${selectedCount || totalBookings} ZIP codes. Adjacent neighborhoods have similar demographics — target them with the same ${analysisData?.available_procedures?.[0] || 'treatment'} messaging.`}
                   </p>
                 </div>
                 <button
@@ -813,7 +881,7 @@ export default function PatientInsights() {
                   disabled={selectedCount === 0}
                   className="self-start px-6 py-3 bg-[#4338CA] text-white rounded-lg text-sm font-semibold hover:bg-[#3730A3] transition-colors disabled:opacity-50"
                 >
-                  Set up now
+                  See expansion ZIPs
                 </button>
               </article>
 
@@ -824,10 +892,12 @@ export default function PatientInsights() {
                     Strategy · Upsell
                   </div>
                   <h3 className="text-xl md:text-2xl font-semibold text-[#111827] mb-3">
-                    Package deals
+                    {(analysisData?.behavior_patterns?.avg_visits_per_year || 0) >= 2 ? 'Increase spend per visit' : 'Build visit frequency'}
                   </h3>
                   <p className="text-sm text-[#6B7280] leading-relaxed mb-6">
-                    {bundleCopy}
+                    {(analysisData?.behavior_patterns?.avg_visits_per_year || 0) >= 2 
+                      ? `At ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)}x visits per year, this segment is already engaged. Bundle ${analysisData?.available_procedures?.[0] || 'treatments'} with add-ons to lift average ticket.`
+                      : `This segment visits ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)}x per year. Maintenance plans and membership perks can boost frequency 20-40%.`}
                   </p>
                 </div>
                 <button
@@ -835,7 +905,7 @@ export default function PatientInsights() {
                   disabled={selectedCount === 0}
                   className="self-start px-6 py-3 bg-[#4338CA] text-white rounded-lg text-sm font-semibold hover:bg-[#3730A3] transition-colors disabled:opacity-50"
                 >
-                  Adjust offer
+                  {(analysisData?.behavior_patterns?.avg_visits_per_year || 0) >= 2 ? 'Create bundle' : 'Set up membership'}
                 </button>
               </article>
             </div>

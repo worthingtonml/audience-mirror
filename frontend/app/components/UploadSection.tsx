@@ -1,5 +1,5 @@
-import React from 'react';
-import { Upload, CheckCircle2, Download, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { Upload, CheckCircle2, Download, FileText, ChevronDown, ExternalLink, Shield } from 'lucide-react';
 import { FocusType } from '../lib/types';
 
 interface UploadSectionProps {
@@ -17,6 +17,77 @@ interface UploadSectionProps {
   onDownloadTemplate: () => void;
 }
 
+const EHR_SYSTEMS = {
+  boulevard: {
+    name: 'Boulevard',
+    docsUrl: 'https://support.joinblvd.com/hc/en-us/articles/4415825683351-Exporting-Client-Data',
+    columns: ['Client ID', 'ZIP/Postal Code', 'Birthdate', 'Appointment Date', 'Service Name', 'Total Paid'],
+    steps: [
+      'Go to Clients → All Clients',
+      'Click "Export" in the top right',
+      'Select the columns listed below',
+      'Export as CSV and upload here'
+    ]
+  },
+  zenoti: {
+    name: 'Zenoti',
+    docsUrl: 'https://help.zenoti.com/en/articles/exporting-guest-data',
+    columns: ['Guest ID', 'Postal Code', 'Date of Birth', 'Appointment Date', 'Service', 'Amount'],
+    steps: [
+      'Navigate to Guests → Guest List',
+      'Click "Export" button',
+      'Choose columns listed below',
+      'Download CSV and upload here'
+    ]
+  },
+  vagaro: {
+    name: 'Vagaro',
+    docsUrl: 'https://support.vagaro.com/hc/en-us/articles/360005904954-Export-Customer-List',
+    columns: ['Customer ID', 'Zip Code', 'Birthday', 'Service Date', 'Service Name', 'Amount Paid'],
+    steps: [
+      'Go to Customers → Customer List',
+      'Click "Export to Excel"',
+      'Include columns listed below',
+      'Save as CSV and upload here'
+    ]
+  },
+  nextech: {
+    name: 'Nextech',
+    docsUrl: 'https://www.nextech.com/support',
+    columns: ['Patient ID', 'ZIP', 'DOB', 'Visit Date', 'Procedure', 'Payment'],
+    steps: [
+      'Open Reports → Patient Reports',
+      'Select "Patient List with Visits"',
+      'Choose columns listed below',
+      'Export to CSV and upload here'
+    ]
+  },
+  patientnow: {
+    name: 'PatientNow',
+    docsUrl: 'https://www.patientnow.com/support',
+    columns: ['Patient #', 'Zip Code', 'Birth Date', 'Appointment Date', 'Procedure', 'Amount'],
+    steps: [
+      'Go to Reports → Patient Reports',
+      'Run "Patient Demographics + Visits"',
+      'Export with columns below',
+      'Upload the CSV here'
+    ]
+  },
+  other: {
+    name: 'Other / Not Listed',
+    docsUrl: null,
+    columns: ['Patient ID', 'ZIP Code', 'Date of Birth', 'Visit Date', 'Treatment/Service', 'Amount Paid'],
+    steps: [
+      'Export your patient list from your system',
+      'Include the columns listed below',
+      'Save as CSV or Excel',
+      'Upload here'
+    ]
+  }
+};
+
+type EHRSystemKey = keyof typeof EHR_SYSTEMS;
+
 export default function UploadSection({
   patientsFile,
   competitorsFile,
@@ -31,6 +102,10 @@ export default function UploadSection({
   onAnalyze,
   onDownloadTemplate
 }: UploadSectionProps) {
+  const [selectedEHR, setSelectedEHR] = useState<EHRSystemKey | null>(null);
+  const [showInstructions, setShowInstructions] = useState(false);
+  const ehrData = selectedEHR ? EHR_SYSTEMS[selectedEHR] : null;
+
   return (
     <section className="mx-auto max-w-4xl mb-16">
       <div className="space-y-6">
@@ -66,6 +141,92 @@ export default function UploadSection({
               <Download className="h-4 w-4" strokeWidth={1.5} />
               Template
             </button>
+          </div>
+
+          {/* EHR System Selector */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              What system do you use?
+            </label>
+            <div className="relative">
+              <select
+                value={selectedEHR || ''}
+                onChange={(e) => {
+                  setSelectedEHR(e.target.value as EHRSystemKey || null);
+                  setShowInstructions(!!e.target.value);
+                }}
+                className="block w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all appearance-none bg-white pr-10"
+              >
+                <option value="">Select your EHR/PMS system...</option>
+                {Object.entries(EHR_SYSTEMS).map(([key, system]) => (
+                  <option key={key} value={key}>{system.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* Export Instructions */}
+          {ehrData && showInstructions && (
+            <div className="mb-6 rounded-xl border border-indigo-100 bg-indigo-50/50 p-5">
+              <div className="flex items-start justify-between mb-4">
+                <h4 className="text-sm font-semibold text-indigo-900">
+                  Exporting from {ehrData.name}
+                </h4>
+                {ehrData.docsUrl && (
+                  
+                    <a href={ehrData.docsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                  >
+                    Official docs
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+              </div>
+
+              {/* Steps */}
+              <ol className="space-y-2 mb-4">
+                {ehrData.steps.map((step, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm text-indigo-800">
+                    <span className="flex-shrink-0 h-5 w-5 rounded-full bg-indigo-200 text-indigo-700 text-xs font-semibold flex items-center justify-center">
+                      {i + 1}
+                    </span>
+                    {step}
+                  </li>
+                ))}
+              </ol>
+
+              {/* Required Columns */}
+              <div className="pt-4 border-t border-indigo-200">
+                <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wide mb-2">
+                  Required Columns
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {ehrData.columns.map((col, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-indigo-700 bg-white rounded border border-indigo-200"
+                    >
+                      <CheckCircle2 className="h-3 w-3" />
+                      {col}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Privacy Note */}
+          <div className="mb-6 flex items-start gap-3 rounded-lg bg-slate-50 p-4">
+            <Shield className="h-5 w-5 text-slate-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-slate-700">Your data stays private</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                We convert birthdates to ages and hash patient IDs on upload. Names, emails, and phone numbers are never stored.
+              </p>
+            </div>
           </div>
 
           <input

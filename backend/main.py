@@ -3,7 +3,6 @@ import os
 
 load_dotenv()
 import sys
-import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import requests
 import uuid
@@ -15,9 +14,6 @@ import statistics
 import numpy as np
 import pandas as pd
 from datetime import datetime
-
-from dotenv import load_dotenv
-load_dotenv()  # This loads your .env file
 
 import fastapi
 from fastapi import UploadFile, Form, HTTPException, Depends
@@ -77,6 +73,7 @@ class RunCreateRequest(BaseModel):
     
 class ExportCreateRequest(BaseModel):
     run_id: str
+    top_n: int = 10
     format: str = "csv"
 
 # NEW FUNCTION - Add this here
@@ -196,6 +193,82 @@ def normalize_patients_dataframe(df):
 # ============================================================================
 # STEP 1: ADD THIS FUNCTION AFTER normalize_patients_dataframe()
 # ============================================================================
+def aggregate_visits_to_patients(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Collapse visit-level rows into patient-level rows.
+    
+    Input: One row per visit
+    Output: One row per patient with aggregated metrics
+    """
+    patient_id_col = 'patient_id' if 'patient_id' in df.columns else None
+    amount_col = next((c for c in ['amount', 'revenue', 'total'] if c in df.columns), None)
+    date_col = next((c for c in ['visit_date', 'date', 'appointment_date'] if c in df.columns), None)
+    treatment_col = next((c for c in ['treatment', 'procedure', 'service'] if c in df.columns), None)
+    
+    if not patient_id_col:
+        print("[AGGREGATE] No patient_id column found - assuming rows are already patient-level")
+        return df
+    
+    if df[patient_id_col].nunique() == len(df):
+        print(f"[AGGREGATE] All {len(df)} rows have unique patient_id - no aggregation needed")
+        return df
+    
+    print(f"[AGGREGATE] Collapsing {len(df)} visits into {df[patient_id_col].nunique()} patients")
+    
+    agg_dict = {}
+    
+    if amount_col:
+        agg_dict[amount_col] = 'sum'
+    
+    if date_col:
+        df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+        agg_dict[date_col] = ['min', 'max', 'count']
+    
+    if treatment_col:
+        agg_dict[treatment_col] = lambda x: ', '.join(sorted(set(str(v) for v in x.dropna())))
+    
+    static_cols = ['zip_code', 'dob', 'date_of_birth', 'gender', 'email', 'phone', 'city', 'state']
+    for col in static_cols:
+        if col in df.columns and col not in agg_dict:
+            agg_dict[col] = 'first'
+    
+    grouped = df.groupby(patient_id_col, as_index=False).agg(agg_dict)
+    
+    new_cols = []
+    for col in grouped.columns:
+        if isinstance(col, tuple):
+            if col[1] == 'sum':
+                new_cols.append('revenue')
+            elif col[1] == 'min':
+                new_cols.append('first_visit')
+            elif col[1] == 'max':
+                new_cols.append('last_visit')
+            elif col[1] == 'count':
+                new_cols.append('visit_count')
+            elif col[1] == '<lambda>':
+                new_cols.append('treatments_received')
+            elif col[1] == 'first':
+                new_cols.append(col[0])
+            else:
+                new_cols.append(f"{col[0]}_{col[1]}")
+        else:
+            new_cols.append(col)
+    grouped.columns = new_cols
+    
+    if 'revenue' not in grouped.columns and amount_col and amount_col in grouped.columns:
+        grouped = grouped.rename(columns={amount_col: 'revenue'})
+    
+    if 'first_visit' in grouped.columns and 'last_visit' in grouped.columns:
+        grouped['tenure_days'] = (grouped['last_visit'] - grouped['first_visit']).dt.days
+        grouped['visits_per_year'] = grouped['visit_count'] / (grouped['tenure_days'] / 365.25).clip(lower=0.1)
+    
+    dob_col = 'dob' if 'dob' in grouped.columns else 'date_of_birth' if 'date_of_birth' in grouped.columns else None
+    if dob_col:
+        grouped['age'] = (pd.Timestamp.now() - pd.to_datetime(grouped[dob_col], errors='coerce')).dt.days // 365
+    
+    print(f"[AGGREGATE] Result: {len(grouped)} patients, Avg revenue: ${grouped['revenue'].mean():,.2f}, Avg visits: {grouped['visit_count'].mean():.1f}")
+    
+    return grouped
 
 def segment_patients_by_behavior(patients_df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -251,29 +324,29 @@ def segment_patients_by_behavior(patients_df: pd.DataFrame) -> pd.DataFrame:
     
     df['behavioral_segment'] = labels
     
-    # Generate AI-powered segment explanations
+    # Pre-computed segment strategies (avoids slow LLM calls)
+    SEGMENT_STRATEGIES = {
+        "Young Professional - Regular Visitor": "High-frequency younger clients who value convenience and results. Target with membership programs and loyalty rewards.",
+        "Millennial Explorer": "Discovery-phase clients testing services. Convert with intro packages and social proof.",
+        "Mid-Career Explorer": "Busy professionals exploring aesthetic options. Emphasize efficiency and proven results.",
+        "Professional Maintainer": "Established clients on maintenance routines. Upsell premium services and bundles.",
+        "Executive Regular - High Value": "Your VIP segment. Offer white-glove service, priority booking, and exclusive treatments.",
+        "Established Affluent - VIP Client": "High-spending loyal clients. Maintain with personalized attention and early access to new services.",
+        "Mature Premium Client": "Experienced clients seeking quality. Focus on anti-aging results and trusted expertise.",
+        "Established Regular": "Consistent older clients. Reward loyalty and offer senior-friendly scheduling.",
+        "Premium Client": "High spenders across age groups. Cross-sell complementary services.",
+        "Regular Client": "Core business clients. Build frequency with package deals.",
+        "Entry Client": "New or budget-conscious clients. Nurture into higher tiers with intro offers.",
+        "Unknown Profile": "Incomplete data. Gather more information on next visit.",
+    }
+    
     segment_explanations = {}
     for segment_name in df['behavioral_segment'].unique():
-        segment_data = df[df['behavioral_segment'] == segment_name]
-        
-        try:
-            context = SegmentContext(
-                segment_name=segment_name,
-                patient_count=len(segment_data),
-                avg_ltv=segment_data['total_revenue'].mean() if 'total_revenue' in segment_data.columns else 0,
-                avg_visits_per_year=segment_data['visits'].mean() * 12 if 'visits' in segment_data.columns else 0,
-                avg_ticket=segment_data['avg_ticket'].mean() if 'avg_ticket' in segment_data.columns else 0,
-                top_procedures=segment_data['procedure_type'].value_counts().head(3).index.tolist() if 'procedure_type' in segment_data.columns else ['General'],
-                retention_rate=75.0,
-                revenue_contribution_pct=(len(segment_data) / len(df)) * 100,
-                risk_level="low"
-            )
-            
-            segment_explanations[segment_name] = llm_service.generate_segment_strategy(context)
-            print(f"[LLM] Generated strategy for {segment_name}")
-        except Exception as e:
-            print(f"[LLM ERROR] Could not generate explanation for {segment_name}: {e}")
-            segment_explanations[segment_name] = f"{segment_name} segment showing engagement patterns."
+        segment_explanations[segment_name] = SEGMENT_STRATEGIES.get(
+            segment_name, 
+            f"{segment_name} segment - engage with targeted campaigns."
+        )
+        print(f"[SEGMENT] Loaded strategy for {segment_name}")
     
     
     # Log results
@@ -292,10 +365,6 @@ def segment_patients_by_behavior(patients_df: pd.DataFrame) -> pd.DataFrame:
 # Next: Make one small change to test this function
 # ============================================================================
 
-
-# --- ZIP → lat/lon (offline) helpers ---
-import numpy as np
-import pandas as pd
 
 def _normalize_zip5(z: str) -> str:
     if pd.isna(z):
@@ -1060,13 +1129,10 @@ async def create_run(
         return fastapi.responses.JSONResponse({"run_id": run_id})
     
     except Exception as e:
-         # REPLACE with this:
         traceback.print_exc(file=sys.stdout)
         analysis_run.status = "error"
-        analysis_run.error = str(e)
+        analysis_run.error_message = str(e)
         db.commit()
-        raise
-        
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 @app.post("/api/v1/exports")
@@ -1144,56 +1210,6 @@ async def download_export(run_id: str, format: str = "full", top_n: int = 10, db
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
-    
-    # ---- campaign helper (place this above the route) ----
-def generate_campaign_card(segment_data, procedure=None, logo_url=None):
-    zip_code = segment_data.get('zip')
-    cohort = segment_data.get('cohort')
-    match_score = float(segment_data.get('match_score', 0))
-    avg_ticket = float(segment_data.get('avg_ticket_zip', 750))
-    distance = float(segment_data.get('distance_miles', 0))
-    competitors = int(segment_data.get('competitors', 0))
-    p50 = int((segment_data.get('expected_bookings') or {}).get('p50', 3))
-    cpa_target = float(segment_data.get('cpa_target', 100))
-    monthly_ad_cap = cpa_target * max(1, p50)
-
-    # Tighter radius if the ZIP is farther away
-    radius = 5 if distance < 10 else 3
-
-    demo_targeting = {
-        'Affluent': 'Ages 35-55, HH Income $120k+, College-educated',
-        'Premium':  'Ages 30-50, HH Income $100k+, Professional',
-        'Emerging': 'Ages 25-45, HH Income $60k+, Health-conscious'
-    }.get(cohort, 'Ages 30-55, interested in wellness')
-
-    # Procedure-specific ad copy
-    if procedure:
-        if avg_ticket > 1200:
-            ad_copy = f"Premier {procedure} results. Packages from ${int(avg_ticket)}. Book today."
-        elif competitors > 1:
-            ad_copy = f"Expert {procedure} treatments. Stand out from {competitors} local options. Avg ${int(avg_ticket)}."
-        else:
-            ad_copy = f"First in your area for {procedure}. Treatments from ${int(avg_ticket)}. Book now."
-    else:
-        # Generic ad copy when no procedure specified
-        if avg_ticket > 1200:
-            ad_copy = f"Premier experience. Typical plans around ${int(avg_ticket)}."
-        elif competitors > 1:
-            ad_copy = f"Stand out from {competitors}+ local options. Avg ticket ~${int(avg_ticket)}."
-        else:
-            ad_copy = f"First-mover advantage. Typical visit ~${int(avg_ticket)}."
-    daily_budget = max(5, round(monthly_ad_cap / 30))
-
-    return {
-        'zip': zip_code,
-        'logo_url': logo_url,
-        'targeting': f"{zip_code} + {radius} mile radius",
-        'demographics': demo_targeting,
-        'ad_copy': ad_copy,
-        'daily_budget': daily_budget,
-        'distance_note': f"{distance:.1f} mi travel consideration" if distance > 10 else None,
-        'match_score': round(match_score, 2)
-    }
     
 @app.get("/api/v1/runs/{run_id}/results")
 async def get_run_results(run_id: str, db: Session = Depends(get_db)):
@@ -1306,7 +1322,7 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
     return {
         "status": "done",
         "procedure": analysis_run.procedure,
-        "patient_count": getattr(analysis_run, 'patient_count', 79),
+        "patient_count": dominant_profile_data.get("segment_patient_count", getattr(analysis_run, 'patient_count', 79)) if dominant_profile_data else getattr(analysis_run, 'patient_count', 79),
         "actual_total_revenue": actual_total_revenue,
         "filtered_patient_count": filtered_patient_count,
         "filtered_revenue": filtered_revenue,
@@ -1502,7 +1518,7 @@ def identify_dominant_profile(
         avg_age = None
         age_range = "Unknown"
     
-    avg_visits = float(top_patients.get('visit_number', pd.Series([2.5])).mean())
+    avg_visits = float(top_patients['visits_per_year'].mean()) if 'visits_per_year' in top_patients.columns else float(top_patients.get('visit_count', pd.Series([2.5])).mean())
     
     # Find top treatments
     top_treatments = ["Primary Service"]
@@ -1578,6 +1594,7 @@ def identify_dominant_profile(
     print(f"[PROFILE]   - {sum(g['patient_count'] for g in geo_concentration) * 1000:,} total addressable households")
     
     return {
+        "segment_patient_count": len(top_patients),
         "dominant_profile": {
             "psychographic": dominant_profile_name,
             "combined": dominant_profile_name,
@@ -1842,6 +1859,10 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
 
         # Ensure unique index
         patients_df = patients_df.reset_index(drop=True)
+        
+        # CRITICAL: Aggregate visit rows into patient rows
+        patients_df = aggregate_visits_to_patients(patients_df)
+        
         competitors_df = load_competitors_csv(dataset["competitors_path"]) if dataset.get("competitors_path") else None
         print("[ANALYSIS] Loaded competitors")
 
@@ -2819,6 +2840,8 @@ async def analyze_segment_churn(
     
     # Load patient data
     df = pd.read_csv(dataset.patients_path)
+    df = normalize_patients_dataframe(df)
+    df = aggregate_visits_to_patients(df)
     
     # Run churn analysis
     summary = get_churn_summary(df)

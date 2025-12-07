@@ -84,10 +84,6 @@ export default function CampaignGenerator() {
             console.log('[Google AI]', googleAd);
           });
           
-          // Save to localStorage for landing page builder
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('audienceMirrorCampaign', JSON.stringify(campaign));
-          }
         }
         setLoading(false);
       })
@@ -376,317 +372,261 @@ export default function CampaignGenerator() {
             </button>
           ))}
           
-          {/* Landing Page Builder - Separate Action */}
-          <button
-            onClick={() => router.push('/landing-page-builder')}
-            className="ml-auto px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
-          >
-            Build Landing Page →
-          </button>
+          
         </div>
 
-        {/* Tab Content */}
         {activeTab === 'ads' && (
-          <>
-            {/* Campaign Overview with KPIs */}
-            <div className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
-              <h2 className="text-lg font-semibold text-slate-900 mb-4">Investment & Expected Returns</h2>
-              
-              <div className="grid grid-cols-3 gap-6 mb-6">
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <div className="text-2xl font-bold text-slate-900 mb-1">
-                    ${(campaignData.overview.monthlyBudget / 1000).toFixed(1)}K
-                  </div>
-                  <div className="text-xs text-slate-600">Monthly Budget</div>
-                </div>
+  <>
+   {/* The Opportunity - Outcome first */}
+<div className="bg-white rounded-xl border border-slate-200 p-6 mb-6 shadow-sm">
+  <div className="flex items-start justify-between">
+    <div>
+      <div className="text-sm text-slate-500 mb-1">Projected Monthly Revenue</div>
+      <div className="text-4xl font-bold text-slate-900">$41K</div>
+      <div className="text-sm text-slate-600 mt-2">from 10 new patients</div>
+    </div>
+    <div className="text-right">
+      <div className="text-sm text-slate-500 mb-1">Ad Spend</div>
+      <div className="text-2xl font-bold text-slate-700">$4.4K</div>
+      <div className="inline-block mt-2 px-2 py-1 bg-emerald-50 text-emerald-700 text-sm font-semibold rounded">
+        9.3× return
+      </div>
+    </div>
+  </div>
+  
+  <p className="mt-5 pt-4 border-t border-slate-100 text-sm text-slate-600">
+    {campaignData.strategy.summary}
+  </p>
+  
+  <button
+    onClick={() => setShowKPIs(!showKPIs)}
+    className="mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+  >
+    {showKPIs ? 'Hide details' : 'View detailed KPIs'}
+  </button>
+  
+{showKPIs && (
+  <div className="mt-4 space-y-4">
+    {/* From Your Data */}
+    <div>
+      <div className="text-xs font-semibold text-slate-500 uppercase mb-2">From Your Data</div>
+      <div className="grid grid-cols-4 gap-3">
+        {campaignData.kpis.fromYourData.map((kpi: any, i: number) => (
+          <div key={i} className="p-3 bg-emerald-50 border border-emerald-100 rounded-lg">
+            <div className="text-xs text-emerald-700">{kpi.metric}</div>
+            <div className="text-sm font-semibold text-emerald-900 mt-1">{kpi.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+    
+    {/* Projections */}
+    <div>
+      <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Projections</div>
+      <div className="grid grid-cols-4 gap-3">
+        {campaignData.kpis.projections.map((kpi: any, i: number) => (
+          <div key={i} className="p-3 bg-slate-50 rounded-lg">
+            <div className="text-xs text-slate-500">{kpi.metric}</div>
+            <div className="text-sm font-semibold text-slate-900 mt-1">{kpi.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+    
+    {/* Industry Benchmarks */}
+    <div>
+      <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Industry Benchmarks</div>
+      <div className="grid grid-cols-3 gap-3">
+        {campaignData.kpis.industryBenchmarks.map((kpi: any, i: number) => (
+          <div key={i} className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
+            <div className="text-xs text-amber-700">{kpi.metric}</div>
+            <div className="text-sm font-semibold text-amber-900 mt-1">{kpi.value}</div>
+            <div className="text-xs text-amber-600 mt-1">{kpi.note}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+)}
 
-                <div className="text-center p-4 bg-emerald-50 rounded-lg">
-                  <div className="text-2xl font-bold text-emerald-600 mb-1">
-                    {campaignData.overview.expectedPatients}
-                  </div>
-                  <div className="text-xs text-slate-600">Expected Bookings</div>
-                </div>
 
-                <div className="text-center p-4 bg-emerald-50 rounded-lg">
-                  <div className="text-2xl font-bold text-emerald-600 mb-1">
-                    ${(campaignData.overview.expectedRevenue / 1000).toFixed(0)}K
-                  </div>
-                  <div className="text-xs text-slate-600">Expected Revenue</div>
-                </div>
-              </div>
+</div>
 
-              <div className="text-sm text-slate-600 text-center mb-6 pb-6 border-b border-slate-100">
-                That's a <strong className="text-slate-900">{campaignData.overview.roas}× return</strong> on investment
-              </div>
-
-              {/* Inline KPIs */}
-              <div className="grid grid-cols-3 gap-4">
-                {campaignData.kpis.slice(0, 6).map((kpi: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <span className="text-xs text-slate-600">{kpi.metric}</span>
-                    <span className="text-sm font-bold text-indigo-600">{kpi.target}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Strategy Summary */}
-            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl p-6 mb-6">
-              <div className="flex items-start gap-3 mb-3">
-                <Target className="h-5 w-5 text-indigo-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-slate-900 mb-2">Campaign Strategy Based on Your Data</h3>
-                  <p className="text-sm text-slate-700">{campaignData.strategy.summary}</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <div className="bg-white/60 rounded-lg p-3">
-                  <div className="text-xs text-slate-600 mb-1">Target Profile</div>
-                  <div className="text-sm font-medium text-slate-900">{campaignData.overview.profileType}</div>
-                </div>
-                <div className="bg-white/60 rounded-lg p-3">
-                  <div className="text-xs text-slate-600 mb-1">Geography</div>
-                  {campaignData.overview.city || 'Your area'} ({campaignData.overview.totalZips} neighborhoods)
-                </div>
-              </div>
-            </div>
-
-            {/* Controls Bar */}
-            <div className="flex items-center justify-between mb-4">
-              <button
-                onClick={() => {
-                  // Format all campaigns for export
-                  const allCampaigns = campaignData.platforms.map((platform: any) => {
-                    const platformData = [
-                      `\n=== ${platform.name.toUpperCase()} ===`,
-                      `Budget: $${(platform.budget / 1000).toFixed(1)}K/month (${platform.allocationPct}%)`,
-                      `Strategy: ${platform.strategyDescription}`,
-                      `\nADS:\n`
-                    ];
-                    
-                    platform.ads.forEach((ad: any, idx: number) => {
-                      const exportHeadline = platform.name === 'Google Search' && googleAdCopy?.headlines
-                        ? googleAdCopy.headlines.join(' | ')
-                        : ad.headline;
-
-                      const exportCopy = platform.name === 'Instagram Ads' && instagramAdCopy?.caption
-                        ? instagramAdCopy.caption
-                        : platform.name === 'Google Search' && googleAdCopy?.descriptions
-                        ? googleAdCopy.descriptions.join(' ')
-                        : ad.copy;
-
-                      platformData.push(
-                        `\n--- Ad ${idx + 1}: ${ad.location} ---`,
-                        `Targeting: ${ad.targeting}`,
-                        `Audience: ${ad.demographics}`,
-                        `Daily Budget: $${ad.dailyBudget}`,
-                        `Headline: ${exportHeadline}`,
-                        `Copy: ${exportCopy}`,
-                        ad.optimizationTip ? `Tip: ${ad.optimizationTip}` : '',
-                        ''
-                      );
-                    });
-                    
-                    return platformData.join('\n');
-                  }).join('\n\n');
-
-                  const fullExport = [
-                    `CAMPAIGN EXPORT - ${campaignData.overview.procedure}`,
-                    `Generated: ${new Date().toLocaleDateString()}`,
-                    `\nOVERVIEW:`,
-                    `Monthly Budget: $${(campaignData.overview.monthlyBudget / 1000).toFixed(1)}K`,
-                    `Expected Bookings: ${campaignData.overview.expectedPatients}`,
-                    `Expected Revenue: $${(campaignData.overview.expectedRevenue / 1000).toFixed(1)}K`,
-                    `ROAS: ${campaignData.overview.roas}×`,
-                    `\nSTRATEGY:`,
-                    campaignData.strategy.summary,
-                    allCampaigns
-                  ].join('\n');
-
-                  navigator.clipboard.writeText(fullExport);
-                  setCopiedIndex('export-all');
-                  setTimeout(() => setCopiedIndex(null), 2000);
-                }}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                {copiedIndex === 'export-all' ? (
-                  <><Check className="h-4 w-4" />Copied to clipboard!</>
-                ) : (
-                  <><Copy className="h-4 w-4" />Export all campaigns</>
-                )}
-              </button>
-
-              <button
-                onClick={() => setShowOptimizationTips(!showOptimizationTips)}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
-              >
-                <Lightbulb className="h-4 w-4" />
-                {showOptimizationTips ? 'Hide' : 'Show'} optimization tips
-              </button>
-            </div>
-
-            {campaignData.platforms.map((platform: any) => {
-              const showAll = expandedPlatforms[platform.name] || false;
-              const displayAds = showAll ? platform.ads : platform.ads.slice(0, 1);
-            
-              return (
-                <div key={platform.name} className="bg-white rounded-xl border border-slate-200 p-8 mb-6 shadow-sm">
-                  {/* Platform Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      {platform.icon}
-                      <div>
-                        <h2 className="text-lg font-semibold text-slate-900">{platform.name}</h2>
-                        <p className="text-sm text-slate-600">{platform.reasoning}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-slate-900">{platform.allocationPct}%</div>
-                      <div className="text-xs text-slate-600">${(platform.budget / 1000).toFixed(1)}K/mo</div>
-                    </div>
-                  </div>
-
-                  {/* Strategy Banner */}
-                  <div className={`rounded-lg p-4 mb-6 ${
-                    platform.name === 'Facebook Ads' ? 'bg-blue-50 border border-blue-100' :
-                    platform.name === 'Instagram Ads' ? 'bg-purple-50 border border-purple-100' :
-                    'bg-indigo-50 border border-indigo-100'
-                  }`}>
-                    <div className="flex items-start gap-3">
-                      <Target className={`h-5 w-5 flex-shrink-0 mt-0.5 ${
-                        platform.name === 'Facebook Ads' ? 'text-blue-600' :
-                        platform.name === 'Instagram Ads' ? 'text-purple-600' :
-                        'text-indigo-600'
-                      }`} />
-                      <div>
-                        <div className={`text-sm font-semibold mb-1 ${
-                          platform.name === 'Facebook Ads' ? 'text-blue-900' :
-                          platform.name === 'Instagram Ads' ? 'text-purple-900' :
-                          'text-indigo-900'
-                        }`}>
-                          {platform.strategyTitle}
-                        </div>
-                        <div className={`text-sm ${
-                          platform.name === 'Facebook Ads' ? 'text-blue-800' :
-                          platform.name === 'Instagram Ads' ? 'text-purple-800' :
-                          'text-indigo-800'
-                        }`}>
-                          {platform.strategyDescription}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {displayAds.map((ad: any, index: number) => {
-                      const isInstagram = platform.name === 'Instagram Ads';
-                      const isGoogle = platform.name === 'Google Search';
-                      const googleHeadlines = isGoogle && googleAdCopy?.headlines ? googleAdCopy.headlines : null;
-                      const googleDescriptions = isGoogle && googleAdCopy?.descriptions ? googleAdCopy.descriptions : null;
-                      const displayCopy = isGoogle && googleDescriptions
-                        ? googleDescriptions.join(' ')
-                        : isInstagram && instagramAdCopy?.caption
-                        ? instagramAdCopy.caption
-                        : ad.copy;
-
-                      const clipboardHeadline = googleHeadlines ? googleHeadlines.join(' | ') : ad.headline;
-                      const clipboardCopy = displayCopy;
-
-                      return (
-                        <div key={index} className="border border-slate-200 rounded-lg p-4">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <div className="text-sm font-semibold text-slate-900 mb-1">{ad.location}</div>
-                              <div className="text-xs text-slate-600">{ad.targeting}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm font-semibold text-slate-900">${ad.dailyBudget}/day</div>
-                              <div className="text-xs text-slate-600">{ad.competitiveNote}</div>
-                            </div>
-                          </div>
-
-                          {/* In-line Optimization Tip */}
-                          {showOptimizationTips && ad.optimizationTip && (
-                            <div className="mb-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
-                              <div className="flex items-start gap-2">
-                                <Lightbulb className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
-                                <div className="text-xs italic text-amber-900">{ad.optimizationTip}</div>
-                              </div>
-                            </div>
-                          )}
-
-                        <div className="mb-3">
-                          <div className="text-xs text-slate-500 uppercase mb-1">Audience</div>
-                          <div className="text-sm text-slate-700">{ad.demographics}</div>
-                        </div>
-
-                        <div className="mb-3">
-                          <div className="text-xs text-slate-500 uppercase mb-1">Behavioral Profile</div>
-                          <div className="text-sm text-slate-700">{ad.behavioralTraits}</div>
-                        </div>
-
-                        <div className="mb-3">
-                          <div className="text-xs text-slate-500 uppercase mb-1">{googleHeadlines ? 'Headlines' : 'Headline'}</div>
-                          {googleHeadlines ? (
-                            <div className="space-y-1">
-                              {googleHeadlines.map((headline: string, i: number) => (
-                                <div key={i} className="text-sm font-medium text-slate-900">• {headline}</div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="text-sm font-medium text-slate-900">{ad.headline}</div>
-                          )}
-                        </div>
-
-                          <div className="mb-3">
-                            <div className="text-xs text-slate-500 uppercase mb-1">Ad Copy</div>
-                            {googleDescriptions ? (
-                              <div className="space-y-1 bg-slate-50 p-3 rounded">
-                                {googleDescriptions.map((desc: string, i: number) => (
-                                  <div key={i} className="text-sm text-slate-900">• {desc}</div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="text-sm text-slate-900 bg-slate-50 p-3 rounded">
-                                {isInstagram && instagramAdCopy?.caption
-                                  ? instagramAdCopy.caption
-                                  : ad.copy}
-                              </div>
-                            )}
-                          </div>
-
-                          <button
-                            onClick={() => copyToClipboard(
-                              `Platform: ${platform.name}\nLocation: ${ad.location}\nTargeting: ${ad.targeting}\nAudience: ${ad.demographics}\nHeadline: ${clipboardHeadline}\nCopy: ${clipboardCopy}\nBudget: $${ad.dailyBudget}/day\n\nTip: ${ad.optimizationTip || 'N/A'}`,
-                              `${platform.name}-${index}`
-                            )}
-                            className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors"
-                          >
-                            {copiedIndex === `${platform.name}-${index}` ? (
-                              <><Check className="h-4 w-4" />Copied!</>
-                            ) : (
-                              <><Copy className="h-4 w-4" />Copy campaign details</>
-                            )}
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {platform.ads.length > 3 && (
-                    <button
-                      onClick={() => setExpandedPlatforms(prev => ({ ...prev, [platform.name]: !showAll }))}
-                      className="w-full mt-4 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors"
-                    >
-                      {showAll ? 'Show less' : `Show ${platform.ads.length - 1} more neighborhoods`}
-                    </button>
-                  )}
-                </div>
+    {/* Controls */}
+    <div className="flex items-center justify-between mb-4">
+      <button
+        onClick={() => {
+          const allCampaigns = campaignData.platforms.map((platform: any) => {
+            const platformData = [
+              `\n=== ${platform.name.toUpperCase()} ===`,
+              `Budget: $${(platform.budget / 1000).toFixed(1)}K/month (${platform.allocationPct}%)`,
+              `Strategy: ${platform.strategyDescription}`,
+              `\nADS:\n`
+            ];
+            platform.ads.forEach((ad: any, idx: number) => {
+              platformData.push(
+                `\n--- Ad ${idx + 1}: ${ad.geography || ad.location} ---`,
+                `Audience: ${ad.demographics}`,
+                `Headline: ${ad.headline}`,
+                `Copy: ${ad.copy}`,
+                `Daily Budget: $${ad.dailyBudget}`,
+                ''
               );
-            })}
-          </>
+            });
+            return platformData.join('\n');
+          }).join('\n\n');
+
+          const fullExport = [
+            `CAMPAIGN EXPORT - ${campaignData.overview.procedure}`,
+            `Generated: ${new Date().toLocaleDateString()}`,
+            `\nBudget: $${(campaignData.overview.monthlyBudget / 1000).toFixed(1)}K → ${campaignData.overview.expectedPatients} bookings → $${(campaignData.overview.expectedRevenue / 1000).toFixed(1)}K revenue (${campaignData.overview.roas}× ROAS)`,
+            allCampaigns
+          ].join('\n');
+
+          navigator.clipboard.writeText(fullExport);
+          setCopiedIndex('export-all');
+          setTimeout(() => setCopiedIndex(null), 2000);
+        }}
+        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+      >
+        {copiedIndex === 'export-all' ? (
+          <><Check className="h-4 w-4" />Copied!</>
+        ) : (
+          <><Copy className="h-4 w-4" />Export all campaigns</>
         )}
+      </button>
+
+      <button
+        onClick={() => setShowOptimizationTips(!showOptimizationTips)}
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+      >
+        <Lightbulb className="h-4 w-4" />
+        {showOptimizationTips ? 'Hide tips' : 'Show tips'}
+      </button>
+    </div>
+
+    {/* Platform Cards - Collapsed by default */}
+    {campaignData.platforms.map((platform: any) => {
+      const isExpanded = expandedPlatforms[platform.name] || false;
+      
+      return (
+        <div key={platform.name} className="bg-white rounded-xl border border-slate-200 mb-4 shadow-sm overflow-hidden">
+          {/* Collapsed Header - Always visible */}
+          <button
+            onClick={() => setExpandedPlatforms(prev => ({ ...prev, [platform.name]: !isExpanded }))}
+            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              {platform.icon}
+              <div className="text-left">
+                <div className="font-semibold text-slate-900">{platform.name}</div>
+                <div className="text-sm text-slate-600">{platform.strategyTitle}</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-xl font-bold text-slate-900">{platform.allocationPct}%</div>
+                <div className="text-xs text-slate-500">${(platform.budget / 1000).toFixed(1)}K/mo</div>
+              </div>
+              <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            </div>
+          </button>
+
+          {/* Expanded Content */}
+          {isExpanded && (
+            <div className="px-4 pb-4 border-t border-slate-100">
+              {/* Strategy Description */}
+              <div className={`rounded-lg p-4 my-4 ${
+                platform.name === 'Facebook Ads' ? 'bg-blue-50 border border-blue-100' :
+                platform.name === 'Instagram Ads' ? 'bg-purple-50 border border-purple-100' :
+                'bg-indigo-50 border border-indigo-100'
+              }`}>
+                <p className={`text-sm ${
+                  platform.name === 'Facebook Ads' ? 'text-blue-800' :
+                  platform.name === 'Instagram Ads' ? 'text-purple-800' :
+                  'text-indigo-800'
+                }`}>
+                  {platform.strategyDescription}
+                </p>
+              </div>
+
+              {/* Ad Details */}
+              {platform.ads.map((ad: any, index: number) => {
+                const isInstagram = platform.name === 'Instagram Ads';
+                const isGoogle = platform.name === 'Google Search';
+                const googleHeadlines = isGoogle && googleAdCopy?.headlines ? googleAdCopy.headlines : null;
+                const googleDescriptions = isGoogle && googleAdCopy?.descriptions ? googleAdCopy.descriptions : null;
+
+                return (
+                  <div key={index} className="border border-slate-200 rounded-lg p-4 mt-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="text-sm text-slate-600">{ad.demographics}</div>
+                      <div className="text-sm font-semibold text-slate-900">${ad.dailyBudget}/day</div>
+                    </div>
+
+                    {/* Optimization Tip */}
+                    {showOptimizationTips && ad.optimizationTip && (
+                      <div className="mb-3 p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                        <div className="flex items-start gap-2">
+                          <Lightbulb className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                          <div className="text-xs text-amber-900">{ad.optimizationTip}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs text-slate-500 uppercase mb-1">{googleHeadlines ? 'Headlines' : 'Headline'}</div>
+                        {googleHeadlines ? (
+                          <div className="space-y-1">
+                            {googleHeadlines.map((headline: string, i: number) => (
+                              <div key={i} className="text-sm font-medium text-slate-900">• {headline}</div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm font-medium text-slate-900">{ad.headline}</div>
+                        )}
+                      </div>
+
+                      <div>
+                        <div className="text-xs text-slate-500 uppercase mb-1">Ad Copy</div>
+                        {googleDescriptions ? (
+                          <div className="space-y-1 bg-slate-50 p-3 rounded">
+                            {googleDescriptions.map((desc: string, i: number) => (
+                              <div key={i} className="text-sm text-slate-900">• {desc}</div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-slate-900 bg-slate-50 p-3 rounded">
+                            {isInstagram && instagramAdCopy?.caption ? instagramAdCopy.caption : ad.copy}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => copyToClipboard(
+                        `Platform: ${platform.name}\nAudience: ${ad.demographics}\nHeadline: ${googleHeadlines ? googleHeadlines.join(' | ') : ad.headline}\nCopy: ${googleDescriptions ? googleDescriptions.join(' ') : (isInstagram && instagramAdCopy?.caption ? instagramAdCopy.caption : ad.copy)}\nBudget: $${ad.dailyBudget}/day`,
+                        `${platform.name}-${index}`
+                      )}
+                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors mt-4"
+                    >
+                      {copiedIndex === `${platform.name}-${index}` ? (
+                        <><Check className="h-4 w-4" />Copied!</>
+                      ) : (
+                        <><Copy className="h-4 w-4" />Copy ad</>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </>
+)}
 
         {activeTab === 'messages' && (
           <div className="space-y-6">
@@ -1139,26 +1079,26 @@ function generateCampaignFromRealData(params: any) {
         ? `Average transaction $${Math.round(revenueStats.mean)}. Anchor high, show savings.`
         : 'Lead with monthly payments rather than total price.'
     },
-    landing: {
-      headline: avgCompetition === 0 ? `First ${procedureDisplay} Serving ${city || 'your area'}` : `${profileType.split(' - ')[0]}' Choice for ${procedureDisplay}`,
-      subheadline: avgCompetition === 0 ? 'Be among the first. Limited introductory pricing.' : `Join ${totalPatients}+ satisfied patients.`,
-      trustBuilders: [
-        `${totalPatients}+ successful treatments`,
-        avgCompetition > 3 ? `Most experienced among ${Math.round(avgCompetition)} providers` : 'Board-certified practitioners',
-        'Same-week appointments',
-        'Free consultation'
-      ],
-      cta: { primary: 'Book Free Consultation', secondary: 'Call Now' },
-      formFields: ['Name', 'Phone', 'Email', 'Preferred time']
-    },
-    kpis: [
-      { metric: 'Cost Per Lead', target: `$${Math.round(avgCPA * 0.6)}`, why: 'Track ad efficiency' },
-      { metric: 'Lead Volume', target: `${Math.round(monthlyBudget / (avgCPA * 0.6))}/mo`, why: 'Pipeline health' },
-      { metric: 'Consultation Rate', target: '35%', why: 'Lead quality' },
-      { metric: 'Booking Rate', target: '65%', why: 'Conversion rate' },
-      { metric: 'Cost Per Acquisition', target: `$${Math.round(avgCPA)}`, why: 'True patient cost' },
-      { metric: 'ROAS', target: '5.0×', why: 'Campaign profitability' }
-    ],
+
+    kpis: {
+  fromYourData: [
+    { metric: 'Avg Patient LTV', value: `$${(avgLTV/1000).toFixed(1)}K`, isReal: dataQuality.ltv.isReal },
+    { metric: 'Visit Frequency', value: `${avgFrequency.toFixed(1)}×/year`, isReal: dataQuality.frequency.isReal },
+    { metric: 'Local Competition', value: avgCompetition > 3 ? 'High' : avgCompetition > 1 ? 'Moderate' : 'Low', isReal: true },
+    { metric: 'Target Segments', value: `${validSegments.length} ZIPs`, isReal: true },
+  ],
+  projections: [
+    { metric: 'Monthly Ad Spend', value: `$${(monthlyBudget/1000).toFixed(1)}K`, note: 'Based on CPA × bookings' },
+    { metric: 'Expected Bookings', value: `${totalBookings}/mo`, note: 'From segment analysis' },
+    { metric: 'Projected Revenue', value: `$${(totalRevenue/1000).toFixed(0)}K`, note: 'Bookings × avg ticket' },
+    { metric: 'Projected ROAS', value: `${roas}×`, note: 'Revenue ÷ ad spend' },
+  ],
+  industryBenchmarks: [
+    { metric: 'Lead → Consult Rate', value: '30-40%', note: 'Industry average for medspas' },
+    { metric: 'Consult → Book Rate', value: '60-70%', note: 'Industry average for medspas' },
+    { metric: 'Avg CPC (Google)', value: '$3-8', note: 'Varies by market competition' },
+  ]
+},
     checklist: [
       'Set up Facebook, Instagram, and Google ad accounts',
       'Install conversion tracking pixels',
