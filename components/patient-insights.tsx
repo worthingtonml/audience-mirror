@@ -494,9 +494,14 @@ export default function PatientInsights() {
   const strengthCopy = generateStrengthCopy(analysisData);
 
   const segmentName =
+    analysisData?.cohort_descriptor?.label ||
     analysisData?.dominant_profile?.combined ||
     analysisData?.dominant_profile ||
     'Best Patient Segment';
+  
+  const segmentDescription =
+    analysisData?.cohort_descriptor?.description ||
+    '';
 
   // ================================================================
   // RENDER
@@ -639,7 +644,7 @@ export default function PatientInsights() {
 
               {/* Description */}
               <p className="text-sm md:text-base text-indigo-100 leading-relaxed max-w-3xl mb-6">
-                Your best patients are {segmentName}. They spend ${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.
+                {segmentDescription} They spend ${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.
               </p>
 
               {/* Stats row */}
