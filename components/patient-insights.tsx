@@ -437,7 +437,7 @@ export default function PatientInsights() {
     43000;
 
   const patientCount =
-    analysisData.filtered_patient_count || analysisData.patient_count || 79;
+    analysisData.filtered_patient_count || analysisData.patient_count;
 
   const budgetPercentage =
     analysisData.campaign_metrics?.budget_percentage || 0.2;
@@ -602,24 +602,6 @@ export default function PatientInsights() {
               </div>
             )}
           </div>
-
-          {/* Thin summary strip */}
-          <div className="pb-4">
-            <div className="flex items-start gap-2 rounded-xl bg-[#F3F4FF] px-4 py-3 text-xs text-[#4B5563]">
-              <Info className="h-4 w-4 text-[#4338CA] mt-[2px]" />
-              <p>
-                You're looking at{' '}
-                <span className="font-semibold text-[#111827]">
-                  {segmentName}
-                </span>{' '}
-                across{' '}
-                <span className="font-semibold">
-                  {procedureDisplayText.toLowerCase()}
-                </span>
-                Use this page to decide <span className="font-semibold">where</span> to invest, <span className="font-semibold">what</span> to say, and <span className="font-semibold">how fast</span> you can grow—then launch campaigns in a couple of clicks.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -673,9 +655,9 @@ export default function PatientInsights() {
                 <div>
                   <div className="text-[10px] font-medium text-indigo-200 mb-1">Churn Rate</div>
                   <div className={`text-2xl md:text-3xl font-bold ${
-                    churnData?.at_risk_percent > 50 
+                    churnData?.at_risk_percent > 25 
                       ? 'text-red-300' 
-                      : churnData?.at_risk_percent > 30 
+                      : churnData?.at_risk_percent > 15 
                       ? 'text-amber-300' 
                       : 'text-emerald-300'
                   }`}>
@@ -691,7 +673,7 @@ export default function PatientInsights() {
                 What This Means
               </div>
               <p className="text-sm text-indigo-100 leading-relaxed">
-                {`These ${patientCount} patients average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} visits per year. `}
+                {`Your best patients average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} visits per year. `}
                 {churnData && `${churnData.at_risk_percent.toFixed(0)}% haven't returned within their expected visit interval, putting $${((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0)}K in revenue at risk.`}
               </p>
 
