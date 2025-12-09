@@ -676,7 +676,20 @@ export default function PatientInsights() {
                 {`Your best patients average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} visits per year. `}
                 {churnData && `${churnData.at_risk_percent.toFixed(0)}% haven't returned within their expected visit interval, putting $${((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0)}K in revenue at risk.`}
               </p>
-
+              
+              <button
+                onClick={() => {
+                  if (currentRunId) {
+                    window.open(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/runs/${currentRunId}/export-patients`, '_blank');
+                  }
+                }}
+                className="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export Labeled Patients
+              </button>
               
             </div>
           </section>
@@ -997,8 +1010,7 @@ export default function PatientInsights() {
                         × per year
                       </div>
                       <p className="text-sm text-[#6B7280]">
-                        Down 12% from last year. Industry benchmark is 3.2×
-                        annually for this demographic.
+                        {analysisData?.behavior_patterns?.visits_lift_pct > 0 ? '+' : ''}{analysisData?.behavior_patterns?.visits_lift_pct || 0}% vs your baseline ({analysisData?.behavior_patterns?.baseline_visits_per_year || 2}× across all patients).
                       </p>
                     </div>
                     <div>
@@ -1094,10 +1106,10 @@ export default function PatientInsights() {
                           <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A] mt-2"></div>
                           <div>
                             <div className="text-sm font-semibold text-[#111827]">
-                              15% better retention
+                              {100 - (analysisData?.churn?.at_risk_percent || 15)}% retention
                             </div>
                             <div className="text-xs text-[#6B7280]">
-                              vs. market average of 58%
+                              Top 20% of your patients
                             </div>
                           </div>
                         </div>
@@ -1105,10 +1117,10 @@ export default function PatientInsights() {
                           <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A] mt-2"></div>
                           <div>
                             <div className="text-sm font-semibold text-[#111827]">
-                              Higher LTV per patient
+                              +{analysisData?.behavior_patterns?.ltv_lift_pct || 0}% higher LTV
                             </div>
                             <div className="text-xs text-[#6B7280]">
-                              $3.6K vs. $2.9K industry benchmark
+                              ${((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) / 1000).toFixed(1)}K vs ${((analysisData?.behavior_patterns?.baseline_ltv || 2900) / 1000).toFixed(1)}K baseline
                             </div>
                           </div>
                         </div>
@@ -1119,7 +1131,7 @@ export default function PatientInsights() {
                               Premium service mix
                             </div>
                             <div className="text-xs text-[#6B7280]">
-                              42% advanced procedures vs. 31% average
+                              Top treatments: {analysisData?.available_procedures?.slice(0, 2).join(', ') || 'Botox, Fillers'}
                             </div>
                           </div>
                         </div>
@@ -1198,10 +1210,10 @@ export default function PatientInsights() {
                         Current Annual Run Rate
                       </div>
                       <div className="text-2xl font-semibold text-[#111827] mb-1">
-                        ${(totalRevenue / 1000).toFixed(0)}K
+                        {100 - (churnData?.at_risk_percent || 15)}%
                       </div>
                       <p className="text-sm text-[#6B7280]">
-                        Based on last 90 days of activity
+                        Retention rate for your best patients (top 20%).
                       </p>
                     </div>
                     <div>
@@ -1236,13 +1248,13 @@ export default function PatientInsights() {
                             Injectable Treatments
                           </span>
                           <span className="text-sm font-semibold text-[#111827]">
-                            58%
+                            {analysisData?.behavior_patterns?.treatment_categories?.["Injectable Treatments"] || 0}%
                           </span>
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
                             className="bg-[#4338CA] h-2 rounded-full"
-                            style={{ width: '58%' }}
+                            style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Injectable Treatments"] || 0}%` }}
                           ></div>
                         </div>
                       </div>
@@ -1252,13 +1264,13 @@ export default function PatientInsights() {
                             Laser & Energy Treatments
                           </span>
                           <span className="text-sm font-semibold text-[#111827]">
-                            24%
+                            {analysisData?.behavior_patterns?.treatment_categories?.["Laser & Energy"] || 0}%
                           </span>
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
                             className="bg-[#4338CA] h-2 rounded-full"
-                            style={{ width: '24%' }}
+                            style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Laser & Energy"] || 0}%` }}
                           ></div>
                         </div>
                       </div>
@@ -1268,13 +1280,13 @@ export default function PatientInsights() {
                             Skincare & Other
                           </span>
                           <span className="text-sm font-semibold text-[#111827]">
-                            18%
+                            {analysisData?.behavior_patterns?.treatment_categories?.["Skincare & Other"] || 0}%
                           </span>
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
                             className="bg-[#4338CA] h-2 rounded-full"
-                            style={{ width: '18%' }}
+                            style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Skincare & Other"] || 0}%` }}
                           ></div>
                         </div>
                       </div>
@@ -1307,65 +1319,6 @@ export default function PatientInsights() {
               {openAccordions['risk'] && (
                 <div className="px-6 md:px-8 py-6 border-t border-[#E5E7EB] bg-[#F9FAFB]">
                   <div className="space-y-4">
-                    <div className="p-4 bg-white rounded-lg border-l-2 border-[#DC2626]">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="text-sm font-semibold text-[#111827]">
-                          Declining Visit Frequency
-                        </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-red-50 text-red-700">
-                          High Risk
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#6B7280] mb-3">
-                        12% drop in visits year-over-year. If trend continues,
-                        you'll lose $127K in annual revenue.
-                      </p>
-                      <div className="text-xs text-[#111827]">
-                        <span className="font-semibold">Mitigation:</span> Launch
-                        referral campaign within 30 days. Historical data shows
-                        referral programs increase visit frequency by 23%.
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-white rounded-lg border-l-2 border-[#F59E0B]">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="text-sm font-semibold text-[#111827]">
-                          Market Concentration
-                        </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-yellow-50 text-yellow-700">
-                          Medium Risk
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#6B7280] mb-3">
-                        73% of revenue from single demographic segment. Vulnerable
-                        to market shifts.
-                      </p>
-                      <div className="text-xs text-[#111827]">
-                        <span className="font-semibold">Mitigation:</span> Expand
-                        into adjacent ZIP codes with similar demographics. Reduces
-                        concentration risk by 40%.
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-white rounded-lg border-l-2 border-[#16A34A]">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="text-sm font-semibold text-[#111827]">
-                          Competitive Pressure
-                        </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-50 text-green-700">
-                          Low Risk
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#6B7280] mb-3">
-                        3 new medspas opened within 5 miles in past 12 months.
-                        However, your retention rate remains strong.
-                      </p>
-                      <div className="text-xs text-[#111827]">
-                        <span className="font-semibold">Monitoring:</span> Continue
-                        tracking retention metrics. Maintain service quality
-                        advantage.
-                      </div>
-                    </div>
 
                     {/* Churn Risk - Dynamic from API */}
                     {churnData && (
