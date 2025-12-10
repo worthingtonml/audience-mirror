@@ -206,6 +206,7 @@ export default function PatientInsights() {
   const [outreachSummary, setOutreachSummary] = useState<any>(null);
   const [selectedPatients, setSelectedPatients] = useState<string[]>([]);
   const [showWinbackModal, setShowWinbackModal] = useState(false);
+  const [winbackPatients, setWinbackPatients] = useState<any[]>([]);
 
   // Fetch outreach summary
   const fetchOutreachSummary = async () => {
@@ -553,6 +554,7 @@ export default function PatientInsights() {
   // ================================================================
 
   return (
+    <>
     <div className="min-h-screen bg-[#F4F5FB]">
       {/* HEADER */}
       <div className="bg-white border-b border-[#E2E8F0]">
@@ -731,7 +733,7 @@ export default function PatientInsights() {
                       }
                       generateCampaign();
                     }}
-                    
+
                 className="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1442,11 +1444,24 @@ export default function PatientInsights() {
                             <div className="space-y-1">
                               {churnData.high_risk_patients.slice(0, 5).map((p: any, idx: number) => (
                                 <div key={idx} className="flex justify-between text-xs">
-                                  <span className="text-[#6B7280]">Patient {p.patient_id} - {p.procedure}</span>
+                                  <span className="text-[#6B7280] font-mono">{p.patient_id || `Patient ${idx + 1}`}</span>
                                   <span className="font-medium text-[#DC2626]">{p.days_overdue} days overdue</span>
                                 </div>
                               ))}
                             </div>
+                            <button
+                              onClick={() => {
+                                const patientIds = churnData.high_risk_patients.map((p: any) => p.patient_id).filter(Boolean);
+                                if (patientIds.length > 0) {
+                                  markContacted(patientIds);
+                                  setWinbackPatients(churnData.high_risk_patients);
+                                  setShowWinbackModal(true);
+                                }
+                              }}
+                              className="mt-3 w-full px-4 py-2 bg-[#4338CA] text-white text-xs font-semibold rounded-lg hover:bg-[#3730A3] transition-colors"
+                            >
+                              Launch Win-Back Campaign ({churnData.high_risk_patients.length} patients)
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1666,5 +1681,59 @@ export default function PatientInsights() {
         </div>
       </div>
     </div>
+
+    {showWinbackModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Win-Back Campaign Scripts</h2>
+              <button onClick={() => setShowWinbackModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">{winbackPatients.length} patients marked as contacted.</p>
+          </div>
+          <div className="p-6 space-y-6">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">📧 Email Script</h3>
+                <button onClick={() => navigator.clipboard.writeText('Subject: We miss you!\n\nHi [First Name],\n\nIt has been a while since your last visit. We have reserved 15% off your next appointment just for you.\n\nBook now - offer expires in 14 days.\n\nWarm regards,\n[Practice Name]')} className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200">Copy</button>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700 whitespace-pre-wrap">{`Subject: We miss you!
+
+Hi [First Name],
+
+It has been a while since your last visit. We have reserved 15% off your next appointment just for you.
+
+Book now - offer expires in 14 days.
+
+Warm regards,
+[Practice Name]`}</div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-gray-900">💬 SMS Script</h3>
+                <button onClick={() => navigator.clipboard.writeText('Hi [First Name]! We miss you. Here is 15% off your next visit - book by [date]: [link]')} className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200">Copy</button>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">Hi [First Name]! We miss you. Here is 15% off your next visit - book by [date]: [link]</div>
+            </div>
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-900">Patients to Contact</h3>
+              <div className="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto">
+                {winbackPatients.map((p: any, idx: number) => (
+                  <div key={idx} className="flex justify-between py-1 text-sm border-b border-gray-100">
+                    <span className="font-mono text-xs">{p.patient_id || `Patient ${idx + 1}`}</span>
+                    <span className="text-red-600">{p.days_overdue} days overdue</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+            <button onClick={() => setShowWinbackModal(false)} className="w-full px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">Done</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
