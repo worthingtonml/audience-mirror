@@ -694,10 +694,17 @@ export default function PatientInsights() {
                   <div className="text-[10px] text-indigo-200">per year</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Projected Revenue</div>
-                  <div className="text-2xl md:text-3xl font-bold text-white">
-                    ${(totalRevenue / 1000).toFixed(0)}K
+                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Revenue at Risk</div>
+                  <div className={`text-2xl md:text-3xl font-bold ${
+                    churnData?.at_risk_percent > 25 
+                      ? 'text-red-300' 
+                      : churnData?.at_risk_percent > 15 
+                      ? 'text-amber-300' 
+                      : 'text-emerald-300'
+                  }`}>
+                    ${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '—'}K
                   </div>
+                  <div className="text-[10px] text-indigo-200">from {churnData?.at_risk_count || 0} patients</div>
                 </div>
                 <div>
                   <div className="text-[10px] font-medium text-indigo-200 mb-1">Churn Rate</div>
