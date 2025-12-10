@@ -182,7 +182,7 @@ export default function HomePage() {
             </span>
           </h1>
           <p className="mx-auto max-w-2xl text-[15px] font-normal leading-[1.5] text-gray-600 md:text-[17px] lg:text-[18px]">
-            Connect your patient data to instantly see which high-value patients are slipping away, how much revenue is at risk, and what to do to win them back. Then use the profile of your top patients to find more people who look like them.
+            Connect your patient data to instantly see which high-value patients are slipping away, how much revenue is at risk, and what to do to win them back. Then use the profiles of your top patients to find more like them.
           </p>
         </section>
 
