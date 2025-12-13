@@ -60,24 +60,25 @@ function getSeasonalCopy(season: string): SeasonalCopy {
   return map[season] || map.Q1;
 }
 
-function generateHeroCopy(analysisData: any, season: string): string {
+function generateHeroCopy(analysisData: any, season: string, isRealEstate: boolean = false): string {
   const seasonal = getSeasonalCopy(season);
   const segmentName =
     analysisData?.dominant_profile?.combined ||
     analysisData?.dominant_profile ||
-    'Your best patients';
+    (isRealEstate ? 'Your best clients' : 'Your best patients');
 
   return `${segmentName} bring in significant revenue, but visit frequency is softening. Act now ${seasonal.urgency}`;
 }
 
-function generateReferralCopy(analysisData: any, season: string): string {
+function generateReferralCopy(analysisData: any, season: string, isRealEstate: boolean = false): string {
   const seasonal = getSeasonalCopy(season);
   const referralRate =
     Math.round(
       (analysisData?.behavior_patterns?.referral_rate ?? 0.76) * 100
     ) || 76;
+  const customerTerm = isRealEstate ? 'client' : 'patient';
 
-  return `${referralRate}% of this group has referred friends before. One referred patient can replace this quarter's churn risk. ${seasonal.offer} to turn loyalty into new bookings.`;
+  return `${referralRate}% of this group has referred friends before. One referred ${customerTerm} can replace this quarter's churn risk. ${seasonal.offer} to turn loyalty into new bookings.`;
 }
 
 function generateBundleCopy(analysisData: any): string {
@@ -92,12 +93,13 @@ function generateBundleCopy(analysisData: any): string {
   return `Offer a ${topProc} + ${secondProc} bundle to lift revenue per visit. Practices like yours typically see $1,200+ extra per client when bundled thoughtfully.`;
 }
 
-function generateGrowthCopy(analysisData: any): string {
+function generateGrowthCopy(analysisData: any, isRealEstate: boolean = false): string {
   const ltv = Math.round(
     analysisData?.behavior_patterns?.avg_lifetime_value || 3600
   );
   const ltvK = (ltv / 1000).toFixed(1);
-  return `Revenue is growing year-over-year. Average lifetime value is ~$${ltvK}K per patient—this segment is your growth engine. Protect this momentum.`;
+  const customerTerm = isRealEstate ? 'client' : 'patient';
+  return `Revenue is growing year-over-year. Average lifetime value is ~$${ltvK}K per ${customerTerm}—this segment is your growth engine. Protect this momentum.`;
 }
 
 // Segment-specific psychographic profiles
@@ -170,13 +172,13 @@ const DEFAULT_PSYCHOGRAPHICS = [
   "Convenience-oriented — prefers easy booking and reminders"
 ];
 
-function generateStrengthCopy(analysisData: any): string {
+function generateStrengthCopy(analysisData: any, isRealEstate: boolean = false): string {
   const uplift =
     Math.round(
       (analysisData?.behavior_patterns?.repeat_rate_lift_vs_market ?? 0.12) *
         100
     ) || 12;
-  return `Repeat rate is ~${uplift}% stronger than comparable medspas. You already have an advantage—use campaigns here to widen that gap, not just maintain it.`;
+  return `Repeat rate is ~${uplift}% stronger than comparable businesses. You already have an advantage—use campaigns here to widen that gap, not just maintain it.`;
 }
 
 // ================================================================
@@ -203,6 +205,92 @@ export default function PatientInsights() {
   const [season] = useState(getCurrentSeason());
   const [churnData, setChurnData] = useState<any>(null);
   const [churnLoading, setChurnLoading] = useState(false);
+  const [vertical, setVertical] = useState<string>('medspa');
+  // Terminology based on vertical
+  const isRealEstate = vertical === 'real_estate_mortgage';
+  const terms = {
+    customer: isRealEstate ? 'client' : 'patient',
+    customers: isRealEstate ? 'clients' : 'patients',
+    Customer: isRealEstate ? 'Client' : 'Patient',
+    Customers: isRealEstate ? 'Clients' : 'Patients',
+    service: isRealEstate ? 'transaction' : 'treatment',
+    services: isRealEstate ? 'transactions' : 'treatments',
+    visit: isRealEstate ? 'transaction' : 'visit',
+    visits: isRealEstate ? 'transactions' : 'visits',
+    planTitle: isRealEstate ? 'Client Growth Plan' : 'Patient Growth Plan',
+    bestCustomers: isRealEstate ? 'Your Best Clients Are' : 'Your Best Patients Are',
+    behaviorTitle: isRealEstate ? 'Client Behavior Analysis' : 'Patient Behavior Analysis',
+    churnTitle: isRealEstate ? 'Client Churn Risk' : 'Patient Churn Risk',
+    atRiskTitle: isRealEstate ? 'Top At-Risk Clients' : 'Top At-Risk Patients',
+  };
+  const [outreachSummary, setOutreachSummary] = useState<any>(null);
+  const [selectedPatients, setSelectedPatients] = useState<string[]>([]);
+  const [showWinbackModal, setShowWinbackModal] = useState(false);
+  const [winbackPatients, setWinbackPatients] = useState<any[]>([]);
+  const [winbackScripts, setWinbackScripts] = useState<any>(null);
+  const [scriptsLoading, setScriptsLoading] = useState(false);
+
+  // Fetch win-back scripts
+  const fetchWinbackScripts = async () => {
+    setScriptsLoading(true);
+    try {
+      const treatment = analysisData?.available_procedures?.[0] || 'appointment';
+      const daysOverdue = winbackPatients[0]?.days_overdue || 90;
+      const response = await fetch(
+        `${API_URL}/api/v1/winback-scripts?treatment=${encodeURIComponent(treatment)}&days_overdue=${daysOverdue}&patient_count=${winbackPatients.length}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setWinbackScripts(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch scripts:', e);
+    } finally {
+      setScriptsLoading(false);
+    }
+  };
+
+  // Fetch outreach summary
+  const fetchOutreachSummary = async () => {
+    if (!currentRunId) return;
+    try {
+      const response = await fetch(`${API_URL}/api/v1/runs/${currentRunId}/outreach/summary`);
+      if (response.ok) {
+        const data = await response.json();
+        setOutreachSummary(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch outreach summary:', error);
+    }
+  };
+
+  // Mark patients as contacted
+  const markContacted = async (patientIds: string[]) => {
+    if (!currentRunId || patientIds.length === 0) return;
+    try {
+      const formData = new FormData();
+      patientIds.forEach(id => formData.append('patient_ids', id));
+      
+      const response = await fetch(`${API_URL}/api/v1/runs/${currentRunId}/outreach/mark-contacted`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (response.ok) {
+        setSelectedPatients([]);
+        fetchOutreachSummary();
+      }
+    } catch (error) {
+      console.error('Failed to mark contacted:', error);
+    }
+  };
+
+// Fetch outreach summary when run loads
+  useEffect(() => {
+    if (currentRunId) {
+      fetchOutreachSummary();
+    }
+  }, [currentRunId]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -251,7 +339,7 @@ export default function PatientInsights() {
   useEffect(() => {
     const runId = sessionStorage.getItem('runId');
     if (!runId) {
-      setError('No analysis found. Please upload patient data first.');
+      setError('No analysis found. Please upload data first.');
       setLoading(false);
       return;
     }
@@ -289,6 +377,9 @@ export default function PatientInsights() {
 
           if (data.available_procedures?.length > 0) {
             setAvailableProcedures(data.available_procedures);
+          }
+          if (data.detected_vertical) {
+            setVertical(data.detected_vertical);
           }
 
           setLoading(false);
@@ -370,7 +461,7 @@ export default function PatientInsights() {
       ? 'all'
       : selectedProcedures.join(',');
     router.push(
-      `/campaign-generator?zip=${selected.join(',')}&procedure=${procedureParam}`
+      `/campaign-generator?zip=${selected.join(',')}&procedure=${procedureParam}&vertical=${vertical}`
     );
   };
 
@@ -406,7 +497,7 @@ export default function PatientInsights() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#CBD5E1] border-t-[#4338CA] mx-auto mb-4" />
           <div className="text-sm font-medium text-[#1A202C] mb-1">
-            Analyzing your patients
+            Analyzing your data
           </div>
           <div className="text-xs text-[#94A3B8]">
             We're mapping your top segments and opportunities.
@@ -437,7 +528,7 @@ export default function PatientInsights() {
     43000;
 
   const patientCount =
-    analysisData.filtered_patient_count || analysisData.patient_count || 79;
+    analysisData.filtered_patient_count || analysisData.patient_count;
 
   const budgetPercentage =
     analysisData.campaign_metrics?.budget_percentage || 0.2;
@@ -468,7 +559,7 @@ export default function PatientInsights() {
     ? selectedProcedures[0]
     : `${selectedProcedures.length} procedures`;
 
-  const heroCopy = generateHeroCopy(analysisData, season);
+  const heroCopy = generateHeroCopy(analysisData, season, isRealEstate);
 
   // Calculate overall risk level from strategic insights
   // Calculate overall risk level from strategic insights
@@ -488,21 +579,27 @@ export default function PatientInsights() {
     }
   }
 
-  const referralCopy = generateReferralCopy(analysisData, season);
+  const referralCopy = generateReferralCopy(analysisData, season, isRealEstate);
   const bundleCopy = generateBundleCopy(analysisData);
-  const growthCopy = generateGrowthCopy(analysisData);
-  const strengthCopy = generateStrengthCopy(analysisData);
+  const growthCopy = generateGrowthCopy(analysisData, isRealEstate);
+  const strengthCopy = generateStrengthCopy(analysisData, isRealEstate);
 
   const segmentName =
+    analysisData?.cohort_descriptor?.label ||
     analysisData?.dominant_profile?.combined ||
     analysisData?.dominant_profile ||
-    'Best Patient Segment';
+    (isRealEstate ? 'Best Client Segment' : 'Best Patient Segment');
+  
+  const segmentDescription =
+    analysisData?.cohort_descriptor?.description ||
+    '';
 
   // ================================================================
   // RENDER
   // ================================================================
 
   return (
+    <>
     <div className="min-h-screen bg-[#F4F5FB]">
       {/* HEADER */}
       <div className="bg-white border-b border-[#E2E8F0]">
@@ -513,16 +610,25 @@ export default function PatientInsights() {
           <div className="py-6 flex items-center justify-between gap-4">
             <div>
               <h1 className="text-xl md:text-2xl font-semibold text-[#111827] tracking-tight">
-                Patient Growth Plan
+                {terms.planTitle}
               </h1>
               <p className="text-xs md:text-sm text-[#9CA3AF] mt-1 flex items-center gap-2">
-                <span>{patientCount} patients analyzed</span>
+                <span>{patientCount} {terms.customers} analyzed</span>
                 <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#4338CA]">
                   <Clock className="h-3 w-3" />
                   {getSeasonalCopy(season).timing}
                 </span>
               </p>
             </div>
+            
+            <select
+              value={vertical}
+              onChange={(e) => setVertical(e.target.value)}
+              className="px-3 py-2 text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg focus:ring-[#4338CA] focus:border-[#4338CA]"
+            >
+              <option value="medspa">Aesthetics</option>
+              <option value="real_estate_mortgage">Real Estate / Mortgage</option>
+            </select>
 
             {availableProcedures.length > 0 && (
               <div className="relative" ref={dropdownRef}>
@@ -597,24 +703,6 @@ export default function PatientInsights() {
               </div>
             )}
           </div>
-
-          {/* Thin summary strip */}
-          <div className="pb-4">
-            <div className="flex items-start gap-2 rounded-xl bg-[#F3F4FF] px-4 py-3 text-xs text-[#4B5563]">
-              <Info className="h-4 w-4 text-[#4338CA] mt-[2px]" />
-              <p>
-                You're looking at{' '}
-                <span className="font-semibold text-[#111827]">
-                  {segmentName}
-                </span>{' '}
-                across{' '}
-                <span className="font-semibold">
-                  {procedureDisplayText.toLowerCase()}
-                </span>
-                Use this page to decide <span className="font-semibold">where</span> to invest, <span className="font-semibold">what</span> to say, and <span className="font-semibold">how fast</span> you can grow—then launch campaigns in a couple of clicks.
-              </p>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -629,7 +717,7 @@ export default function PatientInsights() {
             <div className="bg-gradient-to-r from-[#4F46E5] via-[#6366F1] to-[#8B5CF6] rounded-2xl p-8 md:p-10 shadow-lg">
               {/* Top row: Label */}
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-200 mb-2">
-                Your Best Patients Are
+                {terms.bestCustomers}
               </div>
 
               {/* Segment name */}
@@ -639,7 +727,7 @@ export default function PatientInsights() {
 
               {/* Description */}
               <p className="text-sm md:text-base text-indigo-100 leading-relaxed max-w-3xl mb-6">
-                Your best patients are {segmentName}. They spend ${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.
+                {segmentDescription} They spend ${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.
               </p>
 
               {/* Stats row */}
@@ -660,17 +748,24 @@ export default function PatientInsights() {
                   <div className="text-[10px] text-indigo-200">per year</div>
                 </div>
                 <div>
-                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Projected Revenue</div>
-                  <div className="text-2xl md:text-3xl font-bold text-white">
-                    ${(totalRevenue / 1000).toFixed(0)}K
+                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Revenue at Risk</div>
+                  <div className={`text-2xl md:text-3xl font-bold ${
+                    churnData?.at_risk_percent > 25 
+                      ? 'text-red-300' 
+                      : churnData?.at_risk_percent > 15 
+                      ? 'text-amber-300' 
+                      : 'text-emerald-300'
+                  }`}>
+                    ${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '—'}K
                   </div>
+                  <div className="text-[10px] text-indigo-200">from {churnData?.at_risk_count || 0} {terms.customers}</div>
                 </div>
                 <div>
                   <div className="text-[10px] font-medium text-indigo-200 mb-1">Churn Rate</div>
                   <div className={`text-2xl md:text-3xl font-bold ${
-                    churnData?.at_risk_percent > 50 
+                    churnData?.at_risk_percent > 25 
                       ? 'text-red-300' 
-                      : churnData?.at_risk_percent > 30 
+                      : churnData?.at_risk_percent > 15 
                       ? 'text-amber-300' 
                       : 'text-emerald-300'
                   }`}>
@@ -686,10 +781,22 @@ export default function PatientInsights() {
                 What This Means
               </div>
               <p className="text-sm text-indigo-100 leading-relaxed">
-                {`These ${patientCount} patients average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} visits per year. `}
+                {`Your best ${terms.customers} average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} ${terms.visits} per year. `}
                 {churnData && `${churnData.at_risk_percent.toFixed(0)}% haven't returned within their expected visit interval, putting $${((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0)}K in revenue at risk.`}
               </p>
-
+              
+              <button
+                onClick={() => {
+                  if (!currentRunId) return;
+                  window.open(`${API_URL}/api/v1/runs/${currentRunId}/export-patients`, '_blank');
+                }}
+                className="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export Labeled {terms.Customers}
+              </button>
               
             </div>
           </section>
@@ -818,14 +925,14 @@ export default function PatientInsights() {
                 <div className="space-y-3">
                   <h3 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#111827]">
                     {(churnData?.at_risk_percent || 0) > 50 
-                      ? 'Win back lapsed patients' 
+                      ? `Win back lapsed ${terms.customers}` 
                       : (churnData?.at_risk_percent || 0) > 30 
                       ? 'Prevent at-risk churn' 
                       : 'Get referrals'}
                   </h3>
                   <p className="text-sm md:text-base text-[#6B7280] leading-relaxed max-w-xl">
                     {(churnData?.at_risk_percent || 0) > 50 
-                      ? `${churnData?.at_risk_percent.toFixed(0)}% of this segment (${Math.round(patientCount * (churnData?.at_risk_percent || 0) / 100)} patients) haven't returned within their expected interval. A ${analysisData?.available_procedures?.[0] || 'treatment'} reactivation offer could recover $${((totalRevenue * (churnData?.at_risk_percent || 0) / 100) / 1000).toFixed(0)}K in at-risk revenue.`
+                      ? `${churnData?.at_risk_percent.toFixed(0)}% of this segment (${Math.round(patientCount * (churnData?.at_risk_percent || 0) / 100)} ${terms.customers}) haven't returned within their expected interval. A ${analysisData?.available_procedures?.[0] || terms.service} reactivation offer could recover $${((totalRevenue * (churnData?.at_risk_percent || 0) / 100) / 1000).toFixed(0)}K in at-risk revenue.`
                       : (churnData?.at_risk_percent || 0) > 30 
                       ? `${churnData?.at_risk_percent.toFixed(0)}% of this segment is showing early churn signals. Proactive outreach now — before they lapse — is 3x more effective than win-back campaigns later.`
                       : referralCopy}
@@ -834,7 +941,17 @@ export default function PatientInsights() {
 
                 <div className="flex flex-wrap items-center gap-3">
                   <button
-                    onClick={generateCampaign}
+                    onClick={() => {
+                      const atRiskPatients = churnData?.high_risk_patients || [];
+                      const patientIds = atRiskPatients.map((p: any) => p.patient_id);
+                      if (patientIds.length > 0) {
+                        markContacted(patientIds);
+                        setWinbackPatients(atRiskPatients);
+                        setShowWinbackModal(true);
+                      } else {
+                        generateCampaign();
+                      }
+                    }}
                     disabled={selectedCount === 0}
                     className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#4338CA] text-white text-sm md:text-base font-semibold shadow-md hover:bg-[#3730A3] transition-colors disabled:opacity-50"
                   >
@@ -850,6 +967,43 @@ export default function PatientInsights() {
               </div>
             </div>
           </section>
+          
+          {/* ROI TRACKING */}
+          {outreachSummary && outreachSummary.contacted_count > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                  Campaign Results
+                </h2>
+                <span className="text-[11px] text-[#9CA3AF]">
+                  Track your win-back ROI
+                </span>
+              </div>
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E5E7EB]">
+                <div className="grid grid-cols-3 gap-6">
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-[#111827]">{outreachSummary.contacted_count}</div>
+                    <div className="text-xs text-[#6B7280] mt-1">{terms.Customers} Contacted</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-[#16A34A]">{outreachSummary.returned_count}</div>
+                    <div className="text-xs text-[#6B7280] mt-1">Returned</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-3xl font-bold text-[#4338CA]">
+                      ${(outreachSummary.revenue_recovered / 1000).toFixed(1)}K
+                    </div>
+                    <div className="text-xs text-[#6B7280] mt-1">Revenue Recovered</div>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-[#E5E7EB] text-center">
+                  <span className="text-sm text-[#6B7280]">
+                    {outreachSummary.conversion_rate}% conversion rate
+                  </span>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* SECONDARY ACTIONS */}
           <section className="space-y-3">
@@ -873,7 +1027,7 @@ export default function PatientInsights() {
                     Expand to new ZIPs
                   </h3>
                   <p className="text-sm text-[#6B7280] leading-relaxed mb-6">
-                    {`Your ${patientCount} ${segmentName} patients are concentrated in ${selectedCount || totalBookings} ZIP codes. Adjacent neighborhoods have similar demographics — target them with the same ${analysisData?.available_procedures?.[0] || 'treatment'} messaging.`}
+                    {`Your ${patientCount} ${segmentName} ${terms.customers} are concentrated in ${selectedCount || totalBookings} ZIP codes. Adjacent neighborhoods have similar demographics — target them with the same ${analysisData?.available_procedures?.[0] || terms.service} messaging.`}
                   </p>
                 </div>
                 <button
@@ -945,7 +1099,7 @@ export default function PatientInsights() {
                     {totalBookings}
                   </div>
                   <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold">
-                    New patients / month
+                    New {terms.customers} / month
                   </div>
                 </div>
                 <div>
@@ -983,7 +1137,7 @@ export default function PatientInsights() {
               >
                 <div className="text-left">
                   <h3 className="text-base md:text-lg font-semibold text-[#111827]">
-                    Patient Behavior Analysis
+                    {terms.behaviorTitle}
                   </h3>
                   <p className="text-xs md:text-sm text-[#6B7280] mt-1">
                     Visit patterns, service preferences, and retention indicators
@@ -1010,8 +1164,7 @@ export default function PatientInsights() {
                         × per year
                       </div>
                       <p className="text-sm text-[#6B7280]">
-                        Down 12% from last year. Industry benchmark is 3.2×
-                        annually for this demographic.
+                        {analysisData?.behavior_patterns?.visits_lift_pct > 0 ? '+' : ''}{analysisData?.behavior_patterns?.visits_lift_pct || 0}% vs your baseline ({analysisData?.behavior_patterns?.baseline_visits_per_year || 2}× across all {terms.customers}).
                       </p>
                     </div>
                     <div>
@@ -1028,7 +1181,7 @@ export default function PatientInsights() {
                         )}
                       </div>
                       <p className="text-sm text-[#6B7280]">
-                        Up 8% year-over-year. Patients are choosing premium
+                        Up 8% year-over-year. {terms.Customers} are choosing premium
                         services when they do visit.
                       </p>
                     </div>
@@ -1107,10 +1260,10 @@ export default function PatientInsights() {
                           <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A] mt-2"></div>
                           <div>
                             <div className="text-sm font-semibold text-[#111827]">
-                              15% better retention
+                              {100 - (analysisData?.churn?.at_risk_percent || 15)}% retention
                             </div>
                             <div className="text-xs text-[#6B7280]">
-                              vs. market average of 58%
+                              Top 20% of your {terms.customers}
                             </div>
                           </div>
                         </div>
@@ -1118,10 +1271,10 @@ export default function PatientInsights() {
                           <div className="w-1.5 h-1.5 rounded-full bg-[#16A34A] mt-2"></div>
                           <div>
                             <div className="text-sm font-semibold text-[#111827]">
-                              Higher LTV per patient
+                              +{analysisData?.behavior_patterns?.ltv_lift_pct || 0}% higher LTV
                             </div>
                             <div className="text-xs text-[#6B7280]">
-                              $3.6K vs. $2.9K industry benchmark
+                              ${((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) / 1000).toFixed(1)}K vs ${((analysisData?.behavior_patterns?.baseline_ltv || 2900) / 1000).toFixed(1)}K baseline
                             </div>
                           </div>
                         </div>
@@ -1132,7 +1285,7 @@ export default function PatientInsights() {
                               Premium service mix
                             </div>
                             <div className="text-xs text-[#6B7280]">
-                              42% advanced procedures vs. 31% average
+                              Top {terms.services}: {analysisData?.available_procedures?.slice(0, 2).join(', ') || (isRealEstate ? 'Buy, Sell' : 'Botox, Fillers')}
                             </div>
                           </div>
                         </div>
@@ -1211,10 +1364,10 @@ export default function PatientInsights() {
                         Current Annual Run Rate
                       </div>
                       <div className="text-2xl font-semibold text-[#111827] mb-1">
-                        ${(totalRevenue / 1000).toFixed(0)}K
+                        {100 - (churnData?.at_risk_percent || 15)}%
                       </div>
                       <p className="text-sm text-[#6B7280]">
-                        Based on last 90 days of activity
+                        Retention rate for your best {terms.customers} (top 20%).
                       </p>
                     </div>
                     <div>
@@ -1238,6 +1391,7 @@ export default function PatientInsights() {
                       </p>
                     </div>
                   </div>
+                  {!isRealEstate && (
                   <div className="p-4 bg-white rounded-lg border border-[#E5E7EB]">
                     <div className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-3">
                       Revenue by Service Category
@@ -1249,13 +1403,13 @@ export default function PatientInsights() {
                             Injectable Treatments
                           </span>
                           <span className="text-sm font-semibold text-[#111827]">
-                            58%
+                            {analysisData?.behavior_patterns?.treatment_categories?.["Injectable Treatments"] || 0}%
                           </span>
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
                             className="bg-[#4338CA] h-2 rounded-full"
-                            style={{ width: '58%' }}
+                            style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Injectable Treatments"] || 0}%` }}
                           ></div>
                         </div>
                       </div>
@@ -1265,13 +1419,13 @@ export default function PatientInsights() {
                             Laser & Energy Treatments
                           </span>
                           <span className="text-sm font-semibold text-[#111827]">
-                            24%
+                            {analysisData?.behavior_patterns?.treatment_categories?.["Laser & Energy"] || 0}%
                           </span>
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
                             className="bg-[#4338CA] h-2 rounded-full"
-                            style={{ width: '24%' }}
+                            style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Laser & Energy"] || 0}%` }}
                           ></div>
                         </div>
                       </div>
@@ -1281,18 +1435,19 @@ export default function PatientInsights() {
                             Skincare & Other
                           </span>
                           <span className="text-sm font-semibold text-[#111827]">
-                            18%
+                            {analysisData?.behavior_patterns?.treatment_categories?.["Skincare & Other"] || 0}%
                           </span>
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
                             className="bg-[#4338CA] h-2 rounded-full"
-                            style={{ width: '18%' }}
+                            style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Skincare & Other"] || 0}%` }}
                           ></div>
                         </div>
                       </div>
                     </div>
                   </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1320,65 +1475,6 @@ export default function PatientInsights() {
               {openAccordions['risk'] && (
                 <div className="px-6 md:px-8 py-6 border-t border-[#E5E7EB] bg-[#F9FAFB]">
                   <div className="space-y-4">
-                    <div className="p-4 bg-white rounded-lg border-l-2 border-[#DC2626]">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="text-sm font-semibold text-[#111827]">
-                          Declining Visit Frequency
-                        </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-red-50 text-red-700">
-                          High Risk
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#6B7280] mb-3">
-                        12% drop in visits year-over-year. If trend continues,
-                        you'll lose $127K in annual revenue.
-                      </p>
-                      <div className="text-xs text-[#111827]">
-                        <span className="font-semibold">Mitigation:</span> Launch
-                        referral campaign within 30 days. Historical data shows
-                        referral programs increase visit frequency by 23%.
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-white rounded-lg border-l-2 border-[#F59E0B]">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="text-sm font-semibold text-[#111827]">
-                          Market Concentration
-                        </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-yellow-50 text-yellow-700">
-                          Medium Risk
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#6B7280] mb-3">
-                        73% of revenue from single demographic segment. Vulnerable
-                        to market shifts.
-                      </p>
-                      <div className="text-xs text-[#111827]">
-                        <span className="font-semibold">Mitigation:</span> Expand
-                        into adjacent ZIP codes with similar demographics. Reduces
-                        concentration risk by 40%.
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-white rounded-lg border-l-2 border-[#16A34A]">
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="text-sm font-semibold text-[#111827]">
-                          Competitive Pressure
-                        </div>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold uppercase bg-green-50 text-green-700">
-                          Low Risk
-                        </span>
-                      </div>
-                      <p className="text-sm text-[#6B7280] mb-3">
-                        3 new medspas opened within 5 miles in past 12 months.
-                        However, your retention rate remains strong.
-                      </p>
-                      <div className="text-xs text-[#111827]">
-                        <span className="font-semibold">Monitoring:</span> Continue
-                        tracking retention metrics. Maintain service quality
-                        advantage.
-                      </div>
-                    </div>
 
                     {/* Churn Risk - Dynamic from API */}
                     {churnData && (
@@ -1388,7 +1484,7 @@ export default function PatientInsights() {
                       }`}>
                         <div className="flex items-start justify-between mb-2">
                           <div className="text-sm font-semibold text-[#111827]">
-                            Patient Churn Risk
+                            {terms.churnTitle}
                           </div>
                           <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${
                             churnData.at_risk_percent > 50 ? 'bg-red-50 text-red-700' : 
@@ -1399,28 +1495,41 @@ export default function PatientInsights() {
                           </span>
                         </div>
                         <p className="text-sm text-[#6B7280] mb-3">
-                          {churnData.at_risk_count} of {churnData.total_patients} patients ({churnData.at_risk_percent.toFixed(0)}%) 
-                          are overdue for their next visit. {churnData.critical_count > 0 && 
+                          {churnData.at_risk_count} of {churnData.total_patients} {terms.customers} ({churnData.at_risk_percent.toFixed(0)}%) 
+                          are overdue for their next {terms.visit}. {churnData.critical_count > 0 && 
                             `${churnData.critical_count} are critical (2x+ overdue).`}
                         </p>
                         <div className="text-xs text-[#111827] mb-3">
                           <span className="font-semibold">Mitigation:</span> Launch win-back 
                           campaign targeting {churnData.critical_count + churnData.high_count} high-priority 
-                          patients. Average {churnData.avg_days_overdue.toFixed(0)} days overdue.
+                          {terms.customers}. Average {churnData.avg_days_overdue.toFixed(0)} days overdue.
                         </div>
                         {churnData.high_risk_patients?.length > 0 && (
                           <div className="mt-3 pt-3 border-t border-[#E5E7EB]">
                             <div className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-2">
-                              Top At-Risk Patients
+                              {terms.atRiskTitle}
                             </div>
                             <div className="space-y-1">
                               {churnData.high_risk_patients.slice(0, 5).map((p: any, idx: number) => (
                                 <div key={idx} className="flex justify-between text-xs">
-                                  <span className="text-[#6B7280]">Patient {p.patient_id} - {p.procedure}</span>
+                                  <span className="text-[#6B7280] font-mono">{p.patient_id || `${terms.Customer} ${idx + 1}`}</span>
                                   <span className="font-medium text-[#DC2626]">{p.days_overdue} days overdue</span>
                                 </div>
                               ))}
                             </div>
+                            <button
+                              onClick={() => {
+                                const patientIds = churnData.high_risk_patients.map((p: any) => p.patient_id).filter(Boolean);
+                                if (patientIds.length > 0) {
+                                  markContacted(patientIds);
+                                  setWinbackPatients(churnData.high_risk_patients);
+                                  setShowWinbackModal(true);
+                                }
+                              }}
+                              className="mt-3 w-full px-4 py-2 bg-[#4338CA] text-white text-xs font-semibold rounded-lg hover:bg-[#3730A3] transition-colors"
+                            >
+                              Launch Win-Back Campaign ({churnData.high_risk_patients.length} {terms.customers})
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1487,7 +1596,7 @@ export default function PatientInsights() {
                           <th className="text-left py-3 px-6">ZIP</th>
                           <th className="text-left py-3 px-6">Distance</th>
                           <th className="text-right py-3 px-6">
-                            Patients / month
+                            {terms.Customers} / month
                           </th>
                           <th className="text-right py-3 px-6">Match</th>
                         </tr>
@@ -1567,7 +1676,7 @@ export default function PatientInsights() {
                           <th className="text-left py-3 px-6">ZIP</th>
                           <th className="text-left py-3 px-6">Distance</th>
                           <th className="text-right py-3 px-6">
-                            Patients / month
+                            {terms.Customers} / month
                           </th>
                           <th className="text-right py-3 px-6">Match</th>
                         </tr>
@@ -1640,5 +1749,108 @@ export default function PatientInsights() {
         </div>
       </div>
     </div>
+
+    {showWinbackModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Win-Back Campaign Scripts</h2>
+              <button onClick={() => setShowWinbackModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            <p className="text-sm text-gray-500 mt-1">{winbackPatients.length} {terms.customers} marked as contacted.</p>
+          </div>
+          <div className="p-6 space-y-6">
+            {scriptsLoading ? (
+              <div className="text-center py-8 text-gray-500">Generating personalized scripts...</div>
+            ) : (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">📧 Email</h3>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`Subject: ${winbackScripts?.email_subject || 'We miss you!'}\n\n${winbackScripts?.email || ''}`);
+                        fetch(`${API_URL}/api/v1/winback-scripts/track`, {
+                          method: 'POST',
+                          body: new URLSearchParams({ treatment: analysisData?.available_procedures?.[0] || 'appointment', template_type: 'email' })
+                        });
+                      }} 
+                      className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
+                    <div className="font-medium mb-2">Subject: {winbackScripts?.email_subject || 'We miss you!'}</div>
+                    <div className="whitespace-pre-wrap">{winbackScripts?.email || 'Failed to load'}</div>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">💬 SMS</h3>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(winbackScripts?.sms || '');
+                        fetch(`${API_URL}/api/v1/winback-scripts/track`, {
+                          method: 'POST',
+                          body: new URLSearchParams({ treatment: analysisData?.available_procedures?.[0] || 'appointment', template_type: 'sms' })
+                        });
+                      }} 
+                      className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">{winbackScripts?.sms || 'Loading...'}</div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">📞 Phone</h3>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(winbackScripts?.phone || '');
+                        fetch(`${API_URL}/api/v1/winback-scripts/track`, {
+                          method: 'POST',
+                          body: new URLSearchParams({ treatment: analysisData?.available_procedures?.[0] || 'appointment', template_type: 'phone' })
+                        });
+                      }} 
+                      className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">{winbackScripts?.phone || 'Loading...'}</div>
+                </div>
+
+                {winbackScripts?.source === 'optimized' && (
+                  <div className="text-xs text-green-600 flex items-center gap-1">
+                    <span>✓</span> Using top-performing templates
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-gray-900">Patients to Contact ({winbackPatients.length})</h3>
+                  <div className="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto">
+                    {winbackPatients.map((p: any, idx: number) => (
+                      <div key={idx} className="flex justify-between py-1 text-sm border-b border-gray-100 last:border-0">
+                        <span className="font-mono text-xs">{p.patient_id || `${terms.Customer} ${idx + 1}`}</span>
+                        <span className="text-red-600">{p.days_overdue} days overdue</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+            <button onClick={() => setShowWinbackModal(false)} className="w-full px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700">Done</button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }

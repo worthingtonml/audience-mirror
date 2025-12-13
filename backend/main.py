@@ -45,8 +45,9 @@ from services.scoring import (
     generate_llm_explanations
 )
 from services.churn_scoring import calculate_churn_risk, get_churn_summary, analyze_patient_churn
+from services.verticals import detect_vertical, get_vertical, get_prompt_context
 from services.validate import validate_algorithm_accuracy
-from database import get_db, Dataset, AnalysisRun, create_tables
+from database import get_db, Dataset, AnalysisRun, PatientOutreach, create_tables
 
 from sqlalchemy.orm import Session
 from routers import patient_intel as patient_intel_router
@@ -268,94 +269,107 @@ def aggregate_visits_to_patients(df: pd.DataFrame) -> pd.DataFrame:
     
     print(f"[AGGREGATE] Result: {len(grouped)} patients, Avg revenue: ${grouped['revenue'].mean():,.2f}, Avg visits: {grouped['visit_count'].mean():.1f}")
     
+    # Fix patient_id column name if it got mangled
+    if 'patient_id_' in grouped.columns and 'patient_id' not in grouped.columns:
+        grouped = grouped.rename(columns={'patient_id_': 'patient_id'})
+    
     return grouped
+
 
 def segment_patients_by_behavior(patients_df: pd.DataFrame) -> pd.DataFrame:
     """
-    Classifies each patient using actual patient data (age, revenue, visits).
-    NO ZIP DEMOGRAPHICS.
+    Classify patients into 5 actionable segments based on composite scoring.
+    Segments are OUTPUT of scoring, not inputs.
     """
     df = patients_df.copy()
     
-    # Handle date_of_birth if age column doesn't exist
-    if 'age' not in df.columns and 'date_of_birth' in df.columns:
-        df['age'] = pd.to_datetime('today').year - pd.to_datetime(df['date_of_birth'], errors='coerce').dt.year
+    # Ensure columns exist
+    revenue_col = 'revenue' if 'revenue' in df.columns else 'total_spent'
+    if revenue_col in df.columns:
+        df['revenue'] = pd.to_numeric(df[revenue_col], errors='coerce').fillna(0)
+    else:
+        df['revenue'] = 0
     
-    # Ensure proper data types
-    df['age'] = pd.to_numeric(df.get('age', 40), errors='coerce')
-    df['revenue'] = pd.to_numeric(df.get('revenue', 0), errors='coerce')
-    df['visit_number'] = pd.to_numeric(df.get('visit_number', 1), errors='coerce')
+    freq_col = 'visits_per_year' if 'visits_per_year' in df.columns else 'visit_count'
+    if freq_col in df.columns:
+        df['frequency'] = pd.to_numeric(df[freq_col], errors='coerce').fillna(1)
+    else:
+        df['frequency'] = 1
     
-    labels = []
-    for _, row in df.iterrows():
-        age = row['age']
-        revenue = row['revenue']
-        visits = row['visit_number']
+    if 'last_visit' in df.columns:
+        df['days_since_visit'] = (pd.Timestamp.now() - pd.to_datetime(df['last_visit'], errors='coerce')).dt.days.fillna(365)
+    else:
+        df['days_since_visit'] = 90  # default
+    
+    if 'treatments_received' in df.columns:
+        df['treatment_count'] = df['treatments_received'].str.split(',').str.len().fillna(1)
+    else:
+        df['treatment_count'] = 1
+    
+    # Score each dimension (0-1 percentile rank)
+    df['revenue_score'] = df['revenue'].rank(pct=True)
+    df['frequency_score'] = df['frequency'].rank(pct=True)
+    df['recency_score'] = 1 - df['days_since_visit'].rank(pct=True)  # recent = high
+    df['diversity_score'] = df['treatment_count'].rank(pct=True)
+    
+    # Composite value score
+    df['value_score'] = (
+        df['revenue_score'] * 0.25 +
+        df['frequency_score'] * 0.25 +
+        df['recency_score'] * 0.25 +
+        df['diversity_score'] * 0.25
+    )
+    
+    # VIP threshold = top 20% of scores
+    vip_threshold = df['value_score'].quantile(0.80)
+    
+    # Segment based on score + behavioral patterns
+    def assign_segment(row):
+        score = row['value_score']
+        recency = row['recency_score']
+        frequency = row['frequency_score']
+        revenue = row['revenue_score']
         
-        # Classify by age + revenue + visits
-        if pd.isna(age):
-            labels.append("Unknown Profile")
-        elif age >= 55:
-            if revenue > 2000:
-                labels.append("Established Affluent - VIP Client")
-            elif revenue > 1000:
-                labels.append("Mature Premium Client")
-            else:
-                labels.append("Established Regular")
-        elif 35 <= age < 55:
-            if revenue > 1500 and visits >= 3:
-                labels.append("Executive Regular - High Value")
-            elif revenue > 800:
-                labels.append("Professional Maintainer")
-            else:
-                labels.append("Mid-Career Explorer")
-        elif 25 <= age < 35:
-            if visits >= 4:
-                labels.append("Young Professional - Regular Visitor")
-            else:
-                labels.append("Millennial Explorer")
-        else:
-            if revenue > 2000:
-                labels.append("Premium Client")
-            elif revenue > 800:
-                labels.append("Regular Client")
-            else:
-                labels.append("Entry Client")
+        # VIP: Top 20% overall score
+        if score >= vip_threshold:
+            return "VIP"
+        
+        # At Risk: Was valuable (high revenue) but lapsed (low recency)
+        if revenue >= 0.60 and recency < 0.30:
+            return "At Risk"
+        
+        # Rising Star: Highly engaged recently, building value
+        if recency >= 0.70 and frequency >= 0.60 and score >= 0.50:
+            return "Rising Star"
+        
+        # Maintainer: Steady middle tier
+        if score >= 0.40:
+            return "Maintainer"
+        
+        # Explorer: Everyone else - new or low engagement
+        return "Explorer"
     
-    df['behavioral_segment'] = labels
+    df['behavioral_segment'] = df.apply(assign_segment, axis=1)
     
-    # Pre-computed segment strategies (avoids slow LLM calls)
+    # Segment strategies (for UI/campaigns)
     SEGMENT_STRATEGIES = {
-        "Young Professional - Regular Visitor": "High-frequency younger clients who value convenience and results. Target with membership programs and loyalty rewards.",
-        "Millennial Explorer": "Discovery-phase clients testing services. Convert with intro packages and social proof.",
-        "Mid-Career Explorer": "Busy professionals exploring aesthetic options. Emphasize efficiency and proven results.",
-        "Professional Maintainer": "Established clients on maintenance routines. Upsell premium services and bundles.",
-        "Executive Regular - High Value": "Your VIP segment. Offer white-glove service, priority booking, and exclusive treatments.",
-        "Established Affluent - VIP Client": "High-spending loyal clients. Maintain with personalized attention and early access to new services.",
-        "Mature Premium Client": "Experienced clients seeking quality. Focus on anti-aging results and trusted expertise.",
-        "Established Regular": "Consistent older clients. Reward loyalty and offer senior-friendly scheduling.",
-        "Premium Client": "High spenders across age groups. Cross-sell complementary services.",
-        "Regular Client": "Core business clients. Build frequency with package deals.",
-        "Entry Client": "New or budget-conscious clients. Nurture into higher tiers with intro offers.",
-        "Unknown Profile": "Incomplete data. Gather more information on next visit.",
+        "VIP": "Your best customers. Retain with priority access, personalized service, and exclusive offers.",
+        "Rising Star": "High potential. Convert to VIP with loyalty programs and premium upsells.",
+        "Maintainer": "Reliable core business. Increase frequency with packages and seasonal promotions.",
+        "Explorer": "Early stage or occasional. Nurture with intro offers and education.",
+        "At Risk": "Previously valuable, now lapsed. Win back with targeted re-engagement campaigns.",
     }
-    
-    segment_explanations = {}
-    for segment_name in df['behavioral_segment'].unique():
-        segment_explanations[segment_name] = SEGMENT_STRATEGIES.get(
-            segment_name, 
-            f"{segment_name} segment - engage with targeted campaigns."
-        )
-        print(f"[SEGMENT] Loaded strategy for {segment_name}")
-    
     
     # Log results
     print(f"\n[BEHAVIORAL] Classified {len(df)} patients:")
     segment_counts = df['behavioral_segment'].value_counts()
-    for segment, count in segment_counts.items():
-        pct = (count / len(df)) * 100
-        avg_rev = df[df['behavioral_segment'] == segment]['revenue'].mean()
-        print(f"  {segment:45s}: {count:3d} ({pct:4.1f}%) | Avg: ${avg_rev:,.0f}")
+    for segment in ["VIP", "Rising Star", "Maintainer", "Explorer", "At Risk"]:
+        if segment in segment_counts.index:
+            count = segment_counts[segment]
+            pct = (count / len(df)) * 100
+            avg_rev = df[df['behavioral_segment'] == segment]['revenue'].mean()
+            avg_score = df[df['behavioral_segment'] == segment]['value_score'].mean()
+            print(f"  {segment:15s}: {count:3d} ({pct:4.1f}%) | Avg: ${avg_rev:,.0f} | Score: {avg_score:.2f}")
     print("")
     
     return df
@@ -987,7 +1001,8 @@ async def create_dataset(
             practice_zip=practice_zip,
             vertical=vertical,
             patient_count=len(validated_df),
-            unique_zips=validated_df["zip_code"].nunique()
+            unique_zips=validated_df["zip_code"].nunique(),
+            detected_vertical=detect_vertical(validated_df)
         )
         
         db.add(dataset)
@@ -1051,16 +1066,20 @@ async def create_run(
             # Use the SAME column that was found during extraction
             # Priority: procedure > procedure_norm > treatment > service > treatments_received
             procedure_col = None
-            for col in ['procedure', 'procedure_norm', 'treatment', 'service', 'treatments_received']:
+            for col in ['treatment', 'procedure', 'service', 'treatments_received', 'procedure_norm']:
                 if col in df_grouped.columns:
-                    procedure_col = col
-                    print(f"[FILTER] Using column '{col}' for procedure filtering")
-                    break
+                    # Skip columns that only have "Unknown" values
+                    unique_vals = df_grouped[col].dropna().unique()
+                    if len(unique_vals) > 0 and not all(str(v).lower() == 'unknown' for v in unique_vals):
+                        procedure_col = col
+                        print(f"[FILTER] Using column '{col}' for procedure filtering")
+                        break
 
             if procedure_col:
                 # Split comma-separated procedures
                 selected_procs = [p.strip().lower() for p in procedure.split(',')]
                 print(f"[FILTER] Filtering for procedures: {selected_procs}")
+                print(f"[FILTER DEBUG] Sample values in {procedure_col}: {df_grouped[procedure_col].dropna().head(10).tolist()}")
                 
                 def matches(x):
                     if pd.isna(x):
@@ -1125,7 +1144,11 @@ async def create_run(
         analysis_run.strategic_insights = result.get("strategic_insights", [])
         
         db.commit()
-
+        
+        # Auto-reconcile any contacted patients who returned
+        print(f"[DEBUG] About to reconcile for run_id: {run_id}")
+        reconcile_outreach_returns(db, run_id, df_grouped)
+        
         return fastapi.responses.JSONResponse({"run_id": run_id})
     
     except Exception as e:
@@ -1144,11 +1167,11 @@ async def create_export_urls(request: ExportCreateRequest, db: Session = Depends
 
     base_url = f"/api/v1/exports/{request.run_id}"
     
-    return ExportUrls(
-        facebook_url=f"{base_url}?format=facebook&top_n={request.top_n}",
-        google_url=f"{base_url}?format=google&top_n={request.top_n}",
-        full_report_url=f"{base_url}?format=full&top_n={request.top_n}"
-    )
+    return {
+        "facebook_url": f"{base_url}?format=facebook&top_n={request.top_n}",
+        "google_url": f"{base_url}?format=google&top_n={request.top_n}",
+        "full_report_url": f"{base_url}?format=full&top_n={request.top_n}"
+    }
 
 def g(obj, path, default=None):
     cur = obj
@@ -1327,6 +1350,7 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
         "filtered_patient_count": filtered_patient_count,
         "filtered_revenue": filtered_revenue,
         "dominant_profile": dominant_profile_data.get("dominant_profile", {}) if dominant_profile_data else {},
+        "cohort_descriptor": dominant_profile_data.get("cohort_descriptor", {}) if dominant_profile_data else {},
         "profile_characteristics": dominant_profile_data.get("profile_characteristics", {}) if dominant_profile_data else {},
         "behavior_patterns": dominant_profile_data.get("behavior_patterns", {}) if dominant_profile_data else {},
         "geographic_summary": dominant_profile_data.get("geographic_summary", {}) if dominant_profile_data else {},
@@ -1334,7 +1358,8 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
         "strategic_insights": analysis_run.strategic_insights if analysis_run.strategic_insights else [], 
         "top_segments": top_segments[:10],
         "campaign_metrics": campaign_metrics,
-        "available_procedures": available_procedures
+        "available_procedures": available_procedures,
+        "detected_vertical": dataset.detected_vertical if dataset else "medspa"
     }
 
 
@@ -1470,6 +1495,90 @@ async def validate_algorithm(
 # ============================================================================
 # STEP 2: ADD THIS FUNCTION BEFORE execute_advanced_analysis()
 # ============================================================================
+def generate_cohort_descriptor(top_patients: pd.DataFrame) -> dict:
+    """
+    Generate a human-readable descriptor for the top patient cohort
+    based on age, income, and treatment patterns.
+    """
+    # Age bucket
+    avg_age = top_patients['age'].mean() if 'age' in top_patients.columns else 40
+    if avg_age >= 55:
+        age_label = "Mature"
+    elif avg_age >= 40:
+        age_label = "Established"
+    elif avg_age >= 30:
+        age_label = "Mid-Career"
+    else:
+        age_label = "Young"
+    
+    # Income bucket (from ZIP)
+    avg_income = top_patients['median_income'].mean() if 'median_income' in top_patients.columns else 75000
+    if avg_income >= 150000:
+        income_label = "Affluent"
+    elif avg_income >= 100000:
+        income_label = "Upper-Income"
+    elif avg_income >= 75000:
+        income_label = "Professional"
+    else:
+        income_label = "Value-Conscious"
+    
+    # Treatment pattern
+    if 'treatments_received' in top_patients.columns:
+        all_treatments = []
+        for t in top_patients['treatments_received'].dropna():
+            all_treatments.extend([x.strip().lower() for x in str(t).split(',')])
+        
+        premium_treatments = ['morpheus8', 'pdo threads', 'sculptra', 'kybella', 'coolsculpting']
+        anti_aging = ['botox', 'juvederm', 'restylane', 'filler', 'morpheus8']
+        maintenance = ['hydrafacial', 'chemical peel', 'dermaplaning', 'microneedling']
+        
+        premium_count = sum(1 for t in all_treatments if any(p in t for p in premium_treatments))
+        anti_aging_count = sum(1 for t in all_treatments if any(a in t for a in anti_aging))
+        maintenance_count = sum(1 for t in all_treatments if any(m in t for m in maintenance))
+        
+        if premium_count > len(all_treatments) * 0.3:
+            treatment_label = "Premium Seekers"
+        elif anti_aging_count > len(all_treatments) * 0.4:
+            treatment_label = "Anti-Aging Focused"
+        elif maintenance_count > len(all_treatments) * 0.4:
+            treatment_label = "Maintenance Regulars"
+        else:
+            treatment_label = "Full-Service Clients"
+    else:
+        treatment_label = "Clients"
+    
+    # Combine into descriptor
+    if income_label == "Affluent":
+        descriptor = f"{income_label} {treatment_label}"
+    else:
+        descriptor = f"{age_label} {treatment_label}"
+    
+    # Top ZIPs
+    top_zips = top_patients['zip_code'].value_counts().head(3).index.tolist() if 'zip_code' in top_patients.columns else []
+    
+    # Owner status
+    owner_pct = top_patients['owner_occ_pct'].mean() * 100 if 'owner_occ_pct' in top_patients.columns else 50
+    housing_label = "homeowners" if owner_pct > 60 else "residents"
+    
+    # Build description sentence
+    income_display = f"${int(avg_income/1000)}K median household income"
+    description = f"{income_display}, {housing_label} (avg age {int(avg_age)})"
+    if top_zips:
+        description += f", concentrated in {', '.join(str(z) for z in top_zips[:3])}"
+    description += "."
+    
+    print(f"[DESCRIPTOR] Generated: {descriptor} — {description}")
+    
+    return {
+        "label": descriptor,
+        "description": description,
+        "avg_age": int(avg_age),
+        "avg_income": int(avg_income),
+        "top_zips": top_zips,
+        "housing_label": housing_label,
+        "treatment_label": treatment_label
+    }
+
 def identify_dominant_profile(
     patients_df: pd.DataFrame, 
     zip_features: pd.DataFrame,
@@ -1481,11 +1590,47 @@ def identify_dominant_profile(
     revenue_col = 'revenue' if 'revenue' in patients_df.columns else 'total_spent'
     
     # Find top customers by revenue
-    sorted_patients = patients_df.sort_values(revenue_col, ascending=False)
-    top_count = max(1, int(len(patients_df) * top_percentile))
+    # Build composite value score (not just revenue)
+    df = patients_df.copy()
+    
+    # Revenue score (0-1)
+    df['revenue_score'] = df[revenue_col].rank(pct=True)
+    
+    # Frequency score (0-1)
+    freq_col = 'visits_per_year' if 'visits_per_year' in df.columns else 'visit_count'
+    df['frequency_score'] = df[freq_col].rank(pct=True) if freq_col in df.columns else 0.5
+    
+    # Recency score (0-1, more recent = higher)
+    if 'last_visit' in df.columns:
+        df['days_since_visit'] = (pd.Timestamp.now() - pd.to_datetime(df['last_visit'])).dt.days
+        df['recency_score'] = 1 - df['days_since_visit'].rank(pct=True)  # invert: recent = high score
+    else:
+        df['recency_score'] = 0.5
+    
+    # Treatment diversity score (0-1)
+    if 'treatments_received' in df.columns:
+        df['treatment_count'] = df['treatments_received'].str.split(',').str.len().fillna(1)
+        df['diversity_score'] = df['treatment_count'].rank(pct=True)
+    else:
+        df['diversity_score'] = 0.5
+    
+    # Composite score (equal weights)
+    df['value_score'] = (
+        df['revenue_score'] * 0.25 +
+        df['frequency_score'] * 0.25 +
+        df['recency_score'] * 0.25 +
+        df['diversity_score'] * 0.25
+    )
+    
+    print(f"[SCORE] Composite value score: revenue={df['revenue_score'].mean():.2f}, freq={df['frequency_score'].mean():.2f}, recency={df['recency_score'].mean():.2f}, diversity={df['diversity_score'].mean():.2f}")
+    
+    # Select top customers by composite score
+    sorted_patients = patients_df.sort_values('value_score', ascending=False)
+    top_count = max(1, int(len(df) * top_percentile))
     top_patients = sorted_patients.head(top_count)
     
     print(f"[PROFILE] Analyzing top {top_count} patients ({top_percentile*100:.0f}% of {len(patients_df)})")
+    cohort_descriptor = generate_cohort_descriptor(top_patients)
     
     # Get dominant behavioral segment from TOP customers
     if 'behavioral_segment' in top_patients.columns:
@@ -1520,8 +1665,10 @@ def identify_dominant_profile(
     
     avg_visits = float(top_patients['visits_per_year'].mean()) if 'visits_per_year' in top_patients.columns else float(top_patients.get('visit_count', pd.Series([2.5])).mean())
     
-    # Find top treatments
+    # Find top treatments and categorize
     top_treatments = ["Primary Service"]
+    treatment_categories = {"Injectable Treatments": 0, "Laser & Energy": 0, "Skincare & Other": 0}
+    
     if 'treatments_received' in top_patients.columns:
         all_treatments = []
         for treatments in top_patients['treatments_received'].dropna():
@@ -1531,6 +1678,26 @@ def identify_dominant_profile(
         if all_treatments:
             treatment_counts = pd.Series(all_treatments).value_counts()
             top_treatments = treatment_counts.head(3).index.tolist()
+            
+            # Categorize treatments
+            injectables = ['botox', 'filler', 'juvederm', 'restylane', 'sculptra', 'kybella', 'dysport', 'xeomin']
+            laser_energy = ['laser', 'ipl', 'morpheus', 'coolsculpting', 'emsculpt', 'ultherapy', 'rf', 'microneedling', 'pdo']
+            
+            total = len(all_treatments)
+            for treatment in all_treatments:
+                t_lower = treatment.lower()
+                if any(inj in t_lower for inj in injectables):
+                    treatment_categories["Injectable Treatments"] += 1
+                elif any(las in t_lower for las in laser_energy):
+                    treatment_categories["Laser & Energy"] += 1
+                else:
+                    treatment_categories["Skincare & Other"] += 1
+            
+            # Convert to percentages
+            if total > 0:
+                treatment_categories = {k: round(v / total * 100) for k, v in treatment_categories.items()}
+            
+            print(f"[PROFILE] Treatment mix: {treatment_categories}")
 
     # Calculate referral rate
     referral_rate = 0.0
@@ -1545,11 +1712,15 @@ def identify_dominant_profile(
         referral_rate = 0.18  # Conservative default
         print(f"[PROFILE] No referral_source column; using default referral rate")
 
-    # Calculate repeat rate lift vs market
-    industry_avg_visits = 2.1  # Industry benchmark for medspa
-    actual_repeat_rate = avg_visits / industry_avg_visits
-    repeat_rate_lift = (actual_repeat_rate - 1.0)  # e.g., 0.12 = 12% lift
-    print(f"[PROFILE] Repeat rate: {avg_visits:.1f}× vs industry {industry_avg_visits}× = {repeat_rate_lift:+.1%} lift")
+    # Calculate baseline from ALL patients (not industry average)
+    baseline_visits = float(patients_df['visits_per_year'].mean()) if 'visits_per_year' in patients_df.columns else 2.0
+    baseline_ltv = int(patients_df[revenue_col].mean())
+    
+    visits_lift_pct = ((avg_visits - baseline_visits) / baseline_visits) * 100 if baseline_visits > 0 else 0
+    ltv_lift_pct = ((avg_ltv - baseline_ltv) / baseline_ltv) * 100 if baseline_ltv > 0 else 0
+    
+    print(f"[PROFILE] Repeat rate: {avg_visits:.1f}× vs {baseline_visits:.1f}× baseline = {visits_lift_pct:+.0f}% above your average")
+    print(f"[PROFILE] LTV: ${avg_ltv:,} vs ${baseline_ltv:,} baseline = {ltv_lift_pct:+.0f}% above your average")
 
     # Calculate average treatments per patient
     avg_treatments_per_patient = 1
@@ -1611,9 +1782,14 @@ def identify_dominant_profile(
         "behavior_patterns": {
             "avg_lifetime_value": avg_ltv,
             "avg_visits_per_year": round(avg_visits, 1),
+            "baseline_visits_per_year": round(baseline_visits, 1),
+            "baseline_ltv": baseline_ltv,
+            "visits_lift_pct": round(visits_lift_pct, 0),
+            "ltv_lift_pct": round(ltv_lift_pct, 0),
             "top_treatments": top_treatments,
+            "treatment_categories": treatment_categories,
             "referral_rate": round(referral_rate, 3),  
-            "repeat_rate_lift_vs_market": round(repeat_rate_lift, 3), 
+            "repeat_rate_lift_vs_market": round(visits_lift_pct / 100, 3), 
             "avg_treatments_per_patient": avg_treatments_per_patient  
         },
         "geographic_concentration": geo_concentration,
@@ -1624,7 +1800,8 @@ def identify_dominant_profile(
             "total_addressable_households": sum(g['patient_count'] for g in geo_concentration) * 1000,
             "primary_city": primary_city
         },
-        "profile_summary": summary
+        "profile_summary": summary,
+        "cohort_descriptor": cohort_descriptor
     }
 def generate_strategic_insights(
     patients_df: pd.DataFrame,
@@ -1700,7 +1877,7 @@ def generate_strategic_insights(
             "type": "success",
             "title": "Outperforming market",
             "icon": "check",
-            "message": f"Repeat rate is ~{lift_pct}% stronger than comparable medspas. You already have an advantage—use campaigns here to widen that gap, not just maintain it.",
+            "message": f"Repeat rate is ~{lift_pct}% stronger than comparable businesses. You already have an advantage—use campaigns here to widen that gap, not just maintain it.",
             "mitigation": "Expand into adjacent markets to capitalize on your retention strength.",
             "severity": "low",
             "applies": True
@@ -2635,6 +2812,7 @@ async def generate_google_campaign(
     target_demographics: str = Form(...),
     practice_name: str = Form("Your Practice"),
     practice_city: str = Form("Your City"),
+    vertical: str = Form("medspa"),
 ):
     cache_key = hashlib.md5(
         f"google-v1-{segment_name}-{patient_count}-{avg_ltv}-{top_procedures}".encode()
@@ -2677,6 +2855,86 @@ async def generate_google_campaign(
             "descriptions": [f"Expert {procedures_list[0]} treatments. Trusted by {patient_count}+ patients. Book today!"],
             "keywords": [procedures_list[0].lower(), f"{procedures_list[0].lower()} near me", f"{procedures_list[0].lower()} {practice_city.lower()}"]
         }       
+
+@app.post("/api/v1/campaigns/generate-copy")
+async def generate_campaign_copy(
+    request: fastapi.Request,
+    vertical: str = Form("medspa"),
+    profile_type: str = Form(""),
+    city: str = Form(""),
+    avg_ltv: float = Form(0),
+    total_clients: int = Form(0),
+    top_services: str = Form(""),
+):
+    """Generate all ad copy based on vertical and data."""
+    from services.verticals import get_prompt_context
+    
+    vertical_context = get_prompt_context(vertical)
+    services = top_services if top_services else ("real estate services" if vertical == "real_estate_mortgage" else "aesthetic treatments")
+    
+    prompt = f"""Generate ad copy for Facebook, Instagram, and Google for this business.
+
+{vertical_context}
+
+BUSINESS DATA:
+- Location: {city}
+- Client profile: {profile_type}
+- Average client value: ${avg_ltv:,.0f}
+- Total clients served: {total_clients}
+- Top services: {services}
+
+Return ONLY valid JSON:
+{{
+  "facebook": {{
+    "headline": "5-8 words",
+    "body": "2-3 sentences, compelling but not salesy"
+  }},
+  "instagram": {{
+    "headline": "5-8 words with one emoji",
+    "body": "2-3 sentences, visual and aspirational"
+  }},
+  "google": {{
+    "headlines": ["headline 1", "headline 2", "headline 3"],
+    "descriptions": ["description 1", "description 2"]
+  }}
+}}
+"""
+    
+    try:
+        response = await llm_service.generate(prompt, max_tokens=600)
+        return json.loads(response)
+    except Exception as e:
+        print(f"[LLM ERROR] Campaign copy generation failed: {e}")
+        if vertical == "real_estate_mortgage":
+            return {
+                "facebook": {
+                    "headline": f"Your Trusted Real Estate Partner in {city}",
+                    "body": f"Thinking of buying or selling? Our team has helped {total_clients}+ clients find their perfect home. Get a free consultation today."
+                },
+                "instagram": {
+                    "headline": f"🏡 Real Results in {city}",
+                    "body": f"See why {total_clients}+ clients trust us with their biggest investment. Your dream home is closer than you think."
+                },
+                "google": {
+                    "headlines": [f"Top Real Estate Agent {city}", "Buy or Sell With Confidence", "Free Home Valuation"],
+                    "descriptions": [f"Trusted by {total_clients}+ clients. Expert guidance for buyers and sellers.", "Get your free consultation today. No obligation."]
+                }
+            }
+        else:
+            return {
+                "facebook": {
+                    "headline": f"Expert Aesthetic Care in {city}",
+                    "body": f"Join {total_clients}+ satisfied patients who trust us for natural-looking results. Book your complimentary consultation."
+                },
+                "instagram": {
+                    "headline": f"✨ Real Results in {city}",
+                    "body": f"See the transformations our patients love. Natural beauty, expert care."
+                },
+                "google": {
+                    "headlines": [f"Top Med Spa {city}", "Natural-Looking Results", "Free Consultation"],
+                    "descriptions": [f"Trusted by {total_clients}+ patients. Expert aesthetic treatments.", "Book your free consultation today."]
+                }
+            }
         
 @app.post("/api/v1/campaigns/email")
 @limiter.limit("100/hour")
@@ -2687,6 +2945,7 @@ async def generate_email_campaign(
     sequence_type: str = Form("nurture"),  # nurture, reactivation, upsell, post_visit
     practice_name: str = Form("Your Practice"),
     practice_city: str = Form("Your City"),
+    vertical: str = Form("medspa"),
 ):
     """
     Generate email sequence for a patient segment using Claude AI.
@@ -2713,7 +2972,8 @@ async def generate_email_campaign(
         result = generate_email_sequence(
             cohort=segment_name,
             procedure=procedure,
-            sequence_type=sequence_type
+            sequence_type=sequence_type,
+            vertical=vertical
         )
         
         # Add practice info to result
@@ -2757,6 +3017,7 @@ async def generate_sms_campaign(
     campaign_type: str = Form("reactivation"),  # appointment_reminder, reactivation, flash_offer, post_visit, waitlist
     practice_name: str = Form("Your Practice"),
     practice_phone: str = Form("[Phone]"),
+    vertical: str = Form("medspa"),
 ):
     """
     Generate SMS messages for a patient segment using Claude AI.
@@ -2783,7 +3044,8 @@ async def generate_sms_campaign(
         result = gen_sms(
             cohort=segment_name,
             procedure=procedure,
-            campaign_type=campaign_type
+            campaign_type=campaign_type,
+            vertical=vertical
         )
         
         # Replace placeholders with practice info
@@ -2815,6 +3077,424 @@ async def generate_sms_campaign(
             "recommended_send_time": "Tuesday-Thursday, 10am-2pm",
             "compliance_note": "Ensure patient has opted in to SMS marketing."
         }
+        
+def reconcile_outreach_returns(db: Session, run_id: str, df: pd.DataFrame):
+    """
+    Check if any contacted patients have returned based on new upload data.
+    Auto-marks them as returned and logs their revenue.
+    """
+    from datetime import datetime
+    
+    print(f"[RECONCILE] Starting reconciliation for run {run_id}")
+    
+    # Only check patients from THIS run (not all runs)
+    contacted = db.query(PatientOutreach).filter(
+        PatientOutreach.run_id == run_id,
+        PatientOutreach.contacted_at.isnot(None),
+        PatientOutreach.returned_at.is_(None)
+    ).all()
+    
+    print(f"[RECONCILE] Found {len(contacted)} contacted patients awaiting return")
+    
+    if not contacted:
+        return {"reconciled": 0, "revenue": 0}
+    
+    # Get column names from current upload
+    patient_col = 'patient_id' if 'patient_id' in df.columns else df.columns[0]
+    revenue_col = 'revenue' if 'revenue' in df.columns else 'amount' if 'amount' in df.columns else None
+    date_col = next((c for c in ['visit_date', 'date', 'last_visit', 'appointment_date'] if c in df.columns), None)
+    
+    # Parse dates if available
+    if date_col:
+        df = df.copy()
+        df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+    
+    current_patients = set(df[patient_col].astype(str).unique())
+    print(f"[RECONCILE] Current upload has {len(current_patients)} patients: {list(current_patients)[:5]}...")
+    print(f"[RECONCILE] Looking for matches with: {[c.patient_id for c in contacted]}")
+    
+    reconciled = 0
+    total_revenue = 0
+    
+    for outreach in contacted:
+        if outreach.patient_id not in current_patients:
+            continue
+            
+        patient_rows = df[df[patient_col].astype(str) == outreach.patient_id]
+        
+        # Only count visits AFTER the contact date
+        if date_col and outreach.contacted_at:
+            patient_rows = patient_rows[patient_rows[date_col] > outreach.contacted_at]
+        
+        if patient_rows.empty:
+            continue
+            
+        # Patient returned! Mark them
+        outreach.returned_at = datetime.utcnow()
+        
+        if revenue_col:
+            patient_revenue = patient_rows[revenue_col].sum()
+            outreach.revenue_recovered = float(patient_revenue)
+            total_revenue += patient_revenue
+        
+        reconciled += 1
+    
+    if reconciled > 0:
+        db.commit()
+        print(f"[OUTREACH] Auto-reconciled {reconciled} returns, ${total_revenue:,.0f} recovered")
+        
+          # Track conversion for win-back templates
+    try:
+        from database import WinbackTemplate
+        templates = db.query(WinbackTemplate).all()
+        for t in templates:
+            t.times_converted += reconciled
+    except:
+        pass
+    return {"reconciled": reconciled, "revenue": total_revenue}        
+
+@app.post("/api/v1/runs/{run_id}/outreach/mark-contacted")
+async def mark_patients_contacted(
+    run_id: str,
+    patient_ids: list[str] = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Mark patients as contacted for outreach tracking."""
+    import uuid
+    from datetime import datetime
+    
+    for pid in patient_ids:
+        # Check if already exists
+        existing = db.query(PatientOutreach).filter(
+            PatientOutreach.run_id == run_id,
+            PatientOutreach.patient_id == pid
+        ).first()
+        
+        if existing:
+            existing.contacted_at = datetime.utcnow()
+        else:
+            outreach = PatientOutreach(
+                id=str(uuid.uuid4()),
+                run_id=run_id,
+                patient_id=pid,
+                contacted_at=datetime.utcnow()
+            )
+            db.add(outreach)
+    
+    db.commit()
+    return {"success": True, "contacted_count": len(patient_ids)}
+
+
+@app.post("/api/v1/runs/{run_id}/outreach/mark-returned")
+async def mark_patients_returned(
+    run_id: str,
+    patient_id: str = Form(...),
+    revenue: float = Form(0),
+    db: Session = Depends(get_db)
+):
+    """Mark a patient as returned and log recovered revenue."""
+    from datetime import datetime
+    
+    outreach = db.query(PatientOutreach).filter(
+        PatientOutreach.run_id == run_id,
+        PatientOutreach.patient_id == patient_id
+    ).first()
+    
+    if outreach:
+        outreach.returned_at = datetime.utcnow()
+        outreach.revenue_recovered = revenue
+        db.commit()
+        return {"success": True}
+    
+    return {"success": False, "error": "Patient not found in outreach list"}
+
+
+@app.get("/api/v1/runs/{run_id}/outreach/summary")
+async def get_outreach_summary(
+    run_id: str,
+    db: Session = Depends(get_db)
+):
+    """Get ROI summary for outreach campaign."""
+    outreach_records = db.query(PatientOutreach).filter(
+        PatientOutreach.run_id == run_id
+    ).all()
+    
+    contacted = [r for r in outreach_records if r.contacted_at]
+    returned = [r for r in outreach_records if r.returned_at]
+    total_recovered = sum(r.revenue_recovered or 0 for r in returned)
+    
+    return {
+        "contacted_count": len(contacted),
+        "returned_count": len(returned),
+        "conversion_rate": round(len(returned) / len(contacted) * 100, 1) if contacted else 0,
+        "revenue_recovered": total_recovered,
+        "patients": [
+            {
+                "patient_id": r.patient_id,
+                "contacted_at": r.contacted_at.isoformat() if r.contacted_at else None,
+                "returned_at": r.returned_at.isoformat() if r.returned_at else None,
+                "revenue_recovered": r.revenue_recovered
+            }
+            for r in outreach_records
+        ]
+    }
+
+@app.post("/api/v1/runs/{run_id}/outreach/mark-contacted")
+async def mark_patients_contacted(
+    run_id: str,
+    patient_ids: list[str] = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Mark patients as contacted for outreach tracking."""
+    import uuid
+    from datetime import datetime
+    
+    for pid in patient_ids:
+        existing = db.query(PatientOutreach).filter(
+            PatientOutreach.run_id == run_id,
+            PatientOutreach.patient_id == pid
+        ).first()
+        
+        if existing:
+            existing.contacted_at = datetime.utcnow()
+        else:
+            outreach = PatientOutreach(
+                id=str(uuid.uuid4()),
+                run_id=run_id,
+                patient_id=pid,
+                contacted_at=datetime.utcnow()
+            )
+            db.add(outreach)
+    
+    db.commit()
+    return {"success": True, "contacted_count": len(patient_ids)}
+
+
+@app.post("/api/v1/runs/{run_id}/outreach/mark-returned")
+async def mark_patients_returned(
+    run_id: str,
+    patient_id: str = Form(...),
+    revenue: float = Form(0),
+    db: Session = Depends(get_db)
+):
+    """Mark a patient as returned and log recovered revenue."""
+    from datetime import datetime
+    
+    outreach = db.query(PatientOutreach).filter(
+        PatientOutreach.run_id == run_id,
+        PatientOutreach.patient_id == patient_id
+    ).first()
+    
+    if outreach:
+        outreach.returned_at = datetime.utcnow()
+        outreach.revenue_recovered = revenue
+        db.commit()
+        return {"success": True}
+    
+    return {"success": False, "error": "Patient not found in outreach list"}
+
+
+@app.get("/api/v1/runs/{run_id}/outreach/summary")
+async def get_outreach_summary(
+    run_id: str,
+    db: Session = Depends(get_db)
+):
+    """Get ROI summary for outreach campaign."""
+    outreach_records = db.query(PatientOutreach).filter(
+        PatientOutreach.run_id == run_id
+    ).all()
+    
+    contacted = [r for r in outreach_records if r.contacted_at]
+    returned = [r for r in outreach_records if r.returned_at]
+    total_recovered = sum(r.revenue_recovered or 0 for r in returned)
+    
+    return {
+        "contacted_count": len(contacted),
+        "returned_count": len(returned),
+        "conversion_rate": round(len(returned) / len(contacted) * 100, 1) if contacted else 0,
+        "revenue_recovered": total_recovered,
+        "patients": [
+            {
+                "patient_id": r.patient_id,
+                "contacted_at": r.contacted_at.isoformat() if r.contacted_at else None,
+                "returned_at": r.returned_at.isoformat() if r.returned_at else None,
+                "revenue_recovered": r.revenue_recovered
+            }
+            for r in outreach_records
+        ]
+    }
+
+@app.get("/api/v1/winback-scripts")
+async def get_winback_scripts(
+    treatment: str = "appointment",
+    days_overdue: int = 90,
+    patient_count: int = 1,
+    db: Session = Depends(get_db)
+):
+    """Get best-performing win-back scripts, or generate new ones."""
+    from database import WinbackTemplate
+    
+    existing = db.query(WinbackTemplate).filter(
+        WinbackTemplate.treatment == treatment,
+        WinbackTemplate.times_used >= 3
+    ).all()
+    
+    top_performers = [t for t in existing if t.times_used > 0 and (t.times_converted / t.times_used) > 0.1]
+    
+    if len(top_performers) >= 3:
+        return {
+            "source": "optimized",
+            "email_subject": next((t.subject for t in top_performers if t.template_type == "email"), "We miss you!"),
+            "email": next((t.body for t in top_performers if t.template_type == "email"), ""),
+            "sms": next((t.body for t in top_performers if t.template_type == "sms"), ""),
+            "phone": next((t.body for t in top_performers if t.template_type == "phone"), ""),
+        }
+    
+    examples = ""
+    if top_performers:
+        examples = f"\n\nTemplates that worked well before - use similar tone:\n"
+        for t in top_performers[:2]:
+            examples += f"- {t.template_type}: {t.body[:100]}...\n"
+    
+    vertical_context = get_prompt_context(treatment)  # Will use treatment to infer vertical for now
+    
+    prompt = f"""Write 3 win-back scripts for re-engaging {patient_count} contacts who haven't returned in {days_overdue}+ days.
+
+{vertical_context}
+
+Primary service: {treatment}
+{examples}
+Return ONLY valid JSON:
+{{
+  "email_subject": "short subject line",
+  "email_body": "2-3 sentences, use [First Name] and [Practice Name]",
+  "sms": "under 160 chars with [First Name]",
+  "phone": "natural opener for a phone call"
+}}
+
+Warm and personal, not salesy."""
+
+    try:
+        response = await llm_service.generate(prompt, max_tokens=500)
+        scripts = json.loads(response)
+    except:
+        scripts = {
+            "email_subject": "We miss you!",
+            "email_body": f"Hi [First Name],\n\nIt's been a while since your last {treatment}. We'd love to see you again.\n\nWarm regards,\n[Practice Name]",
+            "sms": f"Hi [First Name]! We miss you - ready to book your next {treatment}? [link]",
+            "phone": f"Hi [First Name], this is [Name] from [Practice]. Just checking in since your last {treatment}."
+        }
+    
+    import uuid
+    for ttype, body in [("email", scripts.get("email_body", "")), ("sms", scripts.get("sms", "")), ("phone", scripts.get("phone", ""))]:
+        template = WinbackTemplate(
+            id=str(uuid.uuid4()),
+            treatment=treatment,
+            template_type=ttype,
+            subject=scripts.get("email_subject") if ttype == "email" else None,
+            body=body,
+            times_used=0,
+            times_converted=0
+        )
+        db.add(template)
+    db.commit()
+    
+    return {
+        "source": "generated",
+        "email_subject": scripts.get("email_subject", "We miss you!"),
+        "email": scripts.get("email_body", ""),
+        "sms": scripts.get("sms", ""),
+        "phone": scripts.get("phone", "")
+    }
+
+
+@app.post("/api/v1/winback-scripts/track")
+async def track_script_usage(
+    treatment: str = Form(...),
+    template_type: str = Form(...),
+    converted: bool = Form(False),
+    db: Session = Depends(get_db)
+):
+    """Track when a template is used and if it converts."""
+    from database import WinbackTemplate
+    
+    template = db.query(WinbackTemplate).filter(
+        WinbackTemplate.treatment == treatment,
+        WinbackTemplate.template_type == template_type
+    ).order_by(WinbackTemplate.created_at.desc()).first()
+    
+    if template:
+        template.times_used += 1
+        if converted:
+            template.times_converted += 1
+        db.commit()
+    
+    return {"success": True}
+
+@app.get("/api/v1/runs/{run_id}/export-patients")
+async def export_labeled_patients(
+    run_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Export patient list with computed labels and scores.
+    """
+    # Get the run
+    analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == run_id).first()
+    if not analysis_run or analysis_run.status != "done":
+        raise HTTPException(status_code=404, detail="Run not found or not completed")
+    
+    # Get the dataset
+    dataset = db.query(Dataset).filter(Dataset.id == analysis_run.dataset_id).first()
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    # Load and process patient data
+    df = pd.read_csv(dataset.patients_path)
+    df = normalize_patients_dataframe(df)
+    df = aggregate_visits_to_patients(df)
+    # Fix column name if needed
+    if 'patient_id_' in df.columns and 'patient_id' not in df.columns:
+        df = df.rename(columns={'patient_id_': 'patient_id'})
+    df = segment_patients_by_behavior(df)
+    
+    # Get cohort descriptor from run results
+    dominant_profile = getattr(analysis_run, 'dominant_profile', None)
+    cohort_label = "Best Patient"
+    if dominant_profile:
+        try:
+            profile_data = json.loads(dominant_profile) if isinstance(dominant_profile, str) else dominant_profile
+            cohort_label = profile_data.get("cohort_descriptor", {}).get("label", "Best Patient")
+        except:
+            pass
+    
+    # Mark top 20% with cohort label
+    top_count = max(1, int(len(df) * 0.2))
+    df = df.sort_values('value_score', ascending=False).reset_index(drop=True)
+    df['cohort'] = df.index.map(lambda i: cohort_label if i < top_count else "General")
+    
+    # Select export columns
+    export_cols = ['patient_id', 'zip_code', 'behavioral_segment', 'value_score', 'cohort']
+    if 'revenue' in df.columns:
+        export_cols.append('revenue')
+    if 'visits_per_year' in df.columns:
+        export_cols.append('visits_per_year')
+    
+    export_df = df[[c for c in export_cols if c in df.columns]]
+    
+    # Return as CSV
+    from fastapi.responses import StreamingResponse
+    import io
+    
+    stream = io.StringIO()
+    export_df.to_csv(stream, index=False)
+    stream.seek(0)
+    
+    return StreamingResponse(
+        iter([stream.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=labeled_patients_{run_id[:8]}.csv"}
+    )
 
 @app.post("/api/v1/segments/churn-analysis")
 @limiter.limit("100/hour")
@@ -2843,7 +3523,14 @@ async def analyze_segment_churn(
     df = normalize_patients_dataframe(df)
     df = aggregate_visits_to_patients(df)
     
-    # Run churn analysis
+    # Score and filter to top 20%
+    df = segment_patients_by_behavior(df)
+    top_count = max(1, int(len(df) * 0.2))
+    df = df.sort_values('value_score', ascending=False).head(top_count)
+    
+    # Run churn analysis on top 20% only
+    print(f"[CHURN DEBUG] Columns: {df.columns.tolist()}")
+    print(f"[CHURN DEBUG] Sample patient_id: {df['patient_id'].head(3).tolist() if 'patient_id' in df.columns else 'NO PATIENT_ID COL'}")
     summary = get_churn_summary(df)
     
     return {

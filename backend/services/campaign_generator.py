@@ -51,13 +51,18 @@ def _call_llm(prompt: str, context: str):
         return None
 
 
-def generate_campaign_content(cohort: str, zip_code: str, competitors: int, reasons: list, match_score: float, procedure: str = None):
+def generate_campaign_content(cohort: str, zip_code: str, competitors: int, reasons: list, match_score: float, procedure: str = None, vertical: str = None):
     """Generate Facebook/Instagram ad content"""
     
     cohort_info = _get_cohort_info(cohort)
     procedure_text = procedure if procedure and procedure != "all" else "aesthetic treatments"
     
-    prompt = f"""Create Facebook ad content for a medspa targeting {cohort} customers in ZIP {zip_code}.
+    from services.verticals import get_prompt_context
+    vertical_context = get_prompt_context(vertical if vertical else "medspa")
+    
+    prompt = f"""Create Facebook ad content targeting {cohort} customers in ZIP {zip_code}.
+
+{vertical_context}
 
 COHORT PSYCHOLOGY:
 - Primary concerns: {cohort_info['concerns']}
@@ -113,7 +118,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
     }
 
 
-def generate_email_sequence(cohort: str, procedure: str = None, sequence_type: str = "nurture"):
+def generate_email_sequence(cohort: str, procedure: str = None, sequence_type: str = "nurture", vertical: str = None):
     """Generate email sequence for patient nurturing or re-engagement"""
     
     cohort_info = _get_cohort_info(cohort)
@@ -128,7 +133,12 @@ def generate_email_sequence(cohort: str, procedure: str = None, sequence_type: s
     
     context_description = sequence_context.get(sequence_type, sequence_context['nurture'])
     
-    prompt = f"""Create a 3-email sequence for a medspa targeting {cohort} patients.
+    from services.verticals import get_prompt_context
+    vertical_context = get_prompt_context(vertical if vertical else "medspa")
+    
+    prompt = f"""Create a 3-email sequence targeting {cohort} contacts.
+
+{vertical_context}
 
 SEQUENCE TYPE: {sequence_type}
 CONTEXT: {context_description}
@@ -215,7 +225,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no explanation):
     }
 
 
-def generate_sms_campaign(cohort: str, procedure: str = None, campaign_type: str = "appointment_reminder"):
+def generate_sms_campaign(cohort: str, procedure: str = None, campaign_type: str = "appointment_reminder", vertical: str = None):
     """Generate SMS messages for various campaign types"""
     
     cohort_info = _get_cohort_info(cohort)
@@ -231,7 +241,12 @@ def generate_sms_campaign(cohort: str, procedure: str = None, campaign_type: str
     
     context_description = campaign_context.get(campaign_type, campaign_context['appointment_reminder'])
     
-    prompt = f"""Create SMS messages for a medspa targeting {cohort} patients.
+    from services.verticals import get_prompt_context
+    vertical_context = get_prompt_context(vertical if vertical else "medspa")
+    
+    prompt = f"""Create SMS messages targeting {cohort} contacts.
+
+{vertical_context}
 
 CAMPAIGN TYPE: {campaign_type}
 CONTEXT: {context_description}

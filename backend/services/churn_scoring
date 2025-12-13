@@ -122,7 +122,7 @@ def analyze_patient_churn(df: pd.DataFrame, reference_date: Optional[date] = Non
     results = []
     for _, row in df.iterrows():
         # Find the encounter date column
-        enc_date = row.get("encounter_date") or row.get("last_visit") or row.get("visit_date")
+        enc_date = row.get("encounter_date") or row.get("last_visit") or row.get("visit_date") or row.get("date")
         proc = row.get("procedure", "default")
         
         risk = calculate_churn_risk(

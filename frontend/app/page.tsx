@@ -175,14 +175,14 @@ export default function HomePage() {
         {/* Hero */}
         <section className="mx-auto mb-8 max-w-4xl text-center md:mb-10 lg:mb-12">
           <h1 className="mb-3 text-[28px] font-bold leading-[1.2] text-gray-900 md:mb-4 md:text-[36px] lg:text-[44px]">
-            Know your best patients.
+            Stop losing your best patients.
             <br />
             <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Find more like them.
+              Recover their revenue before they're gone.
             </span>
           </h1>
           <p className="mx-auto max-w-2xl text-[15px] font-normal leading-[1.5] text-gray-600 md:text-[17px] lg:text-[18px]">
-            We show you WHO your VIPs are—not just where they live. Upload your patient list and we identify behavioral patterns and psychographic profiles, then show you how to find thousands more like them.
+            Connect your patient data to instantly see which high-value patients are slipping away, how much revenue is at risk, and what to do to win them back. Then use the profiles of your top patients to find more like them.
           </p>
         </section>
 

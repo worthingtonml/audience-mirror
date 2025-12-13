@@ -40,6 +40,7 @@ class Dataset(Base):
     patient_count = Column(Integer, default=0)
     dominant_profile = Column(JSON)
     unique_zips = Column(Integer, default=0)
+    detected_vertical = Column(String, default="medspa")
 
 class AnalysisRun(Base):
     __tablename__ = "analysis_runs"
@@ -59,6 +60,30 @@ class AnalysisRun(Base):
     patient_count = Column(Integer, nullable=True)
     dominant_profile = Column(JSON, nullable=True)
     strategic_insights = Column(JSON, nullable=True) 
+
+
+class PatientOutreach(Base):
+    __tablename__ = "patient_outreach"
+    id = Column(String, primary_key=True)
+    run_id = Column(String, nullable=False)
+    patient_id = Column(String, nullable=False)
+    contacted_at = Column(DateTime, nullable=True)
+    returned_at = Column(DateTime, nullable=True)
+    revenue_recovered = Column(Float, nullable=True)
+
+
+class WinbackTemplate(Base):
+    __tablename__ = "winback_templates"
+    
+    id = Column(String, primary_key=True)
+    treatment = Column(String, nullable=False)
+    template_type = Column(String, nullable=False)
+    subject = Column(String, nullable=True)
+    body = Column(Text, nullable=False)
+    times_used = Column(Integer, default=0)
+    times_converted = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 # ---- Session helper ----
 def get_db():
     db = SessionLocal()

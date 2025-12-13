@@ -22,6 +22,35 @@ def validate_and_load_patients(file_path: str) -> Tuple[bool, List[str], Optiona
         logger.error(f"Cannot read CSV file: {str(e)}")
         return False, [f"Cannot read CSV file: {str(e)}"], None
 
+    # ---- Column aliasing (accept alternative names) ------------------------
+    column_aliases = {
+        "contact_id": "patient_id",
+        "client_id": "patient_id",
+        "id": "patient_id",
+        "zip": "zip_code",
+        "zipcode": "zip_code",
+        "postal_code": "zip_code",
+        "transaction_type": "treatment",
+        "procedure": "treatment",
+        "procedure_type": "treatment",
+        "service": "treatment",
+        "type": "treatment",
+        "date": "visit_date",
+        "transaction_date": "visit_date",
+        "last_contact": "visit_date",
+        "consult_date": "visit_date",
+        "appointment_date": "visit_date",
+        "amount": "revenue",
+        "commission": "revenue",
+        "value": "revenue",
+        "total": "revenue",
+    }
+    
+    for old_name, new_name in column_aliases.items():
+        if old_name in df.columns and new_name not in df.columns:
+            df = df.rename(columns={old_name: new_name})
+            logger.info(f"Aliased column '{old_name}' → '{new_name}'")
+
     warnings: List[str] = []
 
     # ---- Required columns (minimal) ----------------------------------------
