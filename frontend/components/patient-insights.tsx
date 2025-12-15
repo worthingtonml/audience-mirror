@@ -208,20 +208,21 @@ export default function PatientInsights() {
   const [vertical, setVertical] = useState<string>('medspa');
   // Terminology based on vertical
   const isRealEstate = vertical === 'real_estate_mortgage';
+  const isMortgage = vertical === 'mortgage';
   const terms = {
-    customer: isRealEstate ? 'client' : 'patient',
-    customers: isRealEstate ? 'clients' : 'patients',
-    Customer: isRealEstate ? 'Client' : 'Patient',
-    Customers: isRealEstate ? 'Clients' : 'Patients',
-    service: isRealEstate ? 'transaction' : 'treatment',
-    services: isRealEstate ? 'transactions' : 'treatments',
-    visit: isRealEstate ? 'transaction' : 'visit',
-    visits: isRealEstate ? 'transactions' : 'visits',
-    planTitle: isRealEstate ? 'Client Growth Plan' : 'Patient Growth Plan',
-    bestCustomers: isRealEstate ? 'Your Best Clients Are' : 'Your Best Patients Are',
-    behaviorTitle: isRealEstate ? 'Client Behavior Analysis' : 'Patient Behavior Analysis',
-    churnTitle: isRealEstate ? 'Client Churn Risk' : 'Patient Churn Risk',
-    atRiskTitle: isRealEstate ? 'Top At-Risk Clients' : 'Top At-Risk Patients',
+    customer: isMortgage ? 'borrower' : isRealEstate ? 'client' : 'patient',
+    customers: isMortgage ? 'borrowers' : isRealEstate ? 'clients' : 'patients',
+    Customer: isMortgage ? 'Borrower' : isRealEstate ? 'Client' : 'Patient',
+    Customers: isMortgage ? 'Borrowers' : isRealEstate ? 'Clients' : 'Patients',
+    service: isMortgage ? 'loan' : isRealEstate ? 'transaction' : 'treatment',
+    services: isMortgage ? 'loans' : isRealEstate ? 'transactions' : 'treatments',
+    visit: isMortgage ? 'application' : isRealEstate ? 'transaction' : 'visit',
+    visits: isMortgage ? 'applications' : isRealEstate ? 'transactions' : 'visits',
+    planTitle: isMortgage ? 'Pipeline Growth Plan' : isRealEstate ? 'Client Growth Plan' : 'Patient Growth Plan',
+    bestCustomers: isMortgage ? 'Your Best Borrowers Are' : isRealEstate ? 'Your Best Clients Are' : 'Your Best Patients Are',
+    behaviorTitle: isMortgage ? 'Borrower Behavior Analysis' : isRealEstate ? 'Client Behavior Analysis' : 'Patient Behavior Analysis',
+    churnTitle: isMortgage ? 'Pre-Approvals at Risk' : isRealEstate ? 'Client Churn Risk' : 'Patient Churn Risk',
+    atRiskTitle: isMortgage ? 'Stale Pre-Approvals' : isRealEstate ? 'Top At-Risk Clients' : 'Top At-Risk Patients',
   };
   const [outreachSummary, setOutreachSummary] = useState<any>(null);
   const [selectedPatients, setSelectedPatients] = useState<string[]>([]);

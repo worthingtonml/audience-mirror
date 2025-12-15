@@ -1290,7 +1290,8 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
         demographic_profile=dominant_profile_data.get("dominant_profile", {}) if dominant_profile_data else {},
         cohort_label=dominant_cohort
     )
-    
+    mortgage_data = {}
+   
    # Get available procedures from the dataset
     available_procedures = []
     try:
@@ -1331,6 +1332,16 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
         print(traceback.format_exc())
         available_procedures = []
 
+    # Add mortgage-specific analysis if applicable
+    if dataset and dataset.detected_vertical == 'real_estate_mortgage':
+        try:
+            from services.mortgage_metrics import get_mortgage_analysis
+            mortgage_df = pd.read_csv(dataset.patients_path)
+            mortgage_data = get_mortgage_analysis(mortgage_df)
+            print(f"[DEBUG] Mortgage analysis complete: {mortgage_data.get('preapproval_metrics', {}).get('stale_count', 0)} stale preapprovals")
+        except Exception as e:
+            print(f"[DEBUG] Mortgage analysis failed: {e}")
+
     # Return full structure for frontend
     # Calculate actual total revenue from stored segments
     actual_total_revenue = sum(
@@ -1359,6 +1370,11 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
         "top_segments": top_segments[:10],
         "campaign_metrics": campaign_metrics,
         "available_procedures": available_procedures,
+        # Mortgage-specific metrics
+        "preapproval_metrics": None,
+        "channel_roi": None,
+        "preapproval_metrics": mortgage_data.get('preapproval_metrics') if mortgage_data else None,
+        "channel_roi": mortgage_data.get('channel_roi') if mortgage_data else None,
         "detected_vertical": dataset.detected_vertical if dataset else "medspa"
     }
 
