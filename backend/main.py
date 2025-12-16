@@ -1005,6 +1005,8 @@ async def create_dataset(
             detected_vertical=detect_vertical(validated_df)
         )
         
+        print(f"[DEBUG] Detected vertical: {detect_vertical(validated_df)} for dataset {dataset_id}")
+        
         db.add(dataset)
         db.commit()
         
@@ -3148,54 +3150,6 @@ def reconcile_outreach_returns(db: Session, run_id: str, df: pd.DataFrame):
         # Patient returned! Mark them
         outreach.returned_at = datetime.utcnow()
         
-        if revenue_col:
-            patient_revenue = patient_rows[revenue_col].sum()
-            outreach.revenue_recovered = float(patient_revenue)
-            total_revenue += patient_revenue
-        
-        reconciled += 1
-    
-    if reconciled > 0:
-        db.commit()
-        print(f"[OUTREACH] Auto-reconciled {reconciled} returns, ${total_revenue:,.0f} recovered")
-        
-          # Track conversion for win-back templates
-    try:
-        from database import WinbackTemplate
-        templates = db.query(WinbackTemplate).all()
-        for t in templates:
-            t.times_converted += reconciled
-    except:
-        pass
-    return {"reconciled": reconciled, "revenue": total_revenue}        
-
-@app.post("/api/v1/runs/{run_id}/outreach/mark-contacted")
-async def mark_patients_contacted(
-    run_id: str,
-    patient_ids: list[str] = Form(...),
-    db: Session = Depends(get_db)
-):
-    """Mark patients as contacted for outreach tracking."""
-    import uuid
-    from datetime import datetime
-    
-    for pid in patient_ids:
-        # Check if already exists
-        existing = db.query(PatientOutreach).filter(
-            PatientOutreach.run_id == run_id,
-            PatientOutreach.patient_id == pid
-        ).first()
-        
-        if existing:
-            existing.contacted_at = datetime.utcnow()
-        else:
-            outreach = PatientOutreach(
-                id=str(uuid.uuid4()),
-                run_id=run_id,
-                patient_id=pid,
-                contacted_at=datetime.utcnow()
-            )
-            db.add(outreach)
     
     db.commit()
     return {"success": True, "contacted_count": len(patient_ids)}
@@ -3259,13 +3213,18 @@ async def get_outreach_summary(
 async def mark_patients_contacted(
     run_id: str,
     patient_ids: list[str] = Form(...),
+    days_stale_list: str = Form(""),
+    loan_amount_list: str = Form(""),
     db: Session = Depends(get_db)
 ):
-    """Mark patients as contacted for outreach tracking."""
+    """Mark patients as contacted for outreach tracking with context."""
     import uuid
     from datetime import datetime
     
-    for pid in patient_ids:
+    days_stale = [int(d) for d in days_stale_list.split(",") if d.strip()] if days_stale_list else []
+    loan_amounts = [float(a) for a in loan_amount_list.split(",") if a.strip()] if loan_amount_list else []
+    
+    for i, pid in enumerate(patient_ids):
         existing = db.query(PatientOutreach).filter(
             PatientOutreach.run_id == run_id,
             PatientOutreach.patient_id == pid
@@ -3273,19 +3232,77 @@ async def mark_patients_contacted(
         
         if existing:
             existing.contacted_at = datetime.utcnow()
+            existing.days_stale_when_contacted = days_stale[i] if i < len(days_stale) else None
+            existing.outcome = "pending"
         else:
             outreach = PatientOutreach(
                 id=str(uuid.uuid4()),
                 run_id=run_id,
                 patient_id=pid,
-                contacted_at=datetime.utcnow()
+                contacted_at=datetime.utcnow(),
+                days_stale_when_contacted=days_stale[i] if i < len(days_stale) else None,
+                loan_amount=loan_amounts[i] if i < len(loan_amounts) else None,
+                commission=(loan_amounts[i] * 0.01) if i < len(loan_amounts) else None,
+                outcome="pending"
             )
             db.add(outreach)
     
     db.commit()
     return {"success": True, "contacted_count": len(patient_ids)}
 
+@app.post("/api/v1/outreach/{outreach_id}/outcome")
+async def update_outreach_outcome(
+    outreach_id: str,
+    outcome: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """Update outcome: pending, closed, lost, no_answer, callback"""
+    outreach = db.query(PatientOutreach).filter(PatientOutreach.id == outreach_id).first()
+    if not outreach:
+        raise HTTPException(status_code=404, detail="Outreach record not found")
+    
+    outreach.outcome = outcome
+    if outcome == "closed":
+        outreach.returned_at = datetime.utcnow()
+        outreach.revenue_recovered = outreach.commission or (outreach.loan_amount * 0.01 if outreach.loan_amount else 4000)
+    
+    db.commit()
+    return {"success": True, "outcome": outcome}
 
+
+@app.get("/api/v1/analytics/recovery-rates")
+async def get_recovery_analytics(db: Session = Depends(get_db)):
+    """Conversion rates by days-to-contact — the moat data."""
+    from sqlalchemy import func, case
+    
+    results = db.query(
+        case(
+            (PatientOutreach.days_stale_when_contacted < 7, '0-7 days'),
+            (PatientOutreach.days_stale_when_contacted < 30, '8-30 days'),
+            (PatientOutreach.days_stale_when_contacted < 60, '31-60 days'),
+            else_='60+ days'
+        ).label('timing_bucket'),
+        func.count(PatientOutreach.id).label('total'),
+        func.sum(case((PatientOutreach.outcome == 'closed', 1), else_=0)).label('closed'),
+        func.sum(PatientOutreach.revenue_recovered).label('revenue')
+    ).filter(
+        PatientOutreach.outcome.isnot(None),
+        PatientOutreach.days_stale_when_contacted.isnot(None)
+    ).group_by('timing_bucket').all()
+    
+    return {
+        "buckets": [
+            {
+                "timing": r.timing_bucket,
+                "total": r.total,
+                "closed": r.closed or 0,
+                "conversion_rate": round((r.closed / r.total * 100), 1) if r.total > 0 else 0,
+                "revenue_recovered": float(r.revenue or 0)
+            }
+            for r in results
+        ]
+    }
+    
 @app.post("/api/v1/runs/{run_id}/outreach/mark-returned")
 async def mark_patients_returned(
     run_id: str,

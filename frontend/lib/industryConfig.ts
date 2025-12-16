@@ -354,7 +354,7 @@ export const INDUSTRY_CONFIGS: Record<string, IndustryConfig> = {
   medspa: medspaConfig,
   mortgage: mortgageConfig,
   real_estate: realEstateConfig,
-  real_estate_mortgage: realEstateConfig,
+  real_estate_mortgage: mortgageConfig,
 };
 
 export function getIndustryConfig(vertical: string): IndustryConfig {

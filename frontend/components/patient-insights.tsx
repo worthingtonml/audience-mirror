@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect, useRef} from 'react';
 import { useRouter } from 'next/navigation';
+import { DISC_TYPES } from '@/lib/industryConfig';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
@@ -208,7 +209,7 @@ export default function PatientInsights() {
   const [vertical, setVertical] = useState<string>('medspa');
   // Terminology based on vertical
   const isRealEstate = vertical === 'real_estate_mortgage';
-  const isMortgage = vertical === 'mortgage';
+  const isMortgage = vertical === 'mortgage' || vertical === 'real_estate_mortgage';
   const terms = {
     customer: isMortgage ? 'borrower' : isRealEstate ? 'client' : 'patient',
     customers: isMortgage ? 'borrowers' : isRealEstate ? 'clients' : 'patients',
@@ -230,6 +231,46 @@ export default function PatientInsights() {
   const [winbackPatients, setWinbackPatients] = useState<any[]>([]);
   const [winbackScripts, setWinbackScripts] = useState<any>(null);
   const [scriptsLoading, setScriptsLoading] = useState(false);
+  const [outreachIds, setOutreachIds] = useState<Record<string, string>>({});
+  const [outcomes, setOutcomes] = useState<Record<string, string>>({});
+  const [recoveryAnalytics, setRecoveryAnalytics] = useState<any>(null);
+
+// Fetch recovery analytics
+  const fetchRecoveryAnalytics = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/v1/analytics/recovery-rates`);
+      if (response.ok) {
+        const data = await response.json();
+        setRecoveryAnalytics(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch recovery analytics:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecoveryAnalytics();
+  }, []);
+
+// Update borrower outcome
+  const updateOutcome = async (patientId: string, outcome: string) => {
+    setOutcomes(prev => ({ ...prev, [patientId]: outcome }));
+    
+    // If we have the outreach ID, update backend
+    const outreachId = outreachIds[patientId];
+    if (outreachId) {
+      try {
+        const formData = new FormData();
+        formData.append('outcome', outcome);
+        await fetch(`${API_URL}/api/v1/outreach/${outreachId}/outcome`, {
+          method: 'POST',
+          body: formData
+        });
+      } catch (e) {
+        console.error('Failed to update outcome:', e);
+      }
+    }
+  };
 
   // Fetch win-back scripts
   const fetchWinbackScripts = async () => {
@@ -266,11 +307,16 @@ export default function PatientInsights() {
   };
 
   // Mark patients as contacted
-  const markContacted = async (patientIds: string[]) => {
+  const markContacted = async (patientIds: string[], patientsData?: any[]) => {
     if (!currentRunId || patientIds.length === 0) return;
     try {
       const formData = new FormData();
       patientIds.forEach(id => formData.append('patient_ids', id));
+      
+      if (patientsData && patientsData.length > 0) {
+        formData.append('days_stale_list', patientsData.map(p => p.days_stale || p.days_overdue || 0).join(','));
+        formData.append('loan_amount_list', patientsData.map(p => p.loan_amount || 0).join(','));
+      }
       
       const response = await fetch(`${API_URL}/api/v1/runs/${currentRunId}/outreach/mark-contacted`, {
         method: 'POST',
@@ -721,69 +767,118 @@ export default function PatientInsights() {
                 {terms.bestCustomers}
               </div>
 
-              {/* Segment name */}
+              {/* Segment name - profile for mortgage */}
               <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-                {segmentName}
+                {isMortgage 
+                  ? (analysisData?.borrower_profile?.label || 'Repeat Buyers, Realtor-Referred')
+                  : segmentName
+                }
               </h1>
 
-              {/* Description */}
+              {/* Description - profile then problem for mortgage */}
               <p className="text-sm md:text-base text-indigo-100 leading-relaxed max-w-3xl mb-6">
-                {segmentDescription} They spend ${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.
+                {isMortgage 
+                  ? <>Avg <span className="font-semibold text-white">${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K</span> loan size. They close faster and refer more. But <span className="font-semibold text-amber-300">{analysisData?.preapproval_metrics?.stale_count || 0}</span> of them are going cold.</>
+                  : `${segmentDescription} They spend $${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit ${(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.`
+                }
               </p>
 
               {/* Stats row */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
-                <div>
-                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Lifetime Value</div>
-                  <div className="text-2xl md:text-3xl font-bold text-white">
-                    {(analysisData?.behavior_patterns?.avg_lifetime_value || 3600) >= 1000 
-                      ? `$${((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) / 1000).toFixed(1)}K`
-                      : `$${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toFixed(0)}`}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Visit Frequency</div>
-                  <div className="text-2xl md:text-3xl font-bold text-white">
-                    {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}×
-                  </div>
-                  <div className="text-[10px] text-indigo-200">per year</div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Revenue at Risk</div>
-                  <div className={`text-2xl md:text-3xl font-bold ${
-                    churnData?.at_risk_percent > 25 
-                      ? 'text-red-300' 
-                      : churnData?.at_risk_percent > 15 
-                      ? 'text-amber-300' 
-                      : 'text-emerald-300'
-                  }`}>
-                    ${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '—'}K
-                  </div>
-                  <div className="text-[10px] text-indigo-200">from {churnData?.at_risk_count || 0} {terms.customers}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] font-medium text-indigo-200 mb-1">Churn Rate</div>
-                  <div className={`text-2xl md:text-3xl font-bold ${
-                    churnData?.at_risk_percent > 25 
-                      ? 'text-red-300' 
-                      : churnData?.at_risk_percent > 15 
-                      ? 'text-amber-300' 
-                      : 'text-emerald-300'
-                  }`}>
-                    {churnData ? `${churnData.at_risk_percent.toFixed(0)}%` : '—'}
-                  </div>
-                  <div className="text-[10px] text-indigo-200">at risk</div>
-                </div>
+                {isMortgage ? (
+                  <>
+                    {/* MORTGAGE METRICS */}
+                    <div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Going Cold</div>
+                      <div className="text-2xl md:text-3xl font-bold text-amber-300">
+                        {analysisData?.preapproval_metrics?.stale_count || 0}
+                      </div>
+                      <div className="text-[10px] text-indigo-200">need outreach</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Commission at Risk</div>
+                      <div className="text-2xl md:text-3xl font-bold text-red-300">
+                        {analysisData?.preapproval_metrics?.commission_at_risk 
+                          ? `$${(analysisData.preapproval_metrics.commission_at_risk / 1000).toFixed(0)}K`
+                          : churnData?.at_risk_revenue 
+                          ? `$${(churnData.at_risk_revenue / 1000).toFixed(0)}K`
+                          : '—'}
+                      </div>
+                      <div className="text-[10px] text-indigo-200">if they close elsewhere</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Loan Size</div>
+                      <div className="text-2xl md:text-3xl font-bold text-white">
+                        ${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K
+                      </div>
+                      <div className="text-[10px] text-indigo-200">this segment</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Commission</div>
+                      <div className="text-2xl md:text-3xl font-bold text-emerald-300">
+                        ${((analysisData?.preapproval_metrics?.avg_commission || 4000) / 1000).toFixed(1)}K
+                      </div>
+                      <div className="text-[10px] text-indigo-200">per funded loan</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* MEDSPA METRICS */}
+                    <div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Lifetime Value</div>
+                      <div className="text-2xl md:text-3xl font-bold text-white">
+                        {(analysisData?.behavior_patterns?.avg_lifetime_value || 3600) >= 1000 
+                          ? `$${((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) / 1000).toFixed(1)}K`
+                          : `$${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toFixed(0)}`}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Visit Frequency</div>
+                      <div className="text-2xl md:text-3xl font-bold text-white">
+                        {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}×
+                      </div>
+                      <div className="text-[10px] text-indigo-200">per year</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Revenue at Risk</div>
+                      <div className={`text-2xl md:text-3xl font-bold ${
+                        churnData?.at_risk_percent > 25 
+                          ? 'text-red-300' 
+                          : churnData?.at_risk_percent > 15 
+                          ? 'text-amber-300' 
+                          : 'text-emerald-300'
+                      }`}>
+                        ${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '—'}K
+                      </div>
+                      <div className="text-[10px] text-indigo-200">from {churnData?.at_risk_count || 0} {terms.customers}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Churn Rate</div>
+                      <div className={`text-2xl md:text-3xl font-bold ${
+                        churnData?.at_risk_percent > 25 
+                          ? 'text-red-300' 
+                          : churnData?.at_risk_percent > 15 
+                          ? 'text-amber-300' 
+                          : 'text-emerald-300'
+                      }`}>
+                        {churnData ? `${churnData.at_risk_percent.toFixed(0)}%` : '—'}
+                      </div>
+                      <div className="text-[10px] text-indigo-200">at risk</div>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="h-px bg-white/20 my-6" />
               
               <div className="text-[10px] font-semibold uppercase tracking-wider text-indigo-200 mb-2">
-                What This Means
+                {isMortgage ? 'Protect This Segment' : 'What This Means'}
               </div>
               <p className="text-sm text-indigo-100 leading-relaxed">
-                {`Your best ${terms.customers} average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} ${terms.visits} per year. `}
-                {churnData && `${churnData.at_risk_percent.toFixed(0)}% haven't returned within their expected visit interval, putting $${((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0)}K in revenue at risk.`}
+                {isMortgage 
+                  ? `These are your best borrowers — high loan amounts, likely to close, likely to refer. But ${analysisData?.preapproval_metrics?.stale_count || 0} of them have gone quiet. That's $${((analysisData?.preapproval_metrics?.commission_at_risk || 0) / 1000).toFixed(0)}K in commission you've already earned the right to. Time to reach out.`
+                  : `Your best ${terms.customers} average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} ${terms.visits} per year. ${churnData ? `${churnData.at_risk_percent.toFixed(0)}% haven't returned within their expected visit interval, putting $${((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0)}K in revenue at risk.` : ''}`
+                }
               </p>
               
               <button
@@ -806,15 +901,130 @@ export default function PatientInsights() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                Why this segment matters right now
+                {isMortgage ? "Protect · Get them back" : "Why this segment matters right now"}
               </h2>
               <span className="text-[11px] text-[#9CA3AF]">
-                Use this as your "why now" story when aligning the team.
+                {isMortgage ? "Action items for this week" : "Use this as your \"why now\" story when aligning the team."}
               </span>
             </div>
             <div className="space-y-4">
               <div className="grid md:grid-cols-3 gap-5">
-                {analysisData?.strategic_insights && analysisData.strategic_insights.length > 0 ? (
+                {isMortgage ? (
+                  <>
+                    {/* MORTGAGE CARD 1 - Your next move */}
+                    <article className="bg-white rounded-xl p-6 shadow-sm border border-[#E5E7EB]">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-8 w-8 rounded-full bg-amber-50 flex items-center justify-center">
+                          <AlertCircle className="h-4 w-4 text-amber-600" />
+                        </div>
+                        <h3 className="font-semibold text-[#111827]">Your next move</h3>
+                      </div>
+                      <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
+                        <span className="font-bold text-[#111827]">{analysisData?.preapproval_metrics?.stale_count || 0}</span> stale pre-approvals.
+                        {analysisData?.preapproval_metrics?.top_by_loan_amount?.length > 0 
+                          ? <> Your top <span className="font-bold text-[#111827]">{Math.min(analysisData.preapproval_metrics.top_by_loan_amount.length, 5)}</span> by loan amount are worth <span className="font-bold text-[#111827]">${((analysisData.preapproval_metrics.top_by_loan_amount.slice(0, 5).reduce((sum: number, b: any) => sum + (b.commission || 4000), 0)) / 1000).toFixed(0)}K</span> in commission — start there.</>
+                          : ` Sort by loan amount — your biggest loans are worth the most commission.`
+                        }
+                      </p>
+                      
+                      <div className="text-sm mb-4">
+                        <div className="font-medium text-[#111827] mb-2">Today's call list:</div>
+                        <div className="space-y-2">
+                          {analysisData?.preapproval_metrics?.top_by_loan_amount?.slice(0, 3).map((borrower: any, idx: number) => (
+                            <div key={idx} className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2">
+                              <span className="font-bold text-[#111827]">{borrower.name || `Borrower ${idx + 1}`}</span>
+                              <div className="text-right">
+                                <span className="font-bold text-[#111827]">${((borrower.loan_amount || 0) / 1000).toFixed(0)}K</span>
+                                <span className="text-[#6B7280]"> loan</span>
+                                {borrower.days_stale && <span className="text-[#9CA3AF] text-xs ml-2">({borrower.days_stale} days)</span>}
+                              </div>
+                            </div>
+                          )) || (
+                            <>
+                              <div className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2">
+                                <span className="text-[#9CA3AF]">1. _____________</span>
+                                <span className="text-[#9CA3AF]">$___K loan</span>
+                              </div>
+                              <div className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2">
+                                <span className="text-[#9CA3AF]">2. _____________</span>
+                                <span className="text-[#9CA3AF]">$___K loan</span>
+                              </div>
+                              <div className="flex justify-between items-center bg-gray-50 rounded-lg px-3 py-2">
+                                <span className="text-[#9CA3AF]">3. _____________</span>
+                                <span className="text-[#9CA3AF]">$___K loan</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-sm text-[#111827] bg-indigo-50 rounded-lg p-3">
+                        <div className="font-medium mb-1">Text template for the rest:</div>
+                        <p className="text-[#6B7280] italic">"Hey [name], it's [you]. Rates are at [X.X]% — your $[loan] pre-approval could save you $[amount]/mo. Worth 5 mins this week?"</p>
+                      </div>
+                    </article>
+
+                    {/* MORTGAGE CARD 2 - How to open the call */}
+                    <article className="bg-white rounded-xl p-6 shadow-sm border border-[#E5E7EB]">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center">
+                          <Target className="h-4 w-4 text-indigo-600" />
+                        </div>
+                        <h3 className="font-semibold text-[#111827]">How to open the call</h3>
+                      </div>
+                      <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
+                        Use their name and reference something specific. Pick the line that fits:
+                      </p>
+                      <div className="space-y-3 text-sm">
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="font-medium text-[#111827] mb-1">Check-in opener:</div>
+                          <p className="text-[#6B7280]">"Hey <span className="font-bold text-[#111827]">[name]</span>, last time we talked you were looking at places in <span className="font-bold text-[#111827]">[area]</span>. Still searching, or did you find something?"</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="font-medium text-[#111827] mb-1">Rate update opener:</div>
+                          <p className="text-[#6B7280]">"Hey <span className="font-bold text-[#111827]">[name]</span>, your pre-approval is <span className="font-bold text-[#111827]">{analysisData?.preapproval_metrics?.avg_days_stale ? Math.round(analysisData.preapproval_metrics.avg_days_stale) : '[X]'} days</span> old — rates have moved since then. Want me to re-run your numbers?"</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="font-medium text-[#111827] mb-1">Direct opener:</div>
+                          <p className="text-[#6B7280]">"Hey <span className="font-bold text-[#111827]">[name]</span>, quick check on your <span className="font-bold text-[#111827]">${analysisData?.preapproval_metrics?.avg_loan_amount ? ((analysisData.preapproval_metrics.avg_loan_amount) / 1000).toFixed(0) + 'K' : '[loan]'}</span> pre-approval. Still good to go, or did something change?"</p>
+                        </div>
+                      </div>
+                    </article>
+
+                    {/* MORTGAGE CARD 3 - The math */}
+                    <article className="bg-white rounded-xl p-6 shadow-sm border border-[#E5E7EB]">
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="h-8 w-8 rounded-full bg-emerald-50 flex items-center justify-center">
+                          <TrendingUp className="h-4 w-4 text-emerald-600" />
+                        </div>
+                        <h3 className="font-semibold text-[#111827]">What's at stake</h3>
+                      </div>
+                      <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
+                        {(analysisData?.preapproval_metrics?.commission_at_risk || 0) > 100000
+                          ? <><span className="font-bold text-[#111827]">${((analysisData?.preapproval_metrics?.commission_at_risk || 0) / 1000).toFixed(0)}K</span> in commission sitting in stale files. That's real money — treat this as priority #1 this week.</>
+                          : (analysisData?.preapproval_metrics?.commission_at_risk || 0) > 50000
+                          ? <><span className="font-bold text-[#111827]">${((analysisData?.preapproval_metrics?.commission_at_risk || 0) / 1000).toFixed(0)}K</span> tied up in borrowers who went quiet. A few hours of focused calls could recover <span className="font-bold text-[#111827]">${((analysisData?.preapproval_metrics?.commission_at_risk || 0) * 0.2 / 1000).toFixed(0)}K</span>.</>
+                          : <><span className="font-bold text-[#111827]">${((analysisData?.preapproval_metrics?.commission_at_risk || 0) / 1000).toFixed(0)}K</span> in stale pipeline. Quick wins here — a few calls could close 1-2 deals.</>
+                        }
+                      </p>
+                      <div className="text-sm bg-emerald-50 rounded-lg p-3">
+                        <div className="font-medium text-[#111827] mb-2">The math:</div>
+                        <div className="grid grid-cols-2 gap-y-1 gap-x-3 text-[#6B7280]">
+                          <div>Stale pre-approvals:</div>
+                          <div className="font-bold text-[#111827]">{analysisData?.preapproval_metrics?.stale_count || 0}</div>
+                          <div>× 20% recovery rate:</div>
+                          <div className="font-bold text-[#111827]">{Math.round((analysisData?.preapproval_metrics?.stale_count || 0) * 0.2)} deals</div>
+                          <div>× avg commission:</div>
+                          <div className="font-bold text-[#111827]">${analysisData?.preapproval_metrics?.avg_commission ? (analysisData.preapproval_metrics.avg_commission / 1000).toFixed(1) + 'K' : '4K'}</div>
+                          <div className="font-medium text-[#111827] pt-2 border-t border-emerald-200">Potential recovery:</div>
+                          <div className="font-bold text-emerald-700 pt-2 border-t border-emerald-200">${((analysisData?.preapproval_metrics?.stale_count || 0) * 0.2 * (analysisData?.preapproval_metrics?.avg_commission || 4000) / 1000).toFixed(0)}K</div>
+                        </div>
+                      </div>
+                    </article>
+                  </>
+                ) : (
+                  /* MEDSPA INSIGHTS - existing code */
+                  analysisData?.strategic_insights && analysisData.strategic_insights.length > 0 ? (
                   (showAllInsights 
                     ? analysisData.strategic_insights 
                     : analysisData.strategic_insights.slice(0, 3)
@@ -874,11 +1084,12 @@ export default function PatientInsights() {
                   <div className="col-span-3 text-center text-[#9CA3AF] py-8">
                     No strategic insights available yet.
                   </div>
+                )
                 )}
               </div>
 
-              {/* Show More Button */}
-              {analysisData?.strategic_insights && analysisData.strategic_insights.length > 3 && (
+              {/* Show More Button - medspa only */}
+              {!isMortgage && analysisData?.strategic_insights && analysisData.strategic_insights.length > 3 && (
                 <div className="text-center">
                   <button
                     onClick={() => setShowAllInsights(!showAllInsights)}
@@ -905,7 +1116,7 @@ export default function PatientInsights() {
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                Step 1 · Lock in this revenue
+                Step 1 · {isMortgage ? 'Reach out this week' : 'Lock in this revenue'}
               </h2>
               <span className="text-[11px] text-[#9CA3AF]">
                 Start here if you only do one thing this month.
@@ -914,6 +1125,7 @@ export default function PatientInsights() {
 
             <div className="bg-white rounded-2xl p-8 md:p-10 shadow-sm border border-[#E5E7EB]">
               <div className="space-y-6">
+                {!isMortgage && (
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EEF2FF] text-[10px] font-semibold uppercase tracking-[0.16em] text-[#4338CA]">
                   <span className={`h-1.5 w-1.5 rounded-full ${(churnData?.at_risk_percent || 0) > 50 ? 'bg-red-500' : (churnData?.at_risk_percent || 0) > 30 ? 'bg-amber-500' : 'bg-emerald-500'}`} />
                   {(churnData?.at_risk_percent || 0) > 50 
@@ -922,17 +1134,22 @@ export default function PatientInsights() {
                     ? 'Strategy · Retention' 
                     : 'Strategy · Growth'}
                 </div>
+                )}
 
                 <div className="space-y-3">
                   <h3 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#111827]">
-                    {(churnData?.at_risk_percent || 0) > 50 
+                    {isMortgage 
+                      ? 'Call these borrowers back'
+                      : (churnData?.at_risk_percent || 0) > 50 
                       ? `Win back lapsed ${terms.customers}` 
                       : (churnData?.at_risk_percent || 0) > 30 
                       ? 'Prevent at-risk churn' 
                       : 'Get referrals'}
                   </h3>
                   <p className="text-sm md:text-base text-[#6B7280] leading-relaxed max-w-xl">
-                    {(churnData?.at_risk_percent || 0) > 50 
+                    {isMortgage 
+                      ? `${analysisData?.preapproval_metrics?.stale_count || 0} of your best borrowers have gone quiet. They're still in the market — but they won't wait forever. A quick check-in now could save $${((analysisData?.preapproval_metrics?.commission_at_risk || 0) / 1000).toFixed(0)}K in commission.`
+                      : (churnData?.at_risk_percent || 0) > 50 
                       ? `${churnData?.at_risk_percent.toFixed(0)}% of this segment (${Math.round(patientCount * (churnData?.at_risk_percent || 0) / 100)} ${terms.customers}) haven't returned within their expected interval. A ${analysisData?.available_procedures?.[0] || terms.service} reactivation offer could recover $${((totalRevenue * (churnData?.at_risk_percent || 0) / 100) / 1000).toFixed(0)}K in at-risk revenue.`
                       : (churnData?.at_risk_percent || 0) > 30 
                       ? `${churnData?.at_risk_percent.toFixed(0)}% of this segment is showing early churn signals. Proactive outreach now — before they lapse — is 3x more effective than win-back campaigns later.`
@@ -943,10 +1160,19 @@ export default function PatientInsights() {
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     onClick={() => {
-                      const atRiskPatients = churnData?.high_risk_patients || [];
+                      const atRiskPatients = isMortgage 
+                        ? (analysisData?.preapproval_metrics?.top_by_loan_amount || []).map((b: any) => ({
+                            patient_id: b.borrower_id || b.name,
+                            days_overdue: b.days_stale,
+                            disc_type: b.disc_type,
+                            loan_amount: b.loan_amount,
+                            commission: b.commission,
+                            name: b.name
+                          }))
+                        : (churnData?.high_risk_patients || []);
                       const patientIds = atRiskPatients.map((p: any) => p.patient_id);
                       if (patientIds.length > 0) {
-                        markContacted(patientIds);
+                        markContacted(patientIds, atRiskPatients);
                         setWinbackPatients(atRiskPatients);
                         setShowWinbackModal(true);
                       } else {
@@ -956,18 +1182,99 @@ export default function PatientInsights() {
                     disabled={selectedCount === 0}
                     className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#4338CA] text-white text-sm md:text-base font-semibold shadow-md hover:bg-[#3730A3] transition-colors disabled:opacity-50"
                   >
-                    {(churnData?.at_risk_percent || 0) > 50 ? 'Launch win-back' : (churnData?.at_risk_percent || 0) > 30 ? 'Send retention offer' : 'Set up now'}
+                    {isMortgage ? 'Get call list + scripts' : (churnData?.at_risk_percent || 0) > 50 ? 'Launch win-back' : (churnData?.at_risk_percent || 0) > 30 ? 'Send retention offer' : 'Set up now'}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                   <p className="text-xs md:text-sm text-[#6B7280] max-w-md">
-                    Email templates, incentive structure, and compliance checks
-                    are prebuilt. Review, tweak your offer, then launch in under{' '}
-                    <span className="font-semibold text-[#111827]">2 minutes</span>.
+                    {isMortgage 
+                      ? 'Scripts and talking points ready. Just open, call, close.'
+                      : `Email templates, incentive structure, and compliance checks are prebuilt. Review, tweak your offer, then launch in under `}
+                    {!isMortgage && <span className="font-semibold text-[#111827]">2 minutes</span>}
+                    {!isMortgage && '.'}
                   </p>
                 </div>
               </div>
             </div>
           </section>
+
+          {/* RECOVERY ANALYTICS - Mortgage only, only show if data exists */}
+          {isMortgage && recoveryAnalytics?.buckets?.length > 0 && (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                  Your Recovery Data
+                </h2>
+                <span className="text-[11px] text-[#9CA3AF]">
+                  What happens when you call faster
+                </span>
+              </div>
+              
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E5E7EB]">
+                <div className="space-y-4">
+                  {recoveryAnalytics.buckets.map((bucket: any, idx: number) => {
+                    const maxConversion = Math.max(...recoveryAnalytics.buckets.map((b: any) => b.conversion_rate || 0), 1);
+                    const barWidth = ((bucket.conversion_rate || 0) / maxConversion) * 100;
+                    const barColor = idx === 0 ? 'bg-emerald-500' : idx === 1 ? 'bg-amber-500' : idx === 2 ? 'bg-orange-500' : 'bg-red-400';
+                    const textColor = idx === 0 ? 'text-emerald-600' : idx === 1 ? 'text-amber-600' : idx === 2 ? 'text-orange-600' : 'text-red-500';
+                    
+                    return (
+                      <div key={bucket.timing} className="flex items-center gap-4">
+                        <div className="w-20 text-sm font-medium text-[#374151]">{bucket.timing}</div>
+                        <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
+                          <div className={`${barColor} h-full rounded-full transition-all`} style={{ width: `${barWidth}%` }} />
+                        </div>
+                        <div className="w-16 text-right">
+                          <span className={`text-lg font-bold ${textColor}`}>{bucket.conversion_rate}%</span>
+                        </div>
+                        <div className="w-16 text-right text-xs text-[#9CA3AF]">
+                          {bucket.closed}/{bucket.total}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                
+                {/* Insight callout */}
+                {recoveryAnalytics.buckets.length >= 2 && recoveryAnalytics.buckets[0].conversion_rate > 0 && (
+                  <div className="mt-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                    <div className="flex items-start gap-3">
+                      <span className="text-xl">💡</span>
+                      <div>
+                        <p className="text-sm font-semibold text-[#111827]">
+                          Calling within 7 days = {(recoveryAnalytics.buckets[0].conversion_rate / (recoveryAnalytics.buckets[recoveryAnalytics.buckets.length - 1].conversion_rate || 1)).toFixed(1)}x better close rate
+                        </p>
+                        <p className="text-xs text-[#6B7280] mt-1">
+                          You have {analysisData?.preapproval_metrics?.stale_count || 0} pre-approvals that need attention right now
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                {/* Summary stats */}
+                <div className="mt-6 pt-6 border-t border-gray-100 grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-[#111827]">
+                      ${((recoveryAnalytics.buckets.reduce((sum: number, b: any) => sum + (b.revenue_recovered || 0), 0)) / 1000).toFixed(0)}K
+                    </div>
+                    <div className="text-xs text-[#6B7280] mt-1">Recovered</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-emerald-600">
+                      {recoveryAnalytics.buckets.reduce((sum: number, b: any) => sum + (b.closed || 0), 0)}
+                    </div>
+                    <div className="text-xs text-[#6B7280] mt-1">Closed</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-[#111827]">
+                      {recoveryAnalytics.buckets.reduce((sum: number, b: any) => sum + (b.total || 0), 0)}
+                    </div>
+                    <div className="text-xs text-[#6B7280] mt-1">Contacted</div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
           
           {/* ROI TRACKING */}
           {outreachSummary && outreachSummary.contacted_count > 0 && (
@@ -1006,7 +1313,61 @@ export default function PatientInsights() {
             </section>
           )}
 
-          {/* SECONDARY ACTIONS */}
+          {/* CHANNEL ROI - Mortgage only */}
+          {isMortgage && analysisData?.channel_roi && (
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                  Where is your $10K working?
+                </h2>
+                <span className="text-[11px] text-[#9CA3AF]">
+                  Channel performance from your data
+                </span>
+              </div>
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E5E7EB]">
+                <div className="space-y-4">
+                  {Object.entries(analysisData.channel_roi)
+                    .filter(([channel, data]: [string, any]) => data.leads > 0 || data.funded > 0)
+                    .map(([channel, data]: [string, any]) => (
+                    <div key={channel} className="flex items-center justify-between py-3 border-b border-[#F3F4F6] last:border-0">
+                      <div className="flex items-center gap-3">
+                        <div className={`h-2 w-2 rounded-full ${data.roi > 2 ? 'bg-emerald-500' : data.roi > 1 ? 'bg-amber-500' : 'bg-red-500'}`} />
+                        <span className="font-medium text-[#111827] capitalize">{channel.replace(/_/g, ' ')}</span>
+                      </div>
+                      <div className="flex items-center gap-6 text-sm">
+                        <div className="text-right">
+                          <div className="text-[#6B7280]">Leads</div>
+                          <div className="font-semibold text-[#111827]">{data.leads || 0}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[#6B7280]">Funded</div>
+                          <div className="font-semibold text-[#111827]">{data.funded || 0}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-[#6B7280]">Conv %</div>
+                          <div className="font-semibold text-[#111827]">{data.leads > 0 ? ((data.funded / data.leads) * 100).toFixed(0) : 0}%</div>
+                        </div>
+                        <div className="text-right min-w-[60px]">
+                          <div className="text-[#6B7280]">ROI</div>
+                          <div className={`font-bold ${data.roi > 2 ? 'text-emerald-600' : data.roi > 1 ? 'text-amber-600' : 'text-red-600'}`}>
+                            {data.roi ? `${data.roi.toFixed(1)}x` : '—'}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {Object.entries(analysisData.channel_roi).filter(([_, data]: [string, any]) => data.leads > 0 || data.funded > 0).length === 0 && (
+                  <p className="text-sm text-[#6B7280] text-center py-4">
+                    Add a "source" or "lead_source" column to your CSV to see channel breakdown.
+                  </p>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* SECONDARY ACTIONS - hide for mortgage */}
+          {!isMortgage && (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
@@ -1065,8 +1426,10 @@ export default function PatientInsights() {
               </article>
             </div>
           </section>
+          )}
 
-          {/* KPI BAND */}
+          {/* KPI BAND - hide for mortgage */}
+          {!isMortgage && (
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
@@ -1118,6 +1481,7 @@ export default function PatientInsights() {
               </p>
             </div>
           </section>
+          )}
 
           {/* ACCORDION SECTIONS FOR DEEPER ANALYSIS */}
           <section className="space-y-4">
@@ -1756,7 +2120,9 @@ export default function PatientInsights() {
         <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
           <div className="p-6 border-b border-gray-200">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold text-gray-900">Win-Back Campaign Scripts</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                {isMortgage ? 'Pre-Approval Recapture Scripts' : 'Win-Back Campaign Scripts'}
+              </h2>
               <button onClick={() => setShowWinbackModal(false)} className="text-gray-400 hover:text-gray-600">✕</button>
             </div>
             <p className="text-sm text-gray-500 mt-1">{winbackPatients.length} {terms.customers} marked as contacted.</p>
@@ -1826,6 +2192,32 @@ export default function PatientInsights() {
                   <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">{winbackScripts?.phone || 'Loading...'}</div>
                 </div>
 
+                {/* Communication Coaching - Mortgage only */}
+                {isMortgage && (
+                  <div className="space-y-3 border-t border-gray-200 pt-6">
+                    <h3 className="font-semibold text-gray-900">🎯 Match your approach to the borrower</h3>
+                    <p className="text-xs text-gray-500">Different people need different approaches. Use what you know about them.</p>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="rounded-lg p-3 bg-red-50 border border-red-200">
+                        <div className="font-medium text-gray-900 mb-1">If they seem busy or direct</div>
+                        <p className="text-sm text-gray-600">"Quick question — still looking, or did you find something?"</p>
+                      </div>
+                      <div className="rounded-lg p-3 bg-yellow-50 border border-yellow-200">
+                        <div className="font-medium text-gray-900 mb-1">If they liked chatting last time</div>
+                        <p className="text-sm text-gray-600">"Hey! How's the house hunt going? Anything new since we talked?"</p>
+                      </div>
+                      <div className="rounded-lg p-3 bg-green-50 border border-green-200">
+                        <div className="font-medium text-gray-900 mb-1">If they seemed nervous or unsure</div>
+                        <p className="text-sm text-gray-600">"Just checking in — any questions I can help clear up?"</p>
+                      </div>
+                      <div className="rounded-lg p-3 bg-blue-50 border border-blue-200">
+                        <div className="font-medium text-gray-900 mb-1">If they wanted all the details</div>
+                        <p className="text-sm text-gray-600">"I ran your numbers against today's rates — got 3 mins to compare?"</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {winbackScripts?.source === 'optimized' && (
                   <div className="text-xs text-green-600 flex items-center gap-1">
                     <span>✓</span> Using top-performing templates
@@ -1833,12 +2225,39 @@ export default function PatientInsights() {
                 )}
 
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-gray-900">Patients to Contact ({winbackPatients.length})</h3>
+                  <h3 className="font-semibold text-gray-900">{terms.Customers} to Contact ({winbackPatients.length})</h3>
                   <div className="bg-gray-50 rounded-lg p-4 max-h-48 overflow-y-auto">
                     {winbackPatients.map((p: any, idx: number) => (
-                      <div key={idx} className="flex justify-between py-1 text-sm border-b border-gray-100 last:border-0">
-                        <span className="font-mono text-xs">{p.patient_id || `${terms.Customer} ${idx + 1}`}</span>
-                        <span className="text-red-600">{p.days_overdue} days overdue</span>
+                      <div key={idx} className="flex justify-between items-center py-2 text-sm border-b border-gray-100 last:border-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-xs">{p.patient_id || `${terms.Customer} ${idx + 1}`}</span>
+                          {isMortgage && p.disc_type && (
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                              p.disc_type === 'D' ? 'bg-red-100 text-red-700' :
+                              p.disc_type === 'I' ? 'bg-yellow-100 text-yellow-700' :
+                              p.disc_type === 'S' ? 'bg-green-100 text-green-700' :
+                              'bg-blue-100 text-blue-700'
+                            }`}>{p.disc_type}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-red-600 text-xs">{p.days_overdue} days</span>
+                          <select
+                            value={outcomes[p.patient_id] || 'pending'}
+                            onChange={(e) => updateOutcome(p.patient_id, e.target.value)}
+                            className={`text-xs border rounded px-2 py-1 ${
+                              outcomes[p.patient_id] === 'closed' ? 'bg-green-50 border-green-300' :
+                              outcomes[p.patient_id] === 'lost' ? 'bg-red-50 border-red-300' :
+                              'bg-white border-gray-200'
+                            }`}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="no_answer">No Answer</option>
+                            <option value="callback">Callback</option>
+                            <option value="closed">Closed ✓</option>
+                            <option value="lost">Lost</option>
+                          </select>
+                        </div>
                       </div>
                     ))}
                   </div>

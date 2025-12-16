@@ -68,30 +68,62 @@ def detect_stale_preapprovals(
     
     stale_borrowers = []
     id_col = 'contact_id' if 'contact_id' in stale_df.columns else 'patient_id' if 'patient_id' in stale_df.columns else None
+    name_col = next((c for c in ['name', 'full_name', 'borrower_name', 'contact_name', 'first_name'] if c in stale_df.columns), None)
+    loan_col = 'preapproval_amount' if 'preapproval_amount' in stale_df.columns else 'loan_amount' if 'loan_amount' in stale_df.columns else None
     
     for idx, row in stale_df.head(20).iterrows():
         borrower_id = str(row[id_col]) if id_col else f"Borrower {idx}"
+        
+        # Get borrower name
+        if name_col:
+            borrower_name = str(row[name_col]) if pd.notna(row.get(name_col)) else borrower_id
+        else:
+            borrower_name = borrower_id
+            
+        # Get loan amount
+        loan_amount = float(row.get('preapproval_amount', 0) or row.get('loan_amount', 0) or 0)
+        
         borrower = {
             'borrower_id': borrower_id,
+            'name': borrower_name,
             'days_since_preapproval': int(row.get('days_since_preapproval', 0) or 0),
             'days_since_contact': int(row.get('days_since_contact', 0) or 0),
-            'loan_amount': float(row.get('preapproval_amount', 0) or 0),
+            'days_stale': int(row.get('days_since_preapproval', 0) or 0),
+            'loan_amount': loan_amount,
+            'commission': loan_amount * 0.01 if loan_amount > 0 else 4000,
             'disc_type': str(row.get('disc_type', '')) if pd.notna(row.get('disc_type')) else None,
-            'source': str(row.get('source', 'unknown')) if pd.notna(row.get('source')) else 'unknown'
+            'source': str(row.get('source', 'unknown')) if pd.notna(row.get('source')) else 'unknown',
+            'zip': str(row.get('zip', row.get('zip_code', ''))) if pd.notna(row.get('zip', row.get('zip_code'))) else None
         }
         stale_borrowers.append(borrower)
     
+    # Sort by days stale for the default list
     stale_borrowers.sort(key=lambda x: x['days_since_preapproval'], reverse=True)
     
+    # Create top_by_loan_amount list (sorted by loan amount descending)
+    top_by_loan_amount = sorted(stale_borrowers, key=lambda x: x['loan_amount'], reverse=True)[:10]
+    
     avg_days = float(stale_df['days_since_preapproval'].mean()) if len(stale_df) > 0 else 0.0
+    
+    # Calculate avg_loan_amount
+    if loan_col and loan_col in stale_df.columns:
+        avg_loan_amount = float(pd.to_numeric(stale_df[loan_col], errors='coerce').mean() or 0)
+    else:
+        avg_loan_amount = 350000.0  # Default estimate
+    
+    # Calculate avg_commission
+    avg_commission = avg_loan_amount * 0.01 if avg_loan_amount > 0 else 4000.0
     
     return {
         'stale_count': int(len(stale_df)),
         'stale_borrowers': stale_borrowers,
+        'top_by_loan_amount': top_by_loan_amount,
         'total_preapproved': int(len(active_df)),
         'stale_percent': float((len(stale_df) / len(active_df) * 100) if len(active_df) > 0 else 0),
         'commission_at_risk': commission_at_risk,
-        'avg_days_stale': avg_days
+        'avg_days_stale': avg_days,
+        'avg_loan_amount': avg_loan_amount,
+        'avg_commission': avg_commission
     }
 
 

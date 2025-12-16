@@ -70,6 +70,10 @@ class PatientOutreach(Base):
     contacted_at = Column(DateTime, nullable=True)
     returned_at = Column(DateTime, nullable=True)
     revenue_recovered = Column(Float, nullable=True)
+    days_stale_when_contacted = Column(Integer, nullable=True)
+    outcome = Column(String, nullable=True)  # pending, closed, lost, no_answer, callback
+    loan_amount = Column(Float, nullable=True)
+    commission = Column(Float, nullable=True)
 
 
 class WinbackTemplate(Base):
