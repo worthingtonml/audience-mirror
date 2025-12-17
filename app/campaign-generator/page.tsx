@@ -15,6 +15,7 @@ export default function CampaignGenerator() {
   const [activeTab, setActiveTab] = useState<'ads' | 'messages'>('ads');
   const [instagramAdCopy, setInstagramAdCopy] = useState<any>(null);
   const [googleAdCopy, setGoogleAdCopy] = useState<any>(null);
+  const [llmCopy, setLlmCopy] = useState<any>(null);
   const [expandedPlatforms, setExpandedPlatforms] = useState<Record<string, boolean>>({});
   const [showDataQuality, setShowDataQuality] = useState(false);
   const [showOptimizationTips, setShowOptimizationTips] = useState(false);
@@ -25,6 +26,7 @@ export default function CampaignGenerator() {
   const [emailLoading, setEmailLoading] = useState(false);
   const [smsLoading, setSmsLoading] = useState(false);
   const [emailSequenceType, setEmailSequenceType] = useState('nurture');
+  const [vertical, setVertical] = useState('medspa');
   const [smsType, setSmsType] = useState('reactivation');
   const [showEmails, setShowEmails] = useState(true);
   const [showSms, setShowSms] = useState(true);
@@ -32,6 +34,8 @@ export default function CampaignGenerator() {
   useEffect(() => {
     const zipCodes = searchParams.get('zip')?.split(',') || [];
     const procedure = searchParams.get('procedure') || 'all';
+    const verticalParam = searchParams.get('vertical') || 'medspa';
+    setVertical(verticalParam);
     const procedureDisplay = procedure === 'all' ? 'aesthetic treatments' : procedure;
     const runId = sessionStorage.getItem('runId');
     
@@ -60,6 +64,7 @@ export default function CampaignGenerator() {
           const campaign = generateCampaignFromRealData({
             segments: selectedSegments,
             procedure,
+            vertical: verticalParam,
             demographics: data.demographics,
             behaviorPatterns: data.behavior_patterns,
             profileCharacteristics: data.profile_characteristics,
@@ -71,6 +76,26 @@ export default function CampaignGenerator() {
           });
 
           setCampaignData(campaign);
+
+          // Generate LLM-powered ad copy
+          const copyFormData = new FormData();
+          copyFormData.append('vertical', verticalParam);
+          copyFormData.append('profile_type', data.dominant_profile?.combined || 'clients');
+          copyFormData.append('city', primaryCity);
+          copyFormData.append('avg_ltv', (data.behavior_patterns?.avg_lifetime_value || 5000).toString());
+          copyFormData.append('total_clients', (data.patient_count || 50).toString());
+          copyFormData.append('top_services', Object.keys(data.actual_treatments || {}).slice(0, 3).join(', '));
+          
+          fetch(`${API_URL}/api/v1/campaigns/generate-copy`, {
+            method: 'POST',
+            body: copyFormData
+          })
+            .then(res => res.json())
+            .then(copy => {
+              console.log('[LLM Copy]', copy);
+              setLlmCopy(copy);
+            })
+            .catch(err => console.error('[LLM Copy Error]', err));
 
           // Generate AI-powered Instagram ads
           generateInstagramAds(selectedSegments, primaryCity).then(igAd => {
@@ -200,6 +225,7 @@ export default function CampaignGenerator() {
       formData.append('sequence_type', sequenceType);
       formData.append('practice_name', 'Your Practice');
       formData.append('practice_city', campaignData?.overview?.city || 'Your City');
+      formData.append('vertical', vertical);
 
       const response = await fetch(`${API_URL}/api/v1/campaigns/email`, {
         method: 'POST',
@@ -228,6 +254,7 @@ export default function CampaignGenerator() {
       formData.append('campaign_type', campaignType);
       formData.append('practice_name', 'Your Practice');
       formData.append('practice_phone', '(555) 123-4567');
+      formData.append('vertical', vertical);
 
       const response = await fetch(`${API_URL}/api/v1/campaigns/sms`, {
         method: 'POST',
@@ -310,12 +337,12 @@ export default function CampaignGenerator() {
           {showDataQuality && (
             <div className="space-y-3 pt-4 border-t border-slate-100">
               {[
-                { key: 'patientCount', label: 'Patient Count', format: (v: number) => v.toString() },
+                { key: 'patientCount', label: 'Patient Count', format: (v: any) => v.toString() },
                 { key: 'age', label: 'Avg Patient Age', format: (v: number) => Math.round(v).toString() },
                 { key: 'ltv', label: 'Lifetime Value', format: (v: number) => `$${(v/1000).toFixed(1)}K` },
                 { key: 'frequency', label: 'Annual Visits', format: (v: number) => `${v.toFixed(1)}×` },
                 { key: 'income', label: 'Avg Income', format: (v: number) => `$${(v/1000).toFixed(0)}K` },
-                { key: 'profile', label: 'Patient Profile', format: (v: string) => v.split(' - ')[0] }
+                { key: 'profile', label: 'Patient Profile', format: (v: any) => String(v).split(' - ')[0] }
               ].map(({ key, label, format }) => {
                 const data = campaignData.dataQuality[key];
                 return (
@@ -552,10 +579,31 @@ export default function CampaignGenerator() {
 
               {/* Ad Details */}
               {platform.ads.map((ad: any, index: number) => {
+                const isFacebook = platform.name === 'Facebook Ads';
                 const isInstagram = platform.name === 'Instagram Ads';
                 const isGoogle = platform.name === 'Google Search';
-                const googleHeadlines = isGoogle && googleAdCopy?.headlines ? googleAdCopy.headlines : null;
-                const googleDescriptions = isGoogle && googleAdCopy?.descriptions ? googleAdCopy.descriptions : null;
+                
+                // Use LLM-generated copy when available
+                const displayHeadline = isFacebook && llmCopy?.facebook?.headline 
+                  ? llmCopy.facebook.headline 
+                  : isInstagram && llmCopy?.instagram?.headline 
+                  ? llmCopy.instagram.headline 
+                  : ad.headline;
+                const displayCopy = isFacebook && llmCopy?.facebook?.body 
+                  ? llmCopy.facebook.body 
+                  : isInstagram && llmCopy?.instagram?.body 
+                  ? llmCopy.instagram.body 
+                  : ad.copy;
+                const googleHeadlines = isGoogle && llmCopy?.google?.headlines 
+                  ? llmCopy.google.headlines 
+                  : isGoogle && googleAdCopy?.headlines 
+                  ? googleAdCopy.headlines 
+                  : null;
+                const googleDescriptions = isGoogle && llmCopy?.google?.descriptions 
+                  ? llmCopy.google.descriptions 
+                  : isGoogle && googleAdCopy?.descriptions 
+                  ? googleAdCopy.descriptions 
+                  : null;
 
                 return (
                   <div key={index} className="border border-slate-200 rounded-lg p-4 mt-4">
@@ -842,6 +890,7 @@ function generateCampaignFromRealData(params: any) {
   const {
     segments,
     procedure,
+    vertical,
     demographics,
     behaviorPatterns,
     profileCharacteristics,
@@ -851,7 +900,12 @@ function generateCampaignFromRealData(params: any) {
     totalPatients,
     city  
   } = params;
-  const procedureDisplay = procedure === 'all' ? 'aesthetic treatments' : procedure;
+  const isRealEstate = vertical === 'real_estate_mortgage';
+  const procedureDisplay = procedure === 'all' 
+    ? (isRealEstate ? 'real estate services' : 'aesthetic treatments')
+    : procedure;
+  const customerTerm = isRealEstate ? 'clients' : 'patients';
+  const transactionTerm = isRealEstate ? 'transactions' : 'treatments';
   console.log('[DEBUG] procedure:', procedure, 'procedureDisplay:', procedureDisplay);
   
   // ✅ Validate segments
@@ -928,11 +982,11 @@ function generateCampaignFromRealData(params: any) {
       name: 'Facebook Ads',
       icon: <Facebook className="h-6 w-6 text-blue-600" />,
       reasoning: `${Math.round(fbPct * 100)}% - ${avgAge ? (avgAge > 40 ? `Ages ${Math.round(avgAge)}+ demographic` : 'Local reach & awareness') : 'Local awareness'}`,
-      strategyTitle: avgFrequency > 3 ? 'Facebook: Loyalty & Repeat Visits' : 'Facebook: New Patient Acquisition',
+      strategyTitle: avgFrequency > 3 ? 'Facebook: Loyalty & Repeat Visits' : `Facebook: New ${isRealEstate ? 'Client' : 'Patient'} Acquisition`,
       strategyDescription: avgFrequency > 3
-        ? `Your ${profileType} patients visit ${avgFrequency.toFixed(1)}× yearly. Facebook's lookalike audiences will find similar high-frequency patients. Use retargeting to stay top-of-mind for repeat bookings.`
+        ? `Your ${profileType} ${customerTerm} visit ${avgFrequency.toFixed(1)}× yearly. Facebook's lookalike audiences will find similar high-frequency ${customerTerm}. Use retargeting to stay top-of-mind for repeat bookings.`
         : avgLTV > 5000
-        ? `High-value ${profileType} patients ($${(avgLTV/1000).toFixed(1)}K LTV) need trust before booking. Facebook builds awareness through testimonials and educational content that leads to Google Search conversions.`
+        ? `High-value ${profileType} ${customerTerm} ($${(avgLTV/1000).toFixed(1)}K LTV) need trust before booking. Facebook builds awareness through testimonials and educational content that leads to Google Search conversions.`
         : `Target ${profileType} segment through Facebook's detailed demographic and interest targeting. Build local awareness that converts to consultations.`,
       budget: Math.round(monthlyBudget * fbPct),
       allocationPct: Math.round(fbPct * 100),
@@ -947,10 +1001,10 @@ function generateCampaignFromRealData(params: any) {
           ? `Premium ${procedureDisplay} for Discerning Clients`
           : `Trusted ${procedureDisplay} Specialist`,
         copy: avgCompetition === 0
-          ? `Be among the first to experience ${procedureDisplay} from ${city || 'your area'}'s newest expert practice. Limited introductory pricing for early patients. Book your complimentary consultation today.`
+          ? `Be among the first to experience ${procedureDisplay} from ${city || 'your area'}'s newest expert practice. Limited introductory pricing for early ${customerTerm}. Book your complimentary consultation today.`
           : avgLTV > 5000
-          ? `${profileType} choose us for personalized care and natural results. Join ${totalPatients}+ satisfied patients who trust our expertise. Book your private consultation.`
-          : `Trusted by ${totalPatients}+ patients across ${city || 'your area'}. ${profileType} love our results. Book your free consultation and see why your neighbors choose us.`,
+          ? `${profileType} choose us for personalized service and proven results. Join ${totalPatients}+ satisfied ${customerTerm} who trust our expertise. Book your private consultation.`
+          : `Trusted by ${totalPatients}+ ${customerTerm} across ${city || 'your area'}. ${profileType} love our results. Book your free consultation and see why your neighbors choose us.`,
         dailyBudget: Math.round((monthlyBudget * fbPct) / 30),
         optimizationTip: avgFrequency > 3
           ? `Your patients visit ${avgFrequency.toFixed(1)}× yearly. Highlight package deals and VIP memberships to maximize lifetime value.`
@@ -968,7 +1022,7 @@ function generateCampaignFromRealData(params: any) {
         ? `Age ${Math.round(avgAge)} is Instagram's sweet spot. ${profileType} are highly active on Stories and Reels. Use before/after carousels to showcase results—they outperform single images by 60%.`
         : topTreatments.length >= 2
         ? `Your ${profileType} patients often combine ${topTreatments[0]} + ${topTreatments[1]}. Instagram showcases multi-treatment transformations. Carousel ads work best: problem → treatment A → treatment B → final result.`
-        : `Instagram builds awareness and desire for ${profileType}. Patients may not book immediately but will search your name on Google later. Focus on brand equity and visual proof.`,
+        : `Instagram builds awareness and desire for ${profileType}. ${customerTerm.charAt(0).toUpperCase() + customerTerm.slice(1)} may not book immediately but will search your name on Google later. Focus on brand equity and visual proof.`,
       budget: Math.round(monthlyBudget * igPct),
       allocationPct: Math.round(igPct * 100),
       ads: [{
