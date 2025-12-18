@@ -3571,3 +3571,148 @@ async def analyze_segment_churn(
         "run_id": run_id,
         **summary
     }
+
+
+@app.post("/api/v1/segments/behavior-patterns")
+@limiter.limit("100/hour")
+async def analyze_behavior_patterns(
+    request: fastapi.Request,
+    run_id: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    """
+    Analyze best and worst behavior patterns for a segment.
+    """
+    analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == run_id).first()
+    if not analysis_run or analysis_run.status != "done":
+        raise HTTPException(status_code=404, detail="Run not found or not completed")
+    
+    dataset = db.query(Dataset).filter(Dataset.id == analysis_run.dataset_id).first()
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    df = pd.read_csv(dataset.patients_path)
+    df = normalize_patients_dataframe(df)
+    df = aggregate_visits_to_patients(df)
+    df = segment_patients_by_behavior(df)
+    
+    top_count = max(1, int(len(df) * 0.2))
+    top_df = df.sort_values('value_score', ascending=False).head(top_count)
+    total_patients = len(top_df)
+    
+    best_patterns = []
+    worst_patterns = []
+    
+    # High-frequency maintainers
+    if 'visit_count' in top_df.columns:
+        high_freq = top_df[top_df['visit_count'] >= 4]
+        if len(high_freq) > 0:
+            avg_spend = high_freq['total_revenue'].mean() if 'total_revenue' in high_freq.columns else 0
+            market_avg = top_df['total_revenue'].mean() if 'total_revenue' in top_df.columns else 1
+            multiplier = avg_spend / market_avg if market_avg > 0 else 1
+            best_patterns.append({
+                "id": "high_freq_maintainers",
+                "label": "High-frequency maintainers",
+                "metric": f"{len(high_freq)} patients visit 4+ times/year",
+                "insight": f"They spend {multiplier:.1f}x more than average",
+                "action": "membership",
+                "count": len(high_freq),
+                "patient_ids": high_freq['patient_id'].tolist() if 'patient_id' in high_freq.columns else []
+            })
+    
+    # Premium spenders
+    if 'total_revenue' in top_df.columns and len(top_df) > 4:
+        threshold = top_df['total_revenue'].quantile(0.75)
+        premium = top_df[top_df['total_revenue'] >= threshold]
+        if len(premium) > 0:
+            avg_rev = premium['total_revenue'].mean()
+            best_patterns.append({
+                "id": "premium_spenders",
+                "label": "Premium spenders",
+                "metric": f"{len(premium)} patients avg ${avg_rev:,.0f}",
+                "insight": "VIP treatment keeps them loyal",
+                "action": "vip",
+                "count": len(premium),
+                "patient_ids": premium['patient_id'].tolist() if 'patient_id' in premium.columns else []
+            })
+    
+    # Referrers estimate
+    referral_rate = 0.18
+    best_patterns.append({
+        "id": "active_referrers",
+        "label": "Active referrers",
+        "metric": f"~{int(referral_rate * total_patients)} have referred before",
+        "insight": "Each referral = $0 acquisition cost",
+        "action": "referral",
+        "count": int(referral_rate * total_patients),
+        "patient_ids": []
+    })
+    
+    # One-and-done
+    if 'visit_count' in df.columns and 'days_since_last_visit' in df.columns:
+        one_and_done = df[(df['visit_count'] == 1) & (df['days_since_last_visit'] >= 90)]
+        if len(one_and_done) > 0:
+            potential = len(one_and_done) * 500
+            worst_patterns.append({
+                "id": "one_and_done",
+                "label": "One-and-done trials",
+                "metric": f"{len(one_and_done)} patients tried once, never returned",
+                "insight": f"${potential:,.0f} in potential LTV walking away",
+                "action": "winback",
+                "severity": "high" if len(one_and_done) > 20 else "medium",
+                "count": len(one_and_done),
+                "patient_ids": one_and_done['patient_id'].tolist() if 'patient_id' in one_and_done.columns else []
+            })
+    
+    # Lapsed regulars
+    if 'visit_count' in df.columns and 'days_since_last_visit' in df.columns:
+        lapsed = df[(df['visit_count'] >= 3) & (df['days_since_last_visit'] >= 120)]
+        if len(lapsed) > 0:
+            lost = lapsed['total_revenue'].sum() if 'total_revenue' in lapsed.columns else len(lapsed) * 1000
+            worst_patterns.append({
+                "id": "lapsed_regulars",
+                "label": "Lapsed regulars",
+                "metric": f"{len(lapsed)} former regulars gone 4+ months",
+                "insight": f"${lost:,.0f} in revenue going cold",
+                "action": "winback_vip",
+                "severity": "high" if len(lapsed) > 10 else "medium",
+                "count": len(lapsed),
+                "patient_ids": lapsed['patient_id'].tolist() if 'patient_id' in lapsed.columns else []
+            })
+    
+    # Recommended play
+    recommended_play = None
+    if worst_patterns and worst_patterns[0].get('count', 0) > 5:
+        w = worst_patterns[0]
+        recommended_play = {
+            "id": "winback_trials" if w['id'] == 'one_and_done' else "winback_vip",
+            "type": "fix",
+            "headline": "Re-engage one-time visitors" if w['id'] == 'one_and_done' else "Win back lapsed regulars",
+            "subcopy": f"{w['count']} patients {'tried once and left' if w['id'] == 'one_and_done' else 'were regulars but went quiet'}. A targeted offer typically recovers 12-18%.",
+            "cta": "Launch win-back",
+            "target_count": w['count'],
+            "potential_value": w['count'] * 150
+        }
+    elif best_patterns:
+        b = best_patterns[0]
+        recommended_play = {
+            "id": "lock_in_maintainers",
+            "type": "protect",
+            "headline": "Lock in your best patients",
+            "subcopy": f"{b['count']} patients are your most valuable. A membership or package locks them in before competitors try.",
+            "cta": "Create membership offer",
+            "target_count": b['count'],
+            "potential_value": b['count'] * 200
+        }
+    
+    return {
+        "success": True,
+        "best_patterns": best_patterns[:3],
+        "worst_patterns": worst_patterns[:2],
+        "recommended_play": recommended_play,
+        "summary": {
+            "total_analyzed": total_patients,
+            "one_and_done_count": worst_patterns[0].get('count', 0) if worst_patterns else 0,
+            "high_freq_count": best_patterns[0].get('count', 0) if best_patterns else 0
+        }
+    }
