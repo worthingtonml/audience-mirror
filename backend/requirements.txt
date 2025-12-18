@@ -41,3 +41,8 @@ yarl==1.20.1
 pgeocode==0.5.0
 python-dotenv
 slowapi
+redis
+anthropic
+openai
+httpx
+aiofiles
