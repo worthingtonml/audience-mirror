@@ -558,7 +558,7 @@ export default function PatientInsights() {
           <p className="text-[#64748B] text-sm mb-6">{error}</p>
           <button
             onClick={() => (window.location.href = '/')}
-            className="bg-[#5A67D8] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2E4BC6] transition-colors"
+            className="bg-[#5A67D8] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#1A3FA8] transition-colors"
           >
             Upload New Data
           </button>
@@ -571,7 +571,7 @@ export default function PatientInsights() {
     return (
       <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#CBD5E1] border-t-[#3D5BD9] mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#CBD5E1] border-t-[#2251CC] mx-auto mb-4" />
           <div className="text-sm font-medium text-[#1A202C] mb-1">
             Analyzing your data
           </div>
@@ -690,7 +690,7 @@ export default function PatientInsights() {
               </h1>
               <p className="text-xs md:text-sm text-[#9CA3AF] mt-1 flex items-center gap-2">
                 <span>{patientCount} {terms.customers} analyzed</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#3D5BD9]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#E8F0FE] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2251CC]">
                   <Clock className="h-3 w-3" />
                   {getSeasonalCopy(season).timing}
                 </span>
@@ -700,7 +700,7 @@ export default function PatientInsights() {
             <select
               value={vertical}
               onChange={(e) => setVertical(e.target.value)}
-              className="px-3 py-2 text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg focus:ring-[#3D5BD9] focus:border-[#3D5BD9]"
+              className="px-3 py-2 text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg focus:ring-[#2251CC] focus:border-[#2251CC]"
             >
               <option value="medspa">Aesthetics</option>
               <option value="real_estate_mortgage">Real Estate / Mortgage</option>
@@ -713,9 +713,9 @@ export default function PatientInsights() {
                     setShowProcedureDropdown((open) => !open)
                   }
                   disabled={isFiltering}
-                  className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg hover:bg-[#F3F4FF] disabled:opacity-50 transition-colors shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg hover:bg-[#EBF1FE] disabled:opacity-50 transition-colors shadow-sm"
                 >
-                  <Target className="h-4 w-4 text-[#3D5BD9]" />
+                  <Target className="h-4 w-4 text-[#2251CC]" />
                   {procedureDisplayText}
                   <ChevronDown className="h-4 w-4 text-[#9CA3AF]" />
                 </button>
@@ -731,12 +731,12 @@ export default function PatientInsights() {
                       </p>
                     </div>
                     <div className="p-2 max-h-64 overflow-y-auto">
-                      <label className="flex items-center gap-2 px-3 py-2 hover:bg-[#EEF2FF] rounded cursor-pointer">
+                      <label className="flex items-center gap-2 px-3 py-2 hover:bg-[#E8F0FE] rounded cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedProcedures.includes('all')}
                           onChange={() => toggleProcedure('all')}
-                          className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
+                          className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
                         />
                         <span className="text-sm text-[#111827]">
                           All Procedures
@@ -745,13 +745,13 @@ export default function PatientInsights() {
                       {availableProcedures.map((proc) => (
                         <label
                           key={proc}
-                          className="flex items-center gap-2 px-3 py-2 hover:bg-[#EEF2FF] rounded cursor-pointer"
+                          className="flex items-center gap-2 px-3 py-2 hover:bg-[#E8F0FE] rounded cursor-pointer"
                         >
                           <input
                             type="checkbox"
                             checked={selectedProcedures.includes(proc)}
                             onChange={() => toggleProcedure(proc)}
-                            className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
+                            className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
                           />
                           <span className="text-sm text-[#111827] capitalize">
                             {proc}
@@ -769,7 +769,7 @@ export default function PatientInsights() {
                       <button
                         onClick={applyProcedureFilter}
                         disabled={isFiltering}
-                        className="px-3 py-1.5 text-xs font-semibold text-white bg-[#3D5BD9] rounded-lg hover:bg-[#2E4BC6] disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs font-semibold text-white bg-[#2251CC] rounded-lg hover:bg-[#1A3FA8] disabled:opacity-50"
                       >
                         {isFiltering ? 'Applying…' : 'Apply filter'}
                       </button>
@@ -790,9 +790,9 @@ export default function PatientInsights() {
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
           {/* HERO CARD */}
           <section>
-            <div className="bg-gradient-to-r from-[#4361EE] via-[#5A7FF2] to-[#7B93F5] rounded-2xl p-8 md:p-10 shadow-lg">
+            <div className="bg-gradient-to-r from-[#2D5BE3] via-[#4169E8] to-[#5B7FED] rounded-2xl p-8 md:p-10 shadow-lg">
               {/* Top row: Label */}
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-200 mb-2">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-200 mb-2">
                 {terms.bestCustomers}
               </div>
 
@@ -805,7 +805,7 @@ export default function PatientInsights() {
               </h1>
 
               {/* Description - profile then problem for mortgage */}
-              <p className="text-sm md:text-base text-indigo-100 leading-relaxed max-w-3xl mb-6">
+              <p className="text-sm md:text-base text-blue-100 leading-relaxed max-w-3xl mb-6">
                 {isMortgage 
                   ? <>Avg <span className="font-semibold text-white">${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K</span> loan size. They close faster and refer more. But <span className="font-semibold text-amber-300">{analysisData?.preapproval_metrics?.stale_count || 0}</span> of them are going cold.</>
                   : `${segmentDescription} They spend $${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit ${(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.`
@@ -818,14 +818,14 @@ export default function PatientInsights() {
                   <>
                     {/* MORTGAGE METRICS */}
                     <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Going Cold</div>
+                      <div className="text-[10px] font-medium text-blue-200 mb-1">Going Cold</div>
                       <div className="text-2xl md:text-3xl font-bold text-amber-300">
                         {analysisData?.preapproval_metrics?.stale_count || 0}
                       </div>
-                      <div className="text-[10px] text-indigo-200">need outreach</div>
+                      <div className="text-[10px] text-blue-200">need outreach</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Commission at Risk</div>
+                      <div className="text-[10px] font-medium text-blue-200 mb-1">Commission at Risk</div>
                       <div className="text-2xl md:text-3xl font-bold text-red-300">
                         {analysisData?.preapproval_metrics?.commission_at_risk 
                           ? `$${(analysisData.preapproval_metrics.commission_at_risk / 1000).toFixed(0)}K`
@@ -833,28 +833,28 @@ export default function PatientInsights() {
                           ? `$${(churnData.at_risk_revenue / 1000).toFixed(0)}K`
                           : '—'}
                       </div>
-                      <div className="text-[10px] text-indigo-200">if they close elsewhere</div>
+                      <div className="text-[10px] text-blue-200">if they close elsewhere</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Loan Size</div>
+                      <div className="text-[10px] font-medium text-blue-200 mb-1">Avg Loan Size</div>
                       <div className="text-2xl md:text-3xl font-bold text-white">
                         ${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K
                       </div>
-                      <div className="text-[10px] text-indigo-200">this segment</div>
+                      <div className="text-[10px] text-blue-200">this segment</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Commission</div>
+                      <div className="text-[10px] font-medium text-blue-200 mb-1">Avg Commission</div>
                       <div className="text-2xl md:text-3xl font-bold text-emerald-300">
                         ${((analysisData?.preapproval_metrics?.avg_commission || 4000) / 1000).toFixed(1)}K
                       </div>
-                      <div className="text-[10px] text-indigo-200">per funded loan</div>
+                      <div className="text-[10px] text-blue-200">per funded loan</div>
                     </div>
                   </>
                 ) : (
                   <>
                     {/* MEDSPA METRICS */}
                     <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Lifetime Value</div>
+                      <div className="text-[10px] font-medium text-blue-200 mb-1">Avg Lifetime Value</div>
                       <div className="text-2xl md:text-3xl font-bold text-white">
                         {(analysisData?.behavior_patterns?.avg_lifetime_value || 3600) >= 1000 
                           ? `$${((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) / 1000).toFixed(1)}K`
@@ -862,14 +862,14 @@ export default function PatientInsights() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Visit Frequency</div>
+                      <div className="text-[10px] font-medium text-blue-200 mb-1">Visit Frequency</div>
                       <div className="text-2xl md:text-3xl font-bold text-white">
                         {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}×
                       </div>
-                      <div className="text-[10px] text-indigo-200">per year</div>
+                      <div className="text-[10px] text-blue-200">per year</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Revenue at Risk</div>
+                      <div className="text-[10px] font-medium text-blue-200 mb-1">Revenue at Risk</div>
                       <div className={`text-2xl md:text-3xl font-bold ${
                         churnData?.at_risk_percent > 25 
                           ? 'text-red-300' 
@@ -879,10 +879,10 @@ export default function PatientInsights() {
                       }`}>
                         ${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '—'}K
                       </div>
-                      <div className="text-[10px] text-indigo-200">from {churnData?.at_risk_count || 0} {terms.customers}</div>
+                      <div className="text-[10px] text-blue-200">from {churnData?.at_risk_count || 0} {terms.customers}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Churn Rate</div>
+                      <div className="text-[10px] font-medium text-blue-200 mb-1">Churn Rate</div>
                       <div className={`text-2xl md:text-3xl font-bold ${
                         churnData?.at_risk_percent > 25 
                           ? 'text-red-300' 
@@ -892,7 +892,7 @@ export default function PatientInsights() {
                       }`}>
                         {churnData ? `${churnData.at_risk_percent.toFixed(0)}%` : '—'}
                       </div>
-                      <div className="text-[10px] text-indigo-200">at risk</div>
+                      <div className="text-[10px] text-blue-200">at risk</div>
                     </div>
                   </>
                 )}
@@ -900,10 +900,10 @@ export default function PatientInsights() {
 
               <div className="h-px bg-white/20 my-6" />
               
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-indigo-200 mb-2">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-200 mb-2">
                 {isMortgage ? 'Protect This Segment' : 'What This Means'}
               </div>
-              <p className="text-sm text-indigo-100 leading-relaxed">
+              <p className="text-sm text-blue-100 leading-relaxed">
                 {isMortgage 
                   ? `These are your best borrowers — high loan amounts, likely to close, likely to refer. But ${analysisData?.preapproval_metrics?.stale_count || 0} of them have gone quiet. That's $${((analysisData?.preapproval_metrics?.commission_at_risk || 0) / 1000).toFixed(0)}K in commission you've already earned the right to. Time to reach out.`
                   : `Your best ${terms.customers} average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} ${terms.visits} per year. ${churnData ? `${churnData.at_risk_percent.toFixed(0)}% haven't returned within their expected visit interval, putting $${((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0)}K in revenue at risk.` : ''}`
@@ -1042,7 +1042,7 @@ export default function PatientInsights() {
 
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Primary Play - Protect what's working */}
-                <div className="bg-gradient-to-br from-[#3D5BD9] to-[#2E4BC6] rounded-2xl p-6 md:p-8 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-[#2251CC] to-[#1A3FA8] rounded-2xl p-6 md:p-8 text-white shadow-lg">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-[10px] font-semibold uppercase tracking-[0.12em] mb-5">
                     <span className="h-1.5 w-1.5 rounded-full bg-white" />
                     Protect what's working
@@ -1052,7 +1052,7 @@ export default function PatientInsights() {
                     {(churnData?.at_risk_percent || 0) > 30 ? 'Keep your regulars close' : 'Turn loyalty into referrals'}
                   </h3>
                   
-                  <p className="text-sm text-indigo-100 leading-relaxed mb-6">
+                  <p className="text-sm text-blue-100 leading-relaxed mb-6">
                     {(churnData?.at_risk_percent || 0) > 30 
                       ? `Your best patients are steady, but ${Math.round(patientCount * (churnData?.at_risk_percent || 0) / 100)} are starting to drift. A quick thank-you or VIP offer keeps them choosing you.`
                       : `${Math.round(patientCount * 0.18)} patients have referred before. One referral can offset a whole quarter of churn. This is the easiest win on the board.`
@@ -1062,13 +1062,13 @@ export default function PatientInsights() {
                   <button
                     onClick={generateCampaign}
                     disabled={selectedCount === 0}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#3D5BD9] text-sm font-semibold shadow-md hover:bg-indigo-50 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#2251CC] text-sm font-semibold shadow-md hover:bg-blue-50 transition-colors disabled:opacity-50"
                   >
                     {(churnData?.at_risk_percent || 0) > 30 ? 'Send thank-you offer' : 'Launch referral program'}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                   
-                  <p className="text-xs text-indigo-200 mt-4">
+                  <p className="text-xs text-blue-200 mt-4">
                     Best sent in the next 7–14 days
                   </p>
                 </div>
@@ -1179,7 +1179,7 @@ export default function PatientInsights() {
                         </div>
                       </div>
 
-                      <div className="text-sm text-[#111827] bg-indigo-50 rounded-lg p-3">
+                      <div className="text-sm text-[#111827] bg-blue-50 rounded-lg p-3">
                         <div className="font-medium mb-1">Text template for the rest:</div>
                         <p className="text-[#6B7280] italic">"Hey [name], it's [you]. Rates are at [X.X]% — your $[loan] pre-approval could save you $[amount]/mo. Worth 5 mins this week?"</p>
                       </div>
@@ -1188,7 +1188,7 @@ export default function PatientInsights() {
                     {/* MORTGAGE CARD 2 - How to open the call */}
                     <article className="bg-white rounded-xl p-6 shadow-sm border border-[#E5E7EB]">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center">
+                        <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center">
                           <Target className="h-4 w-4 text-indigo-600" />
                         </div>
                         <h3 className="font-semibold text-[#111827]">How to open the call</h3>
@@ -1294,7 +1294,7 @@ export default function PatientInsights() {
                       }
                     }}
                     disabled={selectedCount === 0}
-                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#3D5BD9] text-white text-sm md:text-base font-semibold shadow-md hover:bg-[#2E4BC6] transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#2251CC] text-white text-sm md:text-base font-semibold shadow-md hover:bg-[#1A3FA8] transition-colors disabled:opacity-50"
                   >
                     Get call list + scripts
                     <ArrowRight className="h-4 w-4" />
@@ -1347,7 +1347,7 @@ export default function PatientInsights() {
                 
                 {/* Insight callout */}
                 {recoveryAnalytics.buckets.length >= 2 && recoveryAnalytics.buckets[0].conversion_rate > 0 && (
-                  <div className="mt-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                  <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
                     <div className="flex items-start gap-3">
                       <span className="text-xl">💡</span>
                       <div>
@@ -1699,7 +1699,7 @@ export default function PatientInsights() {
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-2">
                         Full Strategy Potential
                       </div>
-                      <div className="text-2xl font-semibold text-[#3D5BD9] mb-1">
+                      <div className="text-2xl font-semibold text-[#2251CC] mb-1">
                         ${Math.round((totalRevenue * 1.52) / 1000)}K
                       </div>
                       <p className="text-sm text-[#6B7280]">
@@ -1724,7 +1724,7 @@ export default function PatientInsights() {
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
-                            className="bg-[#3D5BD9] h-2 rounded-full"
+                            className="bg-[#2251CC] h-2 rounded-full"
                             style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Injectable Treatments"] || 0}%` }}
                           ></div>
                         </div>
@@ -1740,7 +1740,7 @@ export default function PatientInsights() {
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
-                            className="bg-[#3D5BD9] h-2 rounded-full"
+                            className="bg-[#2251CC] h-2 rounded-full"
                             style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Laser & Energy"] || 0}%` }}
                           ></div>
                         </div>
@@ -1756,7 +1756,7 @@ export default function PatientInsights() {
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
-                            className="bg-[#3D5BD9] h-2 rounded-full"
+                            className="bg-[#2251CC] h-2 rounded-full"
                             style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Skincare & Other"] || 0}%` }}
                           ></div>
                         </div>
@@ -1842,7 +1842,7 @@ export default function PatientInsights() {
                                   setShowWinbackModal(true);
                                 }
                               }}
-                              className="mt-3 w-full px-4 py-2 bg-[#3D5BD9] text-white text-xs font-semibold rounded-lg hover:bg-[#2E4BC6] transition-colors"
+                              className="mt-3 w-full px-4 py-2 bg-[#2251CC] text-white text-xs font-semibold rounded-lg hover:bg-[#1A3FA8] transition-colors"
                             >
                               Launch Win-Back Campaign ({churnData.high_risk_patients.length} {terms.customers})
                             </button>
@@ -1906,7 +1906,7 @@ export default function PatientInsights() {
                                 });
                                 setSelectedZips(next);
                               }}
-                              className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
+                              className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
                             />
                           </th>
                           <th className="text-left py-3 px-6">ZIP</th>
@@ -1928,7 +1928,7 @@ export default function PatientInsights() {
                                 type="checkbox"
                                 checked={selectedZips[seg.zip] || false}
                                 onChange={() => toggleZip(seg.zip)}
-                                className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
+                                className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
                               />
                             </td>
                             <td className="py-3 px-6 font-medium text-[#111827]">
@@ -1940,7 +1940,7 @@ export default function PatientInsights() {
                                 {seg.distance_miles.toFixed(1)} mi
                               </span>
                             </td>
-                            <td className="py-3 px-6 text-right font-semibold text-[#3D5BD9]">
+                            <td className="py-3 px-6 text-right font-semibold text-[#2251CC]">
                               {seg.expected_bookings}
                             </td>
                             <td className="py-3 px-6 text-right font-semibold text-[#111827]">
@@ -1986,7 +1986,7 @@ export default function PatientInsights() {
                                 });
                                 setSelectedZips(next);
                               }}
-                              className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
+                              className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
                             />
                           </th>
                           <th className="text-left py-3 px-6">ZIP</th>
@@ -2008,7 +2008,7 @@ export default function PatientInsights() {
                                 type="checkbox"
                                 checked={selectedZips[seg.zip] || false}
                                 onChange={() => toggleZip(seg.zip)}
-                                className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
+                                className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
                               />
                             </td>
                             <td className="py-3 px-6 font-medium text-[#111827]">
@@ -2020,7 +2020,7 @@ export default function PatientInsights() {
                                 {seg.distance_miles.toFixed(1)} mi
                               </span>
                             </td>
-                            <td className="py-3 px-6 text-right font-semibold text-[#3D5BD9]">
+                            <td className="py-3 px-6 text-right font-semibold text-[#2251CC]">
                               {seg.expected_bookings}
                             </td>
                             <td className="py-3 px-6 text-right font-semibold text-[#111827]">
@@ -2108,7 +2108,7 @@ export default function PatientInsights() {
               <button
                 onClick={generateCampaign}
                 disabled={selectedCount === 0}
-                className="w-full px-10 py-4 text-base md:text-lg font-semibold text-white bg-[#3D5BD9] rounded-xl hover:bg-[#2E4BC6] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg transition-colors"
+                className="w-full px-10 py-4 text-base md:text-lg font-semibold text-white bg-[#2251CC] rounded-xl hover:bg-[#1A3FA8] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg transition-colors"
               >
                 Generate campaign
                 <ArrowRight className="h-5 w-5" />
@@ -2151,7 +2151,7 @@ export default function PatientInsights() {
                           body: new URLSearchParams({ treatment: analysisData?.available_procedures?.[0] || 'appointment', template_type: 'email' })
                         });
                       }} 
-                      className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200"
+                      className="text-xs px-3 py-1 bg-blue-100 text-indigo-700 rounded-full hover:bg-blue-200"
                     >
                       Copy
                     </button>
@@ -2173,7 +2173,7 @@ export default function PatientInsights() {
                           body: new URLSearchParams({ treatment: analysisData?.available_procedures?.[0] || 'appointment', template_type: 'sms' })
                         });
                       }} 
-                      className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200"
+                      className="text-xs px-3 py-1 bg-blue-100 text-indigo-700 rounded-full hover:bg-blue-200"
                     >
                       Copy
                     </button>
@@ -2192,7 +2192,7 @@ export default function PatientInsights() {
                           body: new URLSearchParams({ treatment: analysisData?.available_procedures?.[0] || 'appointment', template_type: 'phone' })
                         });
                       }} 
-                      className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200"
+                      className="text-xs px-3 py-1 bg-blue-100 text-indigo-700 rounded-full hover:bg-blue-200"
                     >
                       Copy
                     </button>
