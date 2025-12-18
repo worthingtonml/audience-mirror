@@ -46,3 +46,5 @@ anthropic
 openai
 httpx
 aiofiles
+sqlalchemy
+alembic
