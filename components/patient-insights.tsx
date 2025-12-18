@@ -558,7 +558,7 @@ export default function PatientInsights() {
           <p className="text-[#64748B] text-sm mb-6">{error}</p>
           <button
             onClick={() => (window.location.href = '/')}
-            className="bg-[#5A67D8] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#3730A3] transition-colors"
+            className="bg-[#5A67D8] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#2E4BC6] transition-colors"
           >
             Upload New Data
           </button>
@@ -571,7 +571,7 @@ export default function PatientInsights() {
     return (
       <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#CBD5E1] border-t-[#4338CA] mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#CBD5E1] border-t-[#3D5BD9] mx-auto mb-4" />
           <div className="text-sm font-medium text-[#1A202C] mb-1">
             Analyzing your data
           </div>
@@ -690,7 +690,7 @@ export default function PatientInsights() {
               </h1>
               <p className="text-xs md:text-sm text-[#9CA3AF] mt-1 flex items-center gap-2">
                 <span>{patientCount} {terms.customers} analyzed</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#4338CA]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF2FF] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#3D5BD9]">
                   <Clock className="h-3 w-3" />
                   {getSeasonalCopy(season).timing}
                 </span>
@@ -700,7 +700,7 @@ export default function PatientInsights() {
             <select
               value={vertical}
               onChange={(e) => setVertical(e.target.value)}
-              className="px-3 py-2 text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg focus:ring-[#4338CA] focus:border-[#4338CA]"
+              className="px-3 py-2 text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg focus:ring-[#3D5BD9] focus:border-[#3D5BD9]"
             >
               <option value="medspa">Aesthetics</option>
               <option value="real_estate_mortgage">Real Estate / Mortgage</option>
@@ -715,7 +715,7 @@ export default function PatientInsights() {
                   disabled={isFiltering}
                   className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg hover:bg-[#F3F4FF] disabled:opacity-50 transition-colors shadow-sm"
                 >
-                  <Target className="h-4 w-4 text-[#4338CA]" />
+                  <Target className="h-4 w-4 text-[#3D5BD9]" />
                   {procedureDisplayText}
                   <ChevronDown className="h-4 w-4 text-[#9CA3AF]" />
                 </button>
@@ -736,7 +736,7 @@ export default function PatientInsights() {
                           type="checkbox"
                           checked={selectedProcedures.includes('all')}
                           onChange={() => toggleProcedure('all')}
-                          className="rounded border-[#CBD5E1] text-[#4338CA] focus:ring-[#4338CA]"
+                          className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
                         />
                         <span className="text-sm text-[#111827]">
                           All Procedures
@@ -751,7 +751,7 @@ export default function PatientInsights() {
                             type="checkbox"
                             checked={selectedProcedures.includes(proc)}
                             onChange={() => toggleProcedure(proc)}
-                            className="rounded border-[#CBD5E1] text-[#4338CA] focus:ring-[#4338CA]"
+                            className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
                           />
                           <span className="text-sm text-[#111827] capitalize">
                             {proc}
@@ -769,7 +769,7 @@ export default function PatientInsights() {
                       <button
                         onClick={applyProcedureFilter}
                         disabled={isFiltering}
-                        className="px-3 py-1.5 text-xs font-semibold text-white bg-[#4338CA] rounded-lg hover:bg-[#3730A3] disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs font-semibold text-white bg-[#3D5BD9] rounded-lg hover:bg-[#2E4BC6] disabled:opacity-50"
                       >
                         {isFiltering ? 'Applying…' : 'Apply filter'}
                       </button>
@@ -790,7 +790,7 @@ export default function PatientInsights() {
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
           {/* HERO CARD */}
           <section>
-            <div className="bg-gradient-to-r from-[#4F46E5] via-[#6366F1] to-[#8B5CF6] rounded-2xl p-8 md:p-10 shadow-lg">
+            <div className="bg-gradient-to-r from-[#4361EE] via-[#5A7FF2] to-[#7B93F5] rounded-2xl p-8 md:p-10 shadow-lg">
               {/* Top row: Label */}
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-200 mb-2">
                 {terms.bestCustomers}
@@ -1042,7 +1042,7 @@ export default function PatientInsights() {
 
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Primary Play - Protect what's working */}
-                <div className="bg-gradient-to-br from-[#4338CA] to-[#3730A3] rounded-2xl p-6 md:p-8 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-[#3D5BD9] to-[#2E4BC6] rounded-2xl p-6 md:p-8 text-white shadow-lg">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-[10px] font-semibold uppercase tracking-[0.12em] mb-5">
                     <span className="h-1.5 w-1.5 rounded-full bg-white" />
                     Protect what's working
@@ -1062,7 +1062,7 @@ export default function PatientInsights() {
                   <button
                     onClick={generateCampaign}
                     disabled={selectedCount === 0}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#4338CA] text-sm font-semibold shadow-md hover:bg-indigo-50 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#3D5BD9] text-sm font-semibold shadow-md hover:bg-indigo-50 transition-colors disabled:opacity-50"
                   >
                     {(churnData?.at_risk_percent || 0) > 30 ? 'Send thank-you offer' : 'Launch referral program'}
                     <ArrowRight className="h-4 w-4" />
@@ -1294,7 +1294,7 @@ export default function PatientInsights() {
                       }
                     }}
                     disabled={selectedCount === 0}
-                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#4338CA] text-white text-sm md:text-base font-semibold shadow-md hover:bg-[#3730A3] transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#3D5BD9] text-white text-sm md:text-base font-semibold shadow-md hover:bg-[#2E4BC6] transition-colors disabled:opacity-50"
                   >
                     Get call list + scripts
                     <ArrowRight className="h-4 w-4" />
@@ -1699,7 +1699,7 @@ export default function PatientInsights() {
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-2">
                         Full Strategy Potential
                       </div>
-                      <div className="text-2xl font-semibold text-[#4338CA] mb-1">
+                      <div className="text-2xl font-semibold text-[#3D5BD9] mb-1">
                         ${Math.round((totalRevenue * 1.52) / 1000)}K
                       </div>
                       <p className="text-sm text-[#6B7280]">
@@ -1724,7 +1724,7 @@ export default function PatientInsights() {
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
-                            className="bg-[#4338CA] h-2 rounded-full"
+                            className="bg-[#3D5BD9] h-2 rounded-full"
                             style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Injectable Treatments"] || 0}%` }}
                           ></div>
                         </div>
@@ -1740,7 +1740,7 @@ export default function PatientInsights() {
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
-                            className="bg-[#4338CA] h-2 rounded-full"
+                            className="bg-[#3D5BD9] h-2 rounded-full"
                             style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Laser & Energy"] || 0}%` }}
                           ></div>
                         </div>
@@ -1756,7 +1756,7 @@ export default function PatientInsights() {
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
-                            className="bg-[#4338CA] h-2 rounded-full"
+                            className="bg-[#3D5BD9] h-2 rounded-full"
                             style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Skincare & Other"] || 0}%` }}
                           ></div>
                         </div>
@@ -1842,7 +1842,7 @@ export default function PatientInsights() {
                                   setShowWinbackModal(true);
                                 }
                               }}
-                              className="mt-3 w-full px-4 py-2 bg-[#4338CA] text-white text-xs font-semibold rounded-lg hover:bg-[#3730A3] transition-colors"
+                              className="mt-3 w-full px-4 py-2 bg-[#3D5BD9] text-white text-xs font-semibold rounded-lg hover:bg-[#2E4BC6] transition-colors"
                             >
                               Launch Win-Back Campaign ({churnData.high_risk_patients.length} {terms.customers})
                             </button>
@@ -1906,7 +1906,7 @@ export default function PatientInsights() {
                                 });
                                 setSelectedZips(next);
                               }}
-                              className="rounded border-[#CBD5E1] text-[#4338CA] focus:ring-[#4338CA]"
+                              className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
                             />
                           </th>
                           <th className="text-left py-3 px-6">ZIP</th>
@@ -1928,7 +1928,7 @@ export default function PatientInsights() {
                                 type="checkbox"
                                 checked={selectedZips[seg.zip] || false}
                                 onChange={() => toggleZip(seg.zip)}
-                                className="rounded border-[#CBD5E1] text-[#4338CA] focus:ring-[#4338CA]"
+                                className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
                               />
                             </td>
                             <td className="py-3 px-6 font-medium text-[#111827]">
@@ -1940,7 +1940,7 @@ export default function PatientInsights() {
                                 {seg.distance_miles.toFixed(1)} mi
                               </span>
                             </td>
-                            <td className="py-3 px-6 text-right font-semibold text-[#4338CA]">
+                            <td className="py-3 px-6 text-right font-semibold text-[#3D5BD9]">
                               {seg.expected_bookings}
                             </td>
                             <td className="py-3 px-6 text-right font-semibold text-[#111827]">
@@ -1986,7 +1986,7 @@ export default function PatientInsights() {
                                 });
                                 setSelectedZips(next);
                               }}
-                              className="rounded border-[#CBD5E1] text-[#4338CA] focus:ring-[#4338CA]"
+                              className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
                             />
                           </th>
                           <th className="text-left py-3 px-6">ZIP</th>
@@ -2008,7 +2008,7 @@ export default function PatientInsights() {
                                 type="checkbox"
                                 checked={selectedZips[seg.zip] || false}
                                 onChange={() => toggleZip(seg.zip)}
-                                className="rounded border-[#CBD5E1] text-[#4338CA] focus:ring-[#4338CA]"
+                                className="rounded border-[#CBD5E1] text-[#3D5BD9] focus:ring-[#3D5BD9]"
                               />
                             </td>
                             <td className="py-3 px-6 font-medium text-[#111827]">
@@ -2020,7 +2020,7 @@ export default function PatientInsights() {
                                 {seg.distance_miles.toFixed(1)} mi
                               </span>
                             </td>
-                            <td className="py-3 px-6 text-right font-semibold text-[#4338CA]">
+                            <td className="py-3 px-6 text-right font-semibold text-[#3D5BD9]">
                               {seg.expected_bookings}
                             </td>
                             <td className="py-3 px-6 text-right font-semibold text-[#111827]">
@@ -2108,7 +2108,7 @@ export default function PatientInsights() {
               <button
                 onClick={generateCampaign}
                 disabled={selectedCount === 0}
-                className="w-full px-10 py-4 text-base md:text-lg font-semibold text-white bg-[#4338CA] rounded-xl hover:bg-[#3730A3] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg transition-colors"
+                className="w-full px-10 py-4 text-base md:text-lg font-semibold text-white bg-[#3D5BD9] rounded-xl hover:bg-[#2E4BC6] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg transition-colors"
               >
                 Generate campaign
                 <ArrowRight className="h-5 w-5" />
