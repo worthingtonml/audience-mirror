@@ -3573,6 +3573,377 @@ async def analyze_segment_churn(
     }
 
 
+# ============================================================================
+# SEGMENT INSIGHTS WITH LLM INTERPRETATION
+# ============================================================================
+
+async def generate_segment_insight_llm(segment_type: str, stats: dict, procedures: list, cta_action: str) -> str:
+    """
+    Generate insight copy for patient segment cards.
+    Follows the behavioral truth → risk/opportunity → action bridge pattern.
+    CTA action must be explicitly referenced in the copy.
+    """
+    procedure_list = ", ".join(procedures[:3]) if procedures else "various treatments"
+    
+    # System prompt with the full pattern
+    system_prompt = """You are generating insight copy for patient segment cards in a patient intelligence dashboard.
+
+Your sole responsibility is to generate the insight copy that appears inside each card.
+
+Core intent:
+- Insight copy must drive action, not just explain data.
+- The copy should feel like a smart, trusted friend advising a medspa owner: calm, human, sharp, practical.
+- The insight and the CTA are a single thought — the copy must naturally lead into the CTA action.
+
+Hard rule:
+Every insight MUST explicitly reference the CTA action using the same verb or an unmistakable synonym.
+If the action is not clear from the copy alone, rewrite.
+
+Insight copy pattern (must follow in order):
+1) Behavioral truth - Explain what's really happening beneath the data (habits, trust, timing, friction). One sentence. No stats. No jargon.
+2) Risk or opportunity framing - Why this matters now (momentum, drift, trust decay, missed follow-up). Calm urgency only.
+3) Action bridge - Name the CTA action in human language and explain what it unlocks. This should make the CTA feel inevitable.
+
+Rules:
+- 2-3 sentences total, max.
+- Do NOT restate raw stats as prose.
+- Do NOT use instructional language ("you should", "best practice").
+- Do NOT use corporate or marketing jargon.
+- Specific actions beat abstract advice.
+
+Quality check:
+- If I hide the CTA button, is the action still obvious from the copy?
+- Does this sound natural if said out loud to a practice owner?
+- Does this explain why the behavior exists, not just what happened?"""
+
+    prompts = {
+        "high_frequency": f"""Segment: HIGH-FREQUENCY PATIENTS (visit 4+ times/year)
+Context: {stats.get('count', 0)} patients, ${stats.get('avg_ltv', 0):,.0f} avg LTV, {stats.get('multiplier', 2.4):.1f}x more revenue than average
+Top procedures: {procedure_list}
+CTA action: {cta_action}
+
+Write the insight copy. Reference "{cta_action}" explicitly in the action bridge.""",
+
+        "referrers": f"""Segment: REFERRAL CHAMPIONS (have referred others before)
+Context: ~{stats.get('count', 0)} patients, ${stats.get('avg_referral_value', 1850):,.0f} avg referral value, {stats.get('conversion_rate', 73)}% conversion
+CTA action: {cta_action}
+
+Write the insight copy. Reference "{cta_action}" explicitly in the action bridge.""",
+
+        "one_and_done": f"""Segment: ONE-AND-DONE PATIENTS (tried once, never returned)
+Context: {stats.get('count', 0)} patients, ${stats.get('potential_ltv', 0):,.0f} lost potential, ~{stats.get('avg_days_since', 90):.0f} days since visit
+Common first procedure: {procedure_list}
+CTA action: {cta_action}
+
+Write the insight copy. Reference "{cta_action}" explicitly in the action bridge.""",
+
+        "lapsed_regulars": f"""Segment: LAPSED REGULARS (former regulars, 4+ months inactive)
+Context: {stats.get('count', 0)} patients, ${stats.get('revenue_at_risk', 0):,.0f} at risk, {stats.get('avg_prev_visits', 3.2):.1f} avg previous visits
+CTA action: {cta_action}
+
+Write the insight copy. Reference "{cta_action}" explicitly in the action bridge."""
+    }
+    
+    # Fallbacks using variant A from the approved copy
+    fallbacks = {
+        "high_frequency": "They figured out what works and built you into their routine. The risk is they start feeling like just another appointment. A VIP reward reminds them they're not — and keeps future visits locked in.",
+        "referrers": "They talk about you without being asked — that's your strongest signal. Without structure, word of mouth stays inconsistent. A referral program gives them a reason to do it more.",
+        "one_and_done": "They came in curious but left without a clear next step. The window to re-engage is 30–60 days — after that, they've moved on. A win-back text surfaces what held them back.",
+        "lapsed_regulars": "They were consistent, then stopped — something changed. After 6 months, win-back rates collapse. Personal outreach finds out what happened and often reopens the door."
+    }
+    
+    prompt = prompts.get(segment_type, "")
+    if not prompt:
+        return fallbacks.get(segment_type, "No insight available.")
+    
+    try:
+        full_prompt = f"{system_prompt}\n\n{prompt}"
+        response = await llm_service.generate(full_prompt, max_tokens=200)
+        
+        # Validate that CTA action is referenced in response
+        cta_keywords = cta_action.lower().split()
+        response_lower = response.lower() if response else ""
+        
+        # Check if at least one significant word from CTA appears
+        has_cta_reference = any(keyword in response_lower for keyword in cta_keywords if len(keyword) > 3)
+        
+        if response and has_cta_reference:
+            return response.strip()
+        else:
+            # LLM didn't follow the pattern, use fallback
+            print(f"[LLM] Response didn't reference CTA '{cta_action}', using fallback")
+            return fallbacks.get(segment_type, "Analysis pending.")
+            
+    except Exception as e:
+        print(f"[LLM ERROR] Failed to generate insight for {segment_type}: {e}")
+        return fallbacks.get(segment_type, "Insight generation temporarily unavailable.")
+
+
+def compute_segment_details(df: pd.DataFrame, segment_type: str) -> dict:
+    """
+    Compute detailed stats for a specific segment.
+    Returns stats dict + patient list.
+    """
+    result = {
+        "count": 0,
+        "patients": [],
+        "stats": {},
+        "top_procedures": [],
+        "peak_booking": "Tue-Thu, 10am-2pm",  # Default, enhance if time data exists
+        "common_trait": ""
+    }
+    
+    # Get treatments column if exists
+    treatment_col = 'treatments_received' if 'treatments_received' in df.columns else None
+    
+    if segment_type == "high_frequency":
+        # Patients with 4+ visits/year
+        visit_col = 'visits_per_year' if 'visits_per_year' in df.columns else 'visit_count'
+        if visit_col in df.columns:
+            segment_df = df[df[visit_col] >= 4].copy()
+        else:
+            segment_df = pd.DataFrame()
+            
+        if len(segment_df) > 0:
+            avg_ltv = segment_df['total_revenue'].mean() if 'total_revenue' in segment_df.columns else segment_df['revenue'].mean() if 'revenue' in segment_df.columns else 0
+            market_avg = df['total_revenue'].mean() if 'total_revenue' in df.columns else df['revenue'].mean() if 'revenue' in df.columns else 1
+            
+            result["count"] = len(segment_df)
+            result["patients"] = segment_df['patient_id'].tolist()[:100] if 'patient_id' in segment_df.columns else []
+            result["stats"] = {
+                "avg_ltv": avg_ltv,
+                "multiplier": avg_ltv / market_avg if market_avg > 0 else 1,
+                "avg_visits": segment_df[visit_col].mean(),
+                "count": len(segment_df)
+            }
+            result["common_trait"] = "Pre-books next appointment"
+            
+            # Get top procedures
+            if treatment_col and treatment_col in segment_df.columns:
+                all_treatments = segment_df[treatment_col].dropna().str.split(',').explode().str.strip()
+                result["top_procedures"] = all_treatments.value_counts().head(3).index.tolist()
+    
+    elif segment_type == "referrers":
+        # Estimate referrers as ~18% of top patients
+        referral_rate = 0.18
+        top_count = max(1, int(len(df) * 0.2))
+        top_df = df.sort_values('revenue' if 'revenue' in df.columns else 'total_revenue', ascending=False).head(top_count)
+        estimated_count = int(len(top_df) * referral_rate)
+        
+        avg_ltv = top_df['revenue'].mean() if 'revenue' in top_df.columns else 3600
+        
+        result["count"] = estimated_count
+        result["patients"] = top_df['patient_id'].head(estimated_count).tolist() if 'patient_id' in top_df.columns else []
+        result["stats"] = {
+            "count": estimated_count,
+            "avg_referral_value": avg_ltv * 0.5,  # Estimated value per referral
+            "conversion_rate": 73,
+            "avg_ltv": avg_ltv * 1.4  # Referrers typically have higher LTV
+        }
+        result["common_trait"] = "Active on social media"
+        
+        if treatment_col and treatment_col in top_df.columns:
+            all_treatments = top_df[treatment_col].dropna().str.split(',').explode().str.strip()
+            result["top_procedures"] = all_treatments.value_counts().head(3).index.tolist()
+    
+    elif segment_type == "one_and_done":
+        # Single visit, 90+ days ago
+        if 'visit_count' in df.columns and 'days_since_last_visit' in df.columns:
+            segment_df = df[(df['visit_count'] == 1) & (df['days_since_last_visit'] >= 90)].copy()
+        elif 'visit_count' in df.columns:
+            segment_df = df[df['visit_count'] == 1].copy()
+        else:
+            segment_df = pd.DataFrame()
+        
+        if len(segment_df) > 0:
+            avg_spend = segment_df['revenue'].mean() if 'revenue' in segment_df.columns else 320
+            days_since = segment_df['days_since_last_visit'].mean() if 'days_since_last_visit' in segment_df.columns else 120
+            
+            result["count"] = len(segment_df)
+            result["patients"] = segment_df['patient_id'].tolist()[:100] if 'patient_id' in segment_df.columns else []
+            result["stats"] = {
+                "count": len(segment_df),
+                "potential_ltv": len(segment_df) * 500,  # Conservative LTV estimate
+                "avg_first_spend": avg_spend,
+                "avg_days_since": days_since,
+                "win_back_rate": "12-18%"
+            }
+            result["common_trait"] = "No follow-up booked"
+            
+            if treatment_col and treatment_col in segment_df.columns:
+                all_treatments = segment_df[treatment_col].dropna().str.split(',').explode().str.strip()
+                result["top_procedures"] = all_treatments.value_counts().head(3).index.tolist()
+    
+    elif segment_type == "lapsed_regulars":
+        # 3+ visits but 120+ days since last
+        if 'visit_count' in df.columns and 'days_since_last_visit' in df.columns:
+            segment_df = df[(df['visit_count'] >= 3) & (df['days_since_last_visit'] >= 120)].copy()
+        else:
+            segment_df = pd.DataFrame()
+        
+        if len(segment_df) > 0:
+            rev_col = 'total_revenue' if 'total_revenue' in segment_df.columns else 'revenue'
+            revenue_at_risk = segment_df[rev_col].sum() if rev_col in segment_df.columns else len(segment_df) * 2880
+            avg_visits = segment_df['visit_count'].mean()
+            days_since = segment_df['days_since_last_visit'].mean() if 'days_since_last_visit' in segment_df.columns else 150
+            
+            result["count"] = len(segment_df)
+            result["patients"] = segment_df['patient_id'].tolist()[:100] if 'patient_id' in segment_df.columns else []
+            result["stats"] = {
+                "count": len(segment_df),
+                "revenue_at_risk": revenue_at_risk,
+                "avg_prev_visits": avg_visits,
+                "avg_days_since": days_since,
+                "recovery_window": "<6 months optimal"
+            }
+            result["common_trait"] = "Stopped without explanation"
+            
+            if treatment_col and treatment_col in segment_df.columns:
+                all_treatments = segment_df[treatment_col].dropna().str.split(',').explode().str.strip()
+                result["top_procedures"] = all_treatments.value_counts().head(3).index.tolist()
+    
+    return result
+
+
+@app.post("/api/v1/segments/segment-insights")
+@limiter.limit("50/hour")
+async def get_segment_insights(
+    request: fastapi.Request,
+    run_id: str = Form(...),
+    generate_llm: bool = Form(default=True),
+    db: Session = Depends(get_db)
+):
+    """
+    Get detailed segment insights with optional LLM-generated interpretations.
+    Returns everything needed for the 4 insight cards in the frontend.
+    """
+    analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == run_id).first()
+    if not analysis_run or analysis_run.status != "done":
+        raise HTTPException(status_code=404, detail="Run not found or not completed")
+    
+    dataset = db.query(Dataset).filter(Dataset.id == analysis_run.dataset_id).first()
+    if not dataset:
+        raise HTTPException(status_code=404, detail="Dataset not found")
+    
+    # Load and process data
+    df = pd.read_csv(dataset.patients_path)
+    df = normalize_patients_dataframe(df)
+    df = aggregate_visits_to_patients(df)
+    df = segment_patients_by_behavior(df)
+    
+    # Add days_since_last_visit if not present
+    if 'days_since_last_visit' not in df.columns and 'last_visit' in df.columns:
+        df['days_since_last_visit'] = (pd.Timestamp.now() - pd.to_datetime(df['last_visit'], errors='coerce')).dt.days.fillna(365)
+    
+    total_patients = len(df)
+    
+    # Compute details for each segment
+    segments = {
+        "high_frequency": compute_segment_details(df, "high_frequency"),
+        "referrers": compute_segment_details(df, "referrers"),
+        "one_and_done": compute_segment_details(df, "one_and_done"),
+        "lapsed_regulars": compute_segment_details(df, "lapsed_regulars")
+    }
+    
+    # CTA actions for each segment (must match frontend)
+    cta_actions = {
+        "high_frequency": "Send VIP reward",
+        "referrers": "Launch referral program",
+        "one_and_done": "Send win-back text",
+        "lapsed_regulars": "Start personal outreach"
+    }
+    
+    # Generate LLM insights if requested
+    if generate_llm:
+        for seg_type, seg_data in segments.items():
+            if seg_data["count"] > 0:
+                insight = await generate_segment_insight_llm(
+                    seg_type, 
+                    seg_data["stats"], 
+                    seg_data["top_procedures"],
+                    cta_actions.get(seg_type, "Take action")
+                )
+                seg_data["llm_insight"] = insight
+            else:
+                seg_data["llm_insight"] = "No patients in this segment."
+    
+    # Calculate overall market averages for comparison
+    avg_ltv = df['revenue'].mean() if 'revenue' in df.columns else 0
+    avg_visits = df['visit_count'].mean() if 'visit_count' in df.columns else 1
+    
+    return {
+        "success": True,
+        "run_id": run_id,
+        "total_patients": total_patients,
+        "market_averages": {
+            "avg_ltv": round(avg_ltv, 2),
+            "avg_visits": round(avg_visits, 1)
+        },
+        "segments": {
+            "whats_working": [
+                {
+                    "id": "high_frequency",
+                    "title": "High-frequency patients",
+                    "count": segments["high_frequency"]["count"],
+                    "patient_ids": segments["high_frequency"]["patients"][:20],  # Limit for response size
+                    "total_patient_count": len(segments["high_frequency"]["patients"]),
+                    "insight": segments["high_frequency"].get("llm_insight", ""),
+                    "stats": segments["high_frequency"]["stats"],
+                    "top_procedures": segments["high_frequency"]["top_procedures"],
+                    "peak_booking": segments["high_frequency"]["peak_booking"],
+                    "common_trait": segments["high_frequency"]["common_trait"],
+                    "cta": "Send VIP reward",
+                    "action": "vip-reward"
+                },
+                {
+                    "id": "referrers",
+                    "title": "Referral champions",
+                    "count": segments["referrers"]["count"],
+                    "patient_ids": segments["referrers"]["patients"][:20],
+                    "total_patient_count": len(segments["referrers"]["patients"]),
+                    "insight": segments["referrers"].get("llm_insight", ""),
+                    "stats": segments["referrers"]["stats"],
+                    "top_procedures": segments["referrers"]["top_procedures"],
+                    "peak_booking": segments["referrers"]["peak_booking"],
+                    "common_trait": segments["referrers"]["common_trait"],
+                    "cta": "Launch referral program",
+                    "action": "referral-program"
+                }
+            ],
+            "leaking_value": [
+                {
+                    "id": "one_and_done",
+                    "title": "One-and-done patients",
+                    "count": segments["one_and_done"]["count"],
+                    "patient_ids": segments["one_and_done"]["patients"][:20],
+                    "total_patient_count": len(segments["one_and_done"]["patients"]),
+                    "insight": segments["one_and_done"].get("llm_insight", ""),
+                    "stats": segments["one_and_done"]["stats"],
+                    "top_procedures": segments["one_and_done"]["top_procedures"],
+                    "peak_booking": segments["one_and_done"]["peak_booking"],
+                    "common_trait": segments["one_and_done"]["common_trait"],
+                    "cta": "Send win-back text",
+                    "action": "win-back"
+                },
+                {
+                    "id": "lapsed_regulars",
+                    "title": "Lapsed regulars",
+                    "count": segments["lapsed_regulars"]["count"],
+                    "patient_ids": segments["lapsed_regulars"]["patients"][:20],
+                    "total_patient_count": len(segments["lapsed_regulars"]["patients"]),
+                    "insight": segments["lapsed_regulars"].get("llm_insight", ""),
+                    "stats": segments["lapsed_regulars"]["stats"],
+                    "top_procedures": segments["lapsed_regulars"]["top_procedures"],
+                    "peak_booking": segments["lapsed_regulars"]["peak_booking"],
+                    "common_trait": segments["lapsed_regulars"]["common_trait"],
+                    "cta": "Start personal outreach",
+                    "action": "personal-outreach"
+                }
+            ]
+        }
+    }
+
+
 @app.post("/api/v1/segments/behavior-patterns")
 @limiter.limit("100/hour")
 async def analyze_behavior_patterns(
