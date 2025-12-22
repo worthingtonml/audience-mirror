@@ -3176,6 +3176,8 @@ async def mark_patients_returned(
         db.commit()
         return {"success": True}
     
+    
+    
     return {"success": False, "error": "Patient not found in outreach list"}
 
 
@@ -3463,6 +3465,176 @@ async def track_script_usage(
         db.commit()
     
     return {"success": True}
+
+# ============================================================================
+# ACQUISITION CAMPAIGN ENDPOINTS
+# ============================================================================
+
+@app.get("/api/segments/{segment_id}/acquisition-summary")
+async def get_acquisition_summary(segment_id: str, db: Session = Depends(get_db)):
+    """Get segment summary for acquisition campaign page."""
+    analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == segment_id).first()
+    
+    if not analysis_run:
+        return {
+            "segmentId": segment_id,
+            "segmentLabel": "VIP patients",
+            "neighborhoods": ["Local Area"],
+            "procedures": ["All Procedures"],
+            "cohort": "Comfort Spenders",
+            "patientCount": 50,
+            "avgLtv": 850,
+            "avgAge": 42,
+            "avgVisitsPerYear": 3.2,
+            "avgIncome": 95000,
+            "profileLabel": "VIP",
+        }
+    
+    dominant_profile_data = getattr(analysis_run, 'dominant_profile', None)
+    if isinstance(dominant_profile_data, str):
+        try:
+            dominant_profile_data = json.loads(dominant_profile_data)
+        except:
+            dominant_profile_data = {}
+    if not dominant_profile_data:
+        dominant_profile_data = {}
+    
+    demographics = dominant_profile_data.get("dominant_profile", {})
+    behavior = dominant_profile_data.get("behavior_patterns", {})
+    
+    top_segments = analysis_run.top_segments
+    if isinstance(top_segments, str):
+        try:
+            top_segments = json.loads(top_segments)
+        except:
+            top_segments = []
+    
+    neighborhoods = []
+    if top_segments:
+        for seg in top_segments[:5]:
+            zip_code = seg.get("zip_code", "")
+            if zip_code and zip_code not in neighborhoods:
+                neighborhoods.append(zip_code)
+    if not neighborhoods:
+        neighborhoods = ["Local Area"]
+    
+    procedures = [analysis_run.procedure] if analysis_run.procedure and analysis_run.procedure != "all" else ["All Procedures"]
+    
+    return {
+        "segmentId": segment_id,
+        "segmentLabel": f"{dominant_profile_data.get('cohort_descriptor', {}).get('label', 'VIP')} patients",
+        "neighborhoods": neighborhoods,
+        "procedures": procedures,
+        "cohort": demographics.get("combined", "Comfort Spenders"),
+        "patientCount": dominant_profile_data.get("segment_patient_count", getattr(analysis_run, 'patient_count', 50)),
+        "avgLtv": behavior.get("avg_lifetime_value", 850),
+        "avgAge": demographics.get("age", 42),
+        "avgVisitsPerYear": behavior.get("avg_visits_per_year", 3.2),
+        "avgIncome": demographics.get("income", 95000),
+        "profileLabel": dominant_profile_data.get("cohort_descriptor", {}).get("label", "VIP"),
+    }
+
+
+@app.get("/api/acquisition/{segment_id}/projection")
+async def get_acquisition_projection(segment_id: str, db: Session = Depends(get_db)):
+    """Get projected new patient revenue."""
+    analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == segment_id).first()
+    
+    avg_ltv = 850
+    patient_count = 50
+    
+    if analysis_run:
+        dominant_profile_data = getattr(analysis_run, 'dominant_profile', None)
+        if isinstance(dominant_profile_data, str):
+            try:
+                dominant_profile_data = json.loads(dominant_profile_data)
+            except:
+                dominant_profile_data = {}
+        if dominant_profile_data:
+            behavior = dominant_profile_data.get("behavior_patterns", {})
+            avg_ltv = behavior.get("avg_lifetime_value", 850)
+            patient_count = dominant_profile_data.get("segment_patient_count", 50)
+    
+    projected_new_patients = max(5, min(20, int(patient_count * 0.15)))
+    projected_revenue = projected_new_patients * avg_ltv
+    projected_ad_spend = int(projected_revenue * 0.12)
+    return_multiple = projected_revenue / projected_ad_spend if projected_ad_spend > 0 else 0
+    
+    return {
+        "projectedRevenueMonthly": projected_revenue,
+        "projectedNewPatientsMonthly": projected_new_patients,
+        "projectedAdSpendMonthly": projected_ad_spend,
+        "projectedReturnMultiple": round(return_multiple, 1),
+    }
+
+
+@app.get("/api/acquisition/{segment_id}/channels")
+async def get_acquisition_channels(segment_id: str, db: Session = Depends(get_db)):
+    """Get recommended channel mix."""
+    projection = await get_acquisition_projection(segment_id, db)
+    monthly_spend = projection["projectedAdSpendMonthly"]
+    daily_total = monthly_spend / 30
+    
+    return [
+        {
+            "id": "facebook",
+            "label": "Facebook Ads",
+            "role": "New VIP patient acquisition",
+            "budgetSharePercent": 45,
+            "dailyBudget": round(daily_total * 0.45),
+            "description": "Reach VIP-like adults in your target neighborhoods.",
+        },
+        {
+            "id": "instagram",
+            "label": "Instagram Ads",
+            "role": "Visual proof & brand building",
+            "budgetSharePercent": 35,
+            "dailyBudget": round(daily_total * 0.35),
+            "description": "Show real results and behind-the-scenes visuals.",
+        },
+        {
+            "id": "google",
+            "label": "Google Search",
+            "role": "High-intent local searches",
+            "budgetSharePercent": 20,
+            "dailyBudget": round(daily_total * 0.20),
+            "description": "Capture high-intent searches before competitors.",
+        },
+    ]
+
+
+@app.post("/api/acquisition/{segment_id}/channels/{channel_id}/generate")
+async def generate_acquisition_ad_content(segment_id: str, channel_id: str, db: Session = Depends(get_db)):
+    """Generate ad copy for a channel."""
+    summary = await get_acquisition_summary(segment_id, db)
+    targeting_focus = f"Ages 25–54 · Income ${int(summary['avgIncome']/1000)}K+ · {', '.join(summary['neighborhoods'][:3])}"
+    
+    return {
+        "strategy": f"Reach {summary['cohort']} patients through targeted ads in {', '.join(summary['neighborhoods'][:3])}.",
+        "targetingFocus": targeting_focus,
+        "adCopy": [
+            {"headline": "Expert Care in Your Neighborhood", "description": "Premium treatments from experienced specialists. Book your free consultation today."},
+            {"headline": "Results That Speak for Themselves", "description": "Join hundreds of satisfied patients. Personalized plans designed around your goals."},
+            {"headline": "Your Transformation Starts Here", "description": "Trusted by local VIP clients. Schedule your consultation and discover the difference."},
+        ],
+        "brief": f"This campaign targets {summary['cohort']} patients in {', '.join(summary['neighborhoods'][:3])}. Focus on premium service and proven results.",
+    }
+
+
+@app.get("/api/acquisition/{segment_id}/export")
+async def export_acquisition_plan(segment_id: str, db: Session = Depends(get_db)):
+    """Export campaign plan as JSON."""
+    summary = await get_acquisition_summary(segment_id, db)
+    projection = await get_acquisition_projection(segment_id, db)
+    channels = await get_acquisition_channels(segment_id, db)
+    
+    return {
+        "exportedAt": datetime.now().isoformat(),
+        "segmentId": segment_id,
+        "summary": summary,
+        "projection": projection,
+        "channels": channels,
+    }
 
 @app.get("/api/v1/runs/{run_id}/export-patients")
 async def export_labeled_patients(
