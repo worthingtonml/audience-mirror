@@ -3464,6 +3464,189 @@ async def track_script_usage(
     
     return {"success": True}
 
+
+@app.post("/api/v1/generate-outreach-copy")
+async def generate_outreach_copy(
+    segment: str = Form(...),
+    patient_count: int = Form(10),
+    avg_ltv: float = Form(None),
+    avg_visits: float = Form(None),
+    top_procedures: str = Form(None),
+    days_since_visit: int = Form(None),
+    clinic_name: str = Form("[Your Clinic Name]"),
+):
+    """
+    Generate personalized outreach copy (email + SMS) for a patient segment.
+    Uses human-first, non-creepy approach per Audience Mirror guidelines.
+    """
+    
+    # System prompt - human-first, non-creepy copy
+    system_prompt = """You are generating outreach copy for Audience Mirror, a client intelligence platform used for personalized human outreach (SMS, email).
+
+Your highest priority is to ensure that all messaging sounds human, observant, and thoughtful — never automated, analytical, or creepy.
+
+Non-Negotiable Principle: Personalization must feel like recognition, not surveillance.
+The recipient should think: "They remember me."
+They must never think: "They analyzed me."
+
+Tone & Voice Constraints:
+- Write like a real person who knows the relationship
+- Use natural language, not marketing copy or CRM language
+- Avoid corporate phrases, buzzwords, or "customer appreciation" clichés
+- Keep messages warm, calm, and conversational
+- Never sound impressed by your own data
+
+Personalization Rules:
+Use implied specificity, not explicit metrics.
+Preferred phrasing: "a few times", "fairly regularly", "it's been a little while", "earlier this year", "we were thinking about you"
+
+Hard Bans - NEVER use:
+- "Based on our data…"
+- "Our system flagged…"
+- "According to our records…"
+- "You are one of our most valued clients"
+- "We noticed you haven't…"
+- "You are overdue"
+- Any exact dollar amounts, visit counts, dates, percentiles, or scores
+- Any phrasing that implies monitoring, tracking, or scoring
+
+Channel-Specific:
+- SMS: Short, one idea, highly conversational, reads like a quick personal note (under 160 chars)
+- Email: Slightly more context allowed, still conversational, no metrics, no marketing language
+
+Return ONLY valid JSON with this exact structure:
+{
+  "email_subject": "short, warm subject line",
+  "email_body": "full email body with [Patient Name] and clinic name placeholders",
+  "sms": "under 160 characters, conversational"
+}"""
+
+    # Build context based on segment type
+    segment_contexts = {
+        "high-frequency": {
+            "type": "VIP / Gratitude",
+            "goal": "Thank them and offer a reward to keep them engaged",
+            "tone": "warm, appreciative, calm",
+            "context": "These are loyal, regular patients who visit frequently. Focus on appreciation and continuity. Never mention absence."
+        },
+        "referrers": {
+            "type": "Referral Program Invite",
+            "goal": "Invite them to a referral program since they naturally recommend you",
+            "tone": "appreciative, excited but not pushy",
+            "context": "These patients have referred others before. Acknowledge their support naturally without being over-the-top."
+        },
+        "one-and-done": {
+            "type": "Win-Back / Re-engagement",
+            "goal": "Gently check in and invite them back with a soft offer",
+            "tone": "gentle, curious, low-pressure",
+            "context": "These patients visited once but haven't returned. Use curiosity and care, not guilt. Sound like a natural check-in."
+        },
+        "lapsed-regulars": {
+            "type": "Win-Back / Personal Outreach",
+            "goal": "Reconnect with someone who used to be regular but stopped coming",
+            "tone": "warm, personal, genuinely caring",
+            "context": "These were consistent patients who stopped. Something changed. Reach out like you're checking on a friend."
+        }
+    }
+    
+    seg_info = segment_contexts.get(segment, segment_contexts["one-and-done"])
+    
+    # Build the user prompt with available data
+    data_context = []
+    if avg_visits and avg_visits > 3:
+        data_context.append("they've been fairly regular visitors")
+    if top_procedures:
+        procs = top_procedures.split(",")[:2]
+        data_context.append(f"they typically come in for {' and '.join(procs)}")
+    if days_since_visit and days_since_visit > 120:
+        data_context.append("it's been a little while since their last visit")
+    elif days_since_visit and days_since_visit > 60:
+        data_context.append("they visited not too long ago")
+    
+    data_hint = ""
+    if data_context:
+        data_hint = f"\n\nContext you can subtly incorporate (but never state explicitly): {'; '.join(data_context)}."
+    
+    user_prompt = f"""Generate outreach copy for this segment:
+
+Segment type: {seg_info['type']}
+Goal: {seg_info['goal']}
+Tone: {seg_info['tone']}
+Context: {seg_info['context']}
+
+Clinic name to use: {clinic_name}
+Number of patients: {patient_count}{data_hint}
+
+Remember:
+- Use [Patient Name] as placeholder
+- Email should be 3-5 sentences, warm and personal
+- SMS must be under 160 characters
+- No metrics, no "valued customer" language, no guilt trips
+- Sound like a real person who genuinely cares"""
+
+    try:
+        response = await llm_service.generate(
+            user_prompt, 
+            max_tokens=800,
+            system_prompt=system_prompt
+        )
+        
+        # Parse JSON response
+        # Clean up response if it has markdown code blocks
+        clean_response = response.strip()
+        if clean_response.startswith("```"):
+            clean_response = clean_response.split("```")[1]
+            if clean_response.startswith("json"):
+                clean_response = clean_response[4:]
+        clean_response = clean_response.strip()
+        
+        result = json.loads(clean_response)
+        
+        return {
+            "success": True,
+            "segment": segment,
+            "email_subject": result.get("email_subject", "Quick note from us"),
+            "email_body": result.get("email_body", ""),
+            "sms": result.get("sms", ""),
+        }
+        
+    except Exception as e:
+        # Fallback to safe, human-sounding defaults
+        fallbacks = {
+            "high-frequency": {
+                "email_subject": f"A little thank you from {clinic_name}",
+                "email_body": f"Hi [Patient Name],\n\nJust wanted to drop a quick note to say thank you. We really appreciate you, and it's always great to see you.\n\nAs a small token of appreciation, we'd love to offer you something special on your next visit — just mention this email when you book.\n\nHope to see you soon!\n\nWarmly,\nThe {clinic_name} Team",
+                "sms": f"Hi [Patient Name]! Just a quick thank you from {clinic_name} 💙 We have a little something for you next time you're in. See you soon!"
+            },
+            "referrers": {
+                "email_subject": f"You've been so helpful — thank you!",
+                "email_body": f"Hi [Patient Name],\n\nWe just wanted to reach out and say thanks. You've sent some wonderful people our way, and we're so grateful.\n\nWe're putting together a little referral program to make it easier to share — and to thank you properly when you do. Would love to tell you more about it.\n\nThanks again for thinking of us!\n\nWarmly,\nThe {clinic_name} Team",
+                "sms": f"Hi [Patient Name]! Thanks for spreading the word about us 🙏 We're starting a referral program — want the details? Just reply!"
+            },
+            "one-and-done": {
+                "email_subject": "Hey, how's everything going?",
+                "email_body": f"Hi [Patient Name],\n\nHope you're doing well! We were thinking about you and wanted to check in.\n\nIf you ever want to come back in or just have questions about anything, we're here. No pressure at all — just wanted to say hi.\n\nTake care,\nThe {clinic_name} Team",
+                "sms": f"Hi [Patient Name]! Just checking in from {clinic_name}. Hope all is well — we're here if you ever need anything 💙"
+            },
+            "lapsed-regulars": {
+                "email_subject": "Just wanted to check in",
+                "email_body": f"Hi [Patient Name],\n\nIt's been a little while, and we just wanted to reach out and see how you're doing.\n\nNo agenda here — genuinely just checking in. If there's anything we can help with or if you'd like to come back in sometime, we'd love to see you.\n\nHope everything is going well!\n\nWarmly,\nThe {clinic_name} Team",
+                "sms": f"Hi [Patient Name], just wanted to check in and see how you're doing. Hope everything is well — we're here if you need us 💙"
+            }
+        }
+        
+        fallback = fallbacks.get(segment, fallbacks["one-and-done"])
+        
+        return {
+            "success": True,
+            "segment": segment,
+            "email_subject": fallback["email_subject"],
+            "email_body": fallback["email_body"],
+            "sms": fallback["sms"],
+            "source": "fallback"
+        }
+
+
 @app.get("/api/v1/runs/{run_id}/export-patients")
 async def export_labeled_patients(
     run_id: str,

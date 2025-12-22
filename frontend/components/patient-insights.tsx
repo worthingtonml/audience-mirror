@@ -10,6 +10,12 @@ import {
   AlertCircle,
   ChevronDown,
   Info,
+  X,
+  Mail,
+  MessageSquare,
+  Download,
+  Copy,
+  RefreshCw,
 } from 'lucide-react';
 import { useState, useEffect, useRef} from 'react';
 import { useRouter } from 'next/navigation';
@@ -235,6 +241,30 @@ export default function PatientInsights() {
   const [outcomes, setOutcomes] = useState<Record<string, string>>({});
   const [recoveryAnalytics, setRecoveryAnalytics] = useState<any>(null);
   const [behaviorPatterns, setBehaviorPatterns] = useState<any>(null);
+  const [expandedInsight, setExpandedInsight] = useState<string | null>(null);
+  const [selectedHighFreq, setSelectedHighFreq] = useState<Set<string>>(new Set());
+  const [selectedReferrers, setSelectedReferrers] = useState<Set<string>>(new Set());
+  const [selectedOneDone, setSelectedOneDone] = useState<Set<string>>(new Set());
+  const [selectedLapsed, setSelectedLapsed] = useState<Set<string>>(new Set());
+  
+  // Retention action modal state
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [actionModalData, setActionModalData] = useState<{
+    segment: string;
+    title: string;
+    count: number;
+    patients: string[];
+    action: string;
+    cta: string;
+  } | null>(null);
+  const [activeMessageTab, setActiveMessageTab] = useState<'email' | 'sms'>('email');
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [dynamicCopy, setDynamicCopy] = useState<{
+    email_subject: string;
+    email_body: string;
+    sms: string;
+  } | null>(null);
+  const [copyLoading, setCopyLoading] = useState(false);
 
 // Fetch recovery analytics
   const fetchRecoveryAnalytics = async () => {
@@ -558,7 +588,7 @@ export default function PatientInsights() {
           <p className="text-[#64748B] text-sm mb-6">{error}</p>
           <button
             onClick={() => (window.location.href = '/')}
-            className="bg-[#5A67D8] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#1A3FA8] transition-colors"
+            className="bg-[#6366f1] text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-[#4f46e5] transition-colors"
           >
             Upload New Data
           </button>
@@ -571,7 +601,7 @@ export default function PatientInsights() {
     return (
       <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#CBD5E1] border-t-[#2251CC] mx-auto mb-4" />
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#CBD5E1] border-t-[#6366f1] mx-auto mb-4" />
           <div className="text-sm font-medium text-[#1A202C] mb-1">
             Analyzing your data
           </div>
@@ -637,6 +667,179 @@ export default function PatientInsights() {
 
   const heroCopy = generateHeroCopy(analysisData, season, isRealEstate);
 
+  // Generate message templates for retention actions
+  const getMessageTemplates = (segment: string, patientCount: number) => {
+    const clinicName = "[Your Clinic Name]";
+    const templates: Record<string, { email: { subject: string; body: string }; sms: string }> = {
+      'high-frequency': {
+        email: {
+          subject: `A special thank you from ${clinicName}`,
+          body: `Hi [Patient Name],
+
+We wanted to take a moment to say thank you. You're one of our most valued patients, and we truly appreciate your continued trust in us.
+
+As a VIP patient, we'd love to offer you an exclusive benefit:
+• 15% off your next treatment
+• Priority booking for new services
+• Complimentary add-on at your next visit
+
+Book your next appointment and mention "VIP reward" to redeem.
+
+We look forward to seeing you soon!
+
+Warm regards,
+${clinicName} Team`
+        },
+        sms: `Hi [Name]! You're a VIP at ${clinicName} 💎 As a thank you, enjoy 15% off your next visit. Book now & mention "VIP reward" to redeem. We appreciate you!`
+      },
+      'referrers': {
+        email: {
+          subject: `Start earning rewards for referrals at ${clinicName}`,
+          body: `Hi [Patient Name],
+
+We noticed you've been sharing the love — thank you! Your referrals mean the world to us.
+
+We're excited to invite you to our new referral program:
+• Give $50 off to friends you refer
+• Get $50 credit for each successful referral
+• Stack rewards with no limit
+
+Simply share your unique link (below) or have friends mention your name when booking.
+
+[Your referral link]
+
+Thank you for being an ambassador for ${clinicName}!
+
+Warm regards,
+${clinicName} Team`
+        },
+        sms: `Hi [Name]! Thanks for spreading the word about ${clinicName} 🙌 New referral program: Give $50, Get $50 for every friend you send our way. Reply YES for your referral link!`
+      },
+      'one-and-done': {
+        email: {
+          subject: `We'd love to see you again at ${clinicName}`,
+          body: `Hi [Patient Name],
+
+We noticed it's been a while since your last visit, and we wanted to check in.
+
+Was there anything about your experience we could improve? We'd genuinely love to hear your feedback.
+
+If you're ready to come back, we'd like to offer you:
+• 20% off your next treatment
+• Complimentary consultation to discuss your goals
+• Flexible scheduling to fit your calendar
+
+Simply reply to this email or call us to book. We'd love the chance to welcome you back.
+
+Warm regards,
+${clinicName} Team`
+        },
+        sms: `Hi [Name], it's ${clinicName}! We miss you 💙 Come back and enjoy 20% off your next visit. Book this week and we'll add a complimentary consultation. Interested?`
+      },
+      'lapsed-regulars': {
+        email: {
+          subject: `[Patient Name], we miss you at ${clinicName}`,
+          body: `Hi [Patient Name],
+
+It's been a while, and we've been thinking about you. You used to be one of our regulars, and we genuinely miss having you here.
+
+We'd love to know — is everything okay? If there's anything we could have done better, we're all ears.
+
+When you're ready to come back, we have a special welcome-back offer just for you:
+• 25% off any treatment
+• Priority scheduling
+• Personal consultation to refresh your treatment plan
+
+Just reply to this email or give us a call. We'd love to catch up.
+
+Missing you,
+${clinicName} Team`
+        },
+        sms: `Hi [Name], we miss seeing you at ${clinicName}! 💙 It's been a while. Everything okay? We'd love to welcome you back with 25% off. Can we schedule a time to chat?`
+      }
+    };
+    return templates[segment] || templates['one-and-done'];
+  };
+
+  // Handle opening the action modal
+  const openActionModal = async (segment: string, title: string, count: number, patients: string[], action: string, cta: string) => {
+    setActionModalData({ segment, title, count, patients, action, cta });
+    setShowActionModal(true);
+    setActiveMessageTab('email');
+    setCopiedField(null);
+    setDynamicCopy(null);
+    setCopyLoading(true);
+    
+    // Fetch dynamic copy from API
+    try {
+      const formData = new FormData();
+      formData.append('segment', segment);
+      formData.append('patient_count', String(count));
+      
+      // Add context from analysis data if available
+      if (analysisData?.behavior_patterns?.avg_lifetime_value) {
+        formData.append('avg_ltv', String(analysisData.behavior_patterns.avg_lifetime_value));
+      }
+      if (analysisData?.behavior_patterns?.avg_visits_per_year) {
+        formData.append('avg_visits', String(analysisData.behavior_patterns.avg_visits_per_year));
+      }
+      if (analysisData?.available_procedures?.length > 0) {
+        formData.append('top_procedures', analysisData.available_procedures.slice(0, 3).join(','));
+      }
+      
+      const response = await fetch(`${API_URL}/api/v1/generate-outreach-copy`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDynamicCopy({
+          email_subject: data.email_subject,
+          email_body: data.email_body,
+          sms: data.sms,
+        });
+      } else {
+        // Fall back to static templates
+        const templates = getMessageTemplates(segment, count);
+        setDynamicCopy({
+          email_subject: templates.email.subject,
+          email_body: templates.email.body,
+          sms: templates.sms,
+        });
+      }
+    } catch (error) {
+      // Fall back to static templates on error
+      const templates = getMessageTemplates(segment, count);
+      setDynamicCopy({
+        email_subject: templates.email.subject,
+        email_body: templates.email.body,
+        sms: templates.sms,
+      });
+    } finally {
+      setCopyLoading(false);
+    }
+  };
+
+  // Handle copy to clipboard
+  const handleCopy = async (text: string, field: string) => {
+    await navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  // Handle CSV export
+  const handleExportCSV = (patients: string[], segmentName: string) => {
+    const csvContent = "Patient ID\n" + patients.join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${segmentName.replace(/\s+/g, '-').toLowerCase()}-patients.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   // Calculate overall risk level from strategic insights
   // Calculate overall risk level from strategic insights
   let overallRiskLevel = { label: 'Analyzing', color: 'bg-[#F3F4F6] text-[#6B7280]', dotColor: 'bg-[#9CA3AF]' };
@@ -690,7 +893,7 @@ export default function PatientInsights() {
               </h1>
               <p className="text-xs md:text-sm text-[#9CA3AF] mt-1 flex items-center gap-2">
                 <span>{patientCount} {terms.customers} analyzed</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#E8F0FE] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#2251CC]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#e0e7ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#6366f1]">
                   <Clock className="h-3 w-3" />
                   {getSeasonalCopy(season).timing}
                 </span>
@@ -700,7 +903,7 @@ export default function PatientInsights() {
             <select
               value={vertical}
               onChange={(e) => setVertical(e.target.value)}
-              className="px-3 py-2 text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg focus:ring-[#2251CC] focus:border-[#2251CC]"
+              className="px-3 py-2 text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg focus:ring-[#6366f1] focus:border-[#6366f1]"
             >
               <option value="medspa">Aesthetics</option>
               <option value="real_estate_mortgage">Real Estate / Mortgage</option>
@@ -713,9 +916,9 @@ export default function PatientInsights() {
                     setShowProcedureDropdown((open) => !open)
                   }
                   disabled={isFiltering}
-                  className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg hover:bg-[#EBF1FE] disabled:opacity-50 transition-colors shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg hover:bg-[#eef2ff] disabled:opacity-50 transition-colors shadow-sm"
                 >
-                  <Target className="h-4 w-4 text-[#2251CC]" />
+                  <Target className="h-4 w-4 text-[#6366f1]" />
                   {procedureDisplayText}
                   <ChevronDown className="h-4 w-4 text-[#9CA3AF]" />
                 </button>
@@ -731,12 +934,12 @@ export default function PatientInsights() {
                       </p>
                     </div>
                     <div className="p-2 max-h-64 overflow-y-auto">
-                      <label className="flex items-center gap-2 px-3 py-2 hover:bg-[#E8F0FE] rounded cursor-pointer">
+                      <label className="flex items-center gap-2 px-3 py-2 hover:bg-[#e0e7ff] rounded cursor-pointer">
                         <input
                           type="checkbox"
                           checked={selectedProcedures.includes('all')}
                           onChange={() => toggleProcedure('all')}
-                          className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
+                          className="rounded border-[#CBD5E1] text-[#6366f1] focus:ring-[#6366f1]"
                         />
                         <span className="text-sm text-[#111827]">
                           All Procedures
@@ -745,13 +948,13 @@ export default function PatientInsights() {
                       {availableProcedures.map((proc) => (
                         <label
                           key={proc}
-                          className="flex items-center gap-2 px-3 py-2 hover:bg-[#E8F0FE] rounded cursor-pointer"
+                          className="flex items-center gap-2 px-3 py-2 hover:bg-[#e0e7ff] rounded cursor-pointer"
                         >
                           <input
                             type="checkbox"
                             checked={selectedProcedures.includes(proc)}
                             onChange={() => toggleProcedure(proc)}
-                            className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
+                            className="rounded border-[#CBD5E1] text-[#6366f1] focus:ring-[#6366f1]"
                           />
                           <span className="text-sm text-[#111827] capitalize">
                             {proc}
@@ -769,7 +972,7 @@ export default function PatientInsights() {
                       <button
                         onClick={applyProcedureFilter}
                         disabled={isFiltering}
-                        className="px-3 py-1.5 text-xs font-semibold text-white bg-[#2251CC] rounded-lg hover:bg-[#1A3FA8] disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs font-semibold text-white bg-[#6366f1] rounded-lg hover:bg-[#4f46e5] disabled:opacity-50"
                       >
                         {isFiltering ? 'Applying…' : 'Apply filter'}
                       </button>
@@ -790,9 +993,9 @@ export default function PatientInsights() {
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
           {/* HERO CARD */}
           <section>
-            <div className="bg-gradient-to-r from-[#2D5BE3] via-[#4169E8] to-[#5B7FED] rounded-2xl p-8 md:p-10 shadow-lg">
+            <div className="bg-gradient-to-r from-[#1e1b4b] via-[#4338ca] to-[#7c3aed] rounded-2xl p-8 md:p-10 shadow-lg">
               {/* Top row: Label */}
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-200 mb-2">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-200 mb-2">
                 {terms.bestCustomers}
               </div>
 
@@ -805,7 +1008,7 @@ export default function PatientInsights() {
               </h1>
 
               {/* Description - profile then problem for mortgage */}
-              <p className="text-sm md:text-base text-blue-100 leading-relaxed max-w-3xl mb-6">
+              <p className="text-sm md:text-base text-indigo-100 leading-relaxed max-w-3xl mb-6">
                 {isMortgage 
                   ? <>Avg <span className="font-semibold text-white">${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K</span> loan size. They close faster and refer more. But <span className="font-semibold text-amber-300">{analysisData?.preapproval_metrics?.stale_count || 0}</span> of them are going cold.</>
                   : `${segmentDescription} They spend $${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit ${(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.`
@@ -818,14 +1021,14 @@ export default function PatientInsights() {
                   <>
                     {/* MORTGAGE METRICS */}
                     <div>
-                      <div className="text-[10px] font-medium text-blue-200 mb-1">Going Cold</div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Going Cold</div>
                       <div className="text-2xl md:text-3xl font-bold text-amber-300">
                         {analysisData?.preapproval_metrics?.stale_count || 0}
                       </div>
-                      <div className="text-[10px] text-blue-200">need outreach</div>
+                      <div className="text-[10px] text-indigo-200">need outreach</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-blue-200 mb-1">Commission at Risk</div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Commission at Risk</div>
                       <div className="text-2xl md:text-3xl font-bold text-red-300">
                         {analysisData?.preapproval_metrics?.commission_at_risk 
                           ? `$${(analysisData.preapproval_metrics.commission_at_risk / 1000).toFixed(0)}K`
@@ -833,28 +1036,28 @@ export default function PatientInsights() {
                           ? `$${(churnData.at_risk_revenue / 1000).toFixed(0)}K`
                           : '—'}
                       </div>
-                      <div className="text-[10px] text-blue-200">if they close elsewhere</div>
+                      <div className="text-[10px] text-indigo-200">if they close elsewhere</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-blue-200 mb-1">Avg Loan Size</div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Loan Size</div>
                       <div className="text-2xl md:text-3xl font-bold text-white">
                         ${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K
                       </div>
-                      <div className="text-[10px] text-blue-200">this segment</div>
+                      <div className="text-[10px] text-indigo-200">this segment</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-blue-200 mb-1">Avg Commission</div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Commission</div>
                       <div className="text-2xl md:text-3xl font-bold text-emerald-300">
                         ${((analysisData?.preapproval_metrics?.avg_commission || 4000) / 1000).toFixed(1)}K
                       </div>
-                      <div className="text-[10px] text-blue-200">per funded loan</div>
+                      <div className="text-[10px] text-indigo-200">per funded loan</div>
                     </div>
                   </>
                 ) : (
                   <>
                     {/* MEDSPA METRICS */}
                     <div>
-                      <div className="text-[10px] font-medium text-blue-200 mb-1">Avg Lifetime Value</div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Lifetime Value</div>
                       <div className="text-2xl md:text-3xl font-bold text-white">
                         {(analysisData?.behavior_patterns?.avg_lifetime_value || 3600) >= 1000 
                           ? `$${((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) / 1000).toFixed(1)}K`
@@ -862,14 +1065,14 @@ export default function PatientInsights() {
                       </div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-blue-200 mb-1">Visit Frequency</div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Visit Frequency</div>
                       <div className="text-2xl md:text-3xl font-bold text-white">
                         {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}×
                       </div>
-                      <div className="text-[10px] text-blue-200">per year</div>
+                      <div className="text-[10px] text-indigo-200">per year</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-blue-200 mb-1">Revenue at Risk</div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Revenue at Risk</div>
                       <div className={`text-2xl md:text-3xl font-bold ${
                         churnData?.at_risk_percent > 25 
                           ? 'text-red-300' 
@@ -879,10 +1082,10 @@ export default function PatientInsights() {
                       }`}>
                         ${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '—'}K
                       </div>
-                      <div className="text-[10px] text-blue-200">from {churnData?.at_risk_count || 0} {terms.customers}</div>
+                      <div className="text-[10px] text-indigo-200">from {churnData?.at_risk_count || 0} {terms.customers}</div>
                     </div>
                     <div>
-                      <div className="text-[10px] font-medium text-blue-200 mb-1">Churn Rate</div>
+                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Churn Rate</div>
                       <div className={`text-2xl md:text-3xl font-bold ${
                         churnData?.at_risk_percent > 25 
                           ? 'text-red-300' 
@@ -892,7 +1095,7 @@ export default function PatientInsights() {
                       }`}>
                         {churnData ? `${churnData.at_risk_percent.toFixed(0)}%` : '—'}
                       </div>
-                      <div className="text-[10px] text-blue-200">at risk</div>
+                      <div className="text-[10px] text-indigo-200">at risk</div>
                     </div>
                   </>
                 )}
@@ -900,10 +1103,10 @@ export default function PatientInsights() {
 
               <div className="h-px bg-white/20 my-6" />
               
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-blue-200 mb-2">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-indigo-200 mb-2">
                 {isMortgage ? 'Protect This Segment' : 'What This Means'}
               </div>
-              <p className="text-sm text-blue-100 leading-relaxed">
+              <p className="text-sm text-indigo-100 leading-relaxed">
                 {isMortgage 
                   ? `These are your best borrowers — high loan amounts, likely to close, likely to refer. But ${analysisData?.preapproval_metrics?.stale_count || 0} of them have gone quiet. That's $${((analysisData?.preapproval_metrics?.commission_at_risk || 0) / 1000).toFixed(0)}K in commission you've already earned the right to. Time to reach out.`
                   : `Your best ${terms.customers} average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} ${terms.visits} per year. ${churnData ? `${churnData.at_risk_percent.toFixed(0)}% haven't returned within their expected visit interval, putting $${((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0)}K in revenue at risk.` : ''}`
@@ -965,17 +1168,232 @@ export default function PatientInsights() {
                         </div>
                       )) || (
                         <>
-                          <div className="bg-white rounded-xl p-5 shadow-sm border border-emerald-100">
-                            <div className="text-sm font-medium text-[#111827] mb-2">High-frequency patients</div>
-                            <p className="text-sm text-[#6B7280] leading-relaxed">
-                              {Math.round(patientCount * 0.15)} patients visit 4+ times a year. <span className="text-emerald-600 font-medium">These are your bread and butter — they spend 2-3x more than average.</span>
+                          {/* High-frequency patients card */}
+                          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200/60">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="text-sm font-semibold text-[#111827]">High-frequency patients</h4>
+                              <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
+                                {Math.round(patientCount * 0.15)} patients
+                              </span>
+                            </div>
+                            
+                            <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
+                              They figured out what works and built you into their routine. The risk is they start feeling like just another appointment. A VIP reward reminds them they're not — and keeps future visits locked in.
                             </p>
+                            
+                            {/* Supporting metrics - plain text */}
+                            <div className="flex gap-6 text-sm mb-4">
+                              <div>
+                                <span className="text-[#9CA3AF]">Avg LTV:</span>{' '}
+                                <span className="text-[#111827] font-medium">${Math.round((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) * 1.5).toLocaleString()}</span>
+                              </div>
+                              <div>
+                                <span className="text-[#9CA3AF]">vs average:</span>{' '}
+                                <span className="text-[#111827] font-medium">+2.4×</span>
+                              </div>
+                            </div>
+
+                            {/* Progressive disclosure accordion */}
+                            <div className="border-t border-gray-100 pt-3">
+                              <button 
+                                onClick={() => setExpandedInsight(expandedInsight === 'high-freq' ? null : 'high-freq')}
+                                className="w-full text-left text-xs text-[#6B7280] hover:text-[#111827] flex items-center justify-between py-1"
+                              >
+                                <span>View insights</span>
+                                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedInsight === 'high-freq' ? 'rotate-180' : ''}`} />
+                              </button>
+                              
+                              {expandedInsight === 'high-freq' && (
+                                <div className="mt-3 space-y-4 text-sm">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Top procedures</span>
+                                      <span className="text-[#374151]">{analysisData?.available_procedures?.slice(0, 3).join(', ') || 'Botox, Filler, Laser'}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Peak booking</span>
+                                      <span className="text-[#374151]">Tue–Thu, 10am–2pm</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Retention rate</span>
+                                      <span className="text-[#374151]">94%</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Common trait</span>
+                                      <span className="text-[#374151]">Pre-books next visit</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Patient list with checkboxes */}
+                                  <div className="pt-3 border-t border-gray-100">
+                                    <div className="text-xs text-[#9CA3AF] mb-2">Select patients</div>
+                                    <div className="space-y-1">
+                                      {Array.from({ length: 5 }, (_, i) => {
+                                        const id = `HF-${String(i + 1).padStart(3, '0')}`;
+                                        return (
+                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                            <input
+                                              type="checkbox"
+                                              checked={selectedHighFreq.has(id)}
+                                              onChange={(e) => {
+                                                const next = new Set(selectedHighFreq);
+                                                e.target.checked ? next.add(id) : next.delete(id);
+                                                setSelectedHighFreq(next);
+                                              }}
+                                              className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
+                                            />
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
+                                            <span className="text-xs text-[#9CA3AF]">{4 + i} visits/yr</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                    {Math.round(patientCount * 0.15) > 5 && (
+                                      <button className="text-xs text-[#6366f1] mt-2 hover:underline">
+                                        +{Math.round(patientCount * 0.15) - 5} more
+                                      </button>
+                                    )}
+                                    <div className="text-[10px] text-[#9CA3AF] mt-2">
+                                      {selectedHighFreq.size > 0 ? `${selectedHighFreq.size} selected` : 'None selected'}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* CTA */}
+                            <button
+                              onClick={() => {
+                                const hfPatientList = Array.from(selectedHighFreq).length > 0 
+                                  ? Array.from(selectedHighFreq)
+                                  : Array.from({ length: Math.min(Math.round(patientCount * 0.15), 20) }, (_, i) => `HF-${String(i + 1).padStart(3, '0')}`);
+                                openActionModal(
+                                  'high-frequency',
+                                  'High-frequency patients',
+                                  selectedHighFreq.size || Math.round(patientCount * 0.15),
+                                  hfPatientList,
+                                  'vip-reward',
+                                  'Send VIP reward'
+                                );
+                              }}
+                              className="w-full mt-4 px-4 py-2.5 bg-[#6366f1] text-white text-sm font-medium rounded-lg hover:bg-[#4f46e5] transition-colors"
+                            >
+                              {selectedHighFreq.size > 0 ? `Send VIP reward to ${selectedHighFreq.size}` : 'Send VIP reward'}
+                            </button>
                           </div>
-                          <div className="bg-white rounded-xl p-5 shadow-sm border border-emerald-100">
-                            <div className="text-sm font-medium text-[#111827] mb-2">Referral potential</div>
-                            <p className="text-sm text-[#6B7280] leading-relaxed">
-                              ~{Math.round(patientCount * 0.18)} have referred friends before. <span className="text-emerald-600 font-medium">That's free acquisition — gold in this business.</span>
+
+                          {/* Referral champions card */}
+                          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200/60">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="text-sm font-semibold text-[#111827]">Referral champions</h4>
+                              <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
+                                {Math.round(patientCount * 0.18)} patients
+                              </span>
+                            </div>
+                            
+                            <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
+                              They talk about you without being asked — that's your strongest signal. Without structure, word of mouth stays inconsistent. A referral program gives them a reason to do it more.
                             </p>
+                            
+                            {/* Supporting metrics - plain text */}
+                            <div className="flex gap-6 text-sm mb-4">
+                              <div>
+                                <span className="text-[#9CA3AF]">Avg referrals:</span>{' '}
+                                <span className="text-[#111827] font-medium">2.3</span>
+                              </div>
+                              <div>
+                                <span className="text-[#9CA3AF]">Conversion:</span>{' '}
+                                <span className="text-[#111827] font-medium">73%</span>
+                              </div>
+                            </div>
+
+                            {/* Progressive disclosure accordion */}
+                            <div className="border-t border-gray-100 pt-3">
+                              <button 
+                                onClick={() => setExpandedInsight(expandedInsight === 'referrals' ? null : 'referrals')}
+                                className="w-full text-left text-xs text-[#6B7280] hover:text-[#111827] flex items-center justify-between py-1"
+                              >
+                                <span>View insights</span>
+                                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedInsight === 'referrals' ? 'rotate-180' : ''}`} />
+                              </button>
+                              
+                              {expandedInsight === 'referrals' && (
+                                <div className="mt-3 space-y-4 text-sm">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Top procedures</span>
+                                      <span className="text-[#374151]">Botox, Hydrafacial</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Referrer LTV</span>
+                                      <span className="text-[#374151]">${Math.round((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) * 1.4).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Best channel</span>
+                                      <span className="text-[#374151]">Word of mouth</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Common trait</span>
+                                      <span className="text-[#374151]">Posts on social media</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Patient list with checkboxes */}
+                                  <div className="pt-3 border-t border-gray-100">
+                                    <div className="text-xs text-[#9CA3AF] mb-2">Select patients</div>
+                                    <div className="space-y-1">
+                                      {Array.from({ length: 5 }, (_, i) => {
+                                        const id = `RF-${String(i + 1).padStart(3, '0')}`;
+                                        return (
+                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                            <input
+                                              type="checkbox"
+                                              checked={selectedReferrers.has(id)}
+                                              onChange={(e) => {
+                                                const next = new Set(selectedReferrers);
+                                                e.target.checked ? next.add(id) : next.delete(id);
+                                                setSelectedReferrers(next);
+                                              }}
+                                              className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
+                                            />
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
+                                            <span className="text-xs text-[#9CA3AF]">{1 + i} referrals</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                    {Math.round(patientCount * 0.18) > 5 && (
+                                      <button className="text-xs text-[#6366f1] mt-2 hover:underline">
+                                        +{Math.round(patientCount * 0.18) - 5} more
+                                      </button>
+                                    )}
+                                    <div className="text-[10px] text-[#9CA3AF] mt-2">
+                                      {selectedReferrers.size > 0 ? `${selectedReferrers.size} selected` : 'None selected'}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* CTA */}
+                            <button
+                              onClick={() => {
+                                const rfPatientList = Array.from(selectedReferrers).length > 0 
+                                  ? Array.from(selectedReferrers)
+                                  : Array.from({ length: Math.min(Math.round(patientCount * 0.18), 20) }, (_, i) => `RF-${String(i + 1).padStart(3, '0')}`);
+                                openActionModal(
+                                  'referrers',
+                                  'Referral champions',
+                                  selectedReferrers.size || Math.round(patientCount * 0.18),
+                                  rfPatientList,
+                                  'referral-program',
+                                  'Launch referral program'
+                                );
+                              }}
+                              className="w-full mt-4 px-4 py-2.5 bg-[#6366f1] text-white text-sm font-medium rounded-lg hover:bg-[#4f46e5] transition-colors"
+                            >
+                              {selectedReferrers.size > 0 ? `Launch program for ${selectedReferrers.size}` : 'Launch referral program'}
+                            </button>
                           </div>
                         </>
                       )}
@@ -1004,17 +1422,274 @@ export default function PatientInsights() {
                         </div>
                       )) || (
                         <>
-                          <div className="bg-white rounded-xl p-5 shadow-sm border border-red-100">
-                            <div className="text-sm font-medium text-[#111827] mb-2">One-and-done patients</div>
-                            <p className="text-sm text-[#6B7280] leading-relaxed">
-                              {Math.round(patientCount * 0.25)} patients tried once and never came back. <span className="text-red-600 font-medium">That's ${(Math.round(patientCount * 0.25) * 500).toLocaleString()} walking out the door.</span>
+                          {/* One-and-done patients card */}
+                          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200/60">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="text-sm font-semibold text-[#111827]">One-and-done patients</h4>
+                              <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
+                                {Math.round(patientCount * 0.25)} patients
+                              </span>
+                            </div>
+                            
+                            <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
+                              They came in curious but left without a clear next step. The window to re-engage is 30–60 days — after that, they've moved on. A win-back text surfaces what held them back.
                             </p>
+                            
+                            {/* Supporting metrics - plain text */}
+                            <div className="flex gap-6 text-sm mb-4">
+                              <div>
+                                <span className="text-[#9CA3AF]">If recovered:</span>{' '}
+                                <span className="text-[#111827] font-medium">${(Math.round(patientCount * 0.25) * 450).toLocaleString()}</span>
+                              </div>
+                              <div>
+                                <span className="text-[#9CA3AF]">Win-back rate:</span>{' '}
+                                <span className="text-[#111827] font-medium">12–18%</span>
+                              </div>
+                            </div>
+
+                            {/* Progressive disclosure accordion */}
+                            <div className="border-t border-gray-100 pt-3">
+                              <button 
+                                onClick={() => setExpandedInsight(expandedInsight === 'one-done' ? null : 'one-done')}
+                                className="w-full text-left text-xs text-[#6B7280] hover:text-[#111827] flex items-center justify-between py-1"
+                              >
+                                <span>View insights</span>
+                                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedInsight === 'one-done' ? 'rotate-180' : ''}`} />
+                              </button>
+                              
+                              {expandedInsight === 'one-done' && (
+                                <div className="mt-3 space-y-4 text-sm">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Common first visit</span>
+                                      <span className="text-[#374151]">{analysisData?.available_procedures?.[0] || 'Consultation'}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Avg first spend</span>
+                                      <span className="text-[#374151]">$320</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Time since visit</span>
+                                      <span className="text-[#374151]">60–180 days</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Common trait</span>
+                                      <span className="text-[#374151]">No follow-up booked</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Patient list with checkboxes */}
+                                  <div className="pt-3 border-t border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-xs text-[#9CA3AF]">Select patients</span>
+                                      <div className="flex gap-3">
+                                        <button 
+                                          onClick={() => {
+                                            const allIds = Array.from({ length: 5 }, (_, i) => `OD-${String(i + 1).padStart(3, '0')}`);
+                                            setSelectedOneDone(new Set(allIds));
+                                          }}
+                                          className="text-[10px] text-[#6366f1] hover:underline"
+                                        >
+                                          Select all
+                                        </button>
+                                        <button 
+                                          onClick={() => setSelectedOneDone(new Set())}
+                                          className="text-[10px] text-[#9CA3AF] hover:underline"
+                                        >
+                                          Clear
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                      {Array.from({ length: 5 }, (_, i) => {
+                                        const id = `OD-${String(i + 1).padStart(3, '0')}`;
+                                        const daysAgo = 60 + (i * 25);
+                                        return (
+                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                            <input
+                                              type="checkbox"
+                                              checked={selectedOneDone.has(id)}
+                                              onChange={(e) => {
+                                                const next = new Set(selectedOneDone);
+                                                e.target.checked ? next.add(id) : next.delete(id);
+                                                setSelectedOneDone(next);
+                                              }}
+                                              className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
+                                            />
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
+                                            <span className="text-xs text-[#9CA3AF]">{daysAgo}d ago</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                    {Math.round(patientCount * 0.25) > 5 && (
+                                      <button className="text-xs text-[#6366f1] mt-2 hover:underline">
+                                        +{Math.round(patientCount * 0.25) - 5} more
+                                      </button>
+                                    )}
+                                    <div className="text-[10px] text-[#9CA3AF] mt-2">
+                                      {selectedOneDone.size > 0 ? `${selectedOneDone.size} selected` : 'None selected'}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* CTA */}
+                            <button
+                              onClick={() => {
+                                const odPatientList = Array.from(selectedOneDone).length > 0 
+                                  ? Array.from(selectedOneDone)
+                                  : Array.from({ length: Math.min(Math.round(patientCount * 0.25), 20) }, (_, i) => `OD-${String(i + 1).padStart(3, '0')}`);
+                                openActionModal(
+                                  'one-and-done',
+                                  'One-and-done patients',
+                                  selectedOneDone.size || Math.round(patientCount * 0.25),
+                                  odPatientList,
+                                  'win-back',
+                                  'Send win-back text'
+                                );
+                              }}
+                              className="w-full mt-4 px-4 py-2.5 bg-[#6366f1] text-white text-sm font-medium rounded-lg hover:bg-[#4f46e5] transition-colors"
+                            >
+                              {selectedOneDone.size > 0 ? `Send win-back to ${selectedOneDone.size}` : 'Send win-back text'}
+                            </button>
                           </div>
-                          <div className="bg-white rounded-xl p-5 shadow-sm border border-red-100">
-                            <div className="text-sm font-medium text-[#111827] mb-2">Lapsed regulars</div>
-                            <p className="text-sm text-[#6B7280] leading-relaxed">
-                              {Math.round(patientCount * 0.08)} former regulars haven't been back in 4+ months. <span className="text-red-600 font-medium">Once they go cold, they rarely come back on their own.</span>
+
+                          {/* Lapsed regulars card */}
+                          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200/60">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="text-sm font-semibold text-[#111827]">Lapsed regulars</h4>
+                              <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
+                                {Math.round(patientCount * 0.08)} patients
+                              </span>
+                            </div>
+                            
+                            <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
+                              They were consistent, then stopped — something changed. After 6 months, win-back rates collapse. Personal outreach finds out what happened and often reopens the door.
                             </p>
+                            
+                            {/* Supporting metrics - plain text */}
+                            <div className="flex gap-6 text-sm mb-4">
+                              <div>
+                                <span className="text-[#9CA3AF]">Avg prev visits:</span>{' '}
+                                <span className="text-[#111827] font-medium">3.2</span>
+                              </div>
+                              <div>
+                                <span className="text-[#9CA3AF]">At risk:</span>{' '}
+                                <span className="text-[#111827] font-medium">${(Math.round(patientCount * 0.08) * 2880).toLocaleString()}</span>
+                              </div>
+                            </div>
+
+                            {/* Progressive disclosure accordion */}
+                            <div className="border-t border-gray-100 pt-3">
+                              <button 
+                                onClick={() => setExpandedInsight(expandedInsight === 'lapsed' ? null : 'lapsed')}
+                                className="w-full text-left text-xs text-[#6B7280] hover:text-[#111827] flex items-center justify-between py-1"
+                              >
+                                <span>View insights</span>
+                                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedInsight === 'lapsed' ? 'rotate-180' : ''}`} />
+                              </button>
+                              
+                              {expandedInsight === 'lapsed' && (
+                                <div className="mt-3 space-y-4 text-sm">
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Top procedures</span>
+                                      <span className="text-[#374151]">Botox, Filler</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Avg lifetime value</span>
+                                      <span className="text-[#374151]">${Math.round((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) * 0.8).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Recovery window</span>
+                                      <span className="text-[#374151]">&lt;6 months optimal</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-[#9CA3AF]">Best approach</span>
+                                      <span className="text-[#374151]">Personal outreach</span>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Patient list with checkboxes */}
+                                  <div className="pt-3 border-t border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-xs text-[#9CA3AF]">Select patients</span>
+                                      <div className="flex gap-3">
+                                        <button 
+                                          onClick={() => {
+                                            const allIds = Array.from({ length: 5 }, (_, i) => `LP-${String(i + 1).padStart(3, '0')}`);
+                                            setSelectedLapsed(new Set(allIds));
+                                          }}
+                                          className="text-[10px] text-[#6366f1] hover:underline"
+                                        >
+                                          Select all
+                                        </button>
+                                        <button 
+                                          onClick={() => setSelectedLapsed(new Set())}
+                                          className="text-[10px] text-[#9CA3AF] hover:underline"
+                                        >
+                                          Clear
+                                        </button>
+                                      </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                      {Array.from({ length: 5 }, (_, i) => {
+                                        const id = `LP-${String(i + 1).padStart(3, '0')}`;
+                                        const daysAgo = 120 + (i * 15);
+                                        const prevVisits = 3 + i;
+                                        return (
+                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                            <input
+                                              type="checkbox"
+                                              checked={selectedLapsed.has(id)}
+                                              onChange={(e) => {
+                                                const next = new Set(selectedLapsed);
+                                                e.target.checked ? next.add(id) : next.delete(id);
+                                                setSelectedLapsed(next);
+                                              }}
+                                              className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
+                                            />
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
+                                            <span className="text-xs text-[#9CA3AF]">{prevVisits} visits</span>
+                                            <span className="text-xs text-[#9CA3AF]">{daysAgo}d</span>
+                                          </label>
+                                        );
+                                      })}
+                                    </div>
+                                    {Math.round(patientCount * 0.08) > 5 && (
+                                      <button className="text-xs text-[#6366f1] mt-2 hover:underline">
+                                        +{Math.round(patientCount * 0.08) - 5} more
+                                      </button>
+                                    )}
+                                    <div className="text-[10px] text-[#9CA3AF] mt-2">
+                                      {selectedLapsed.size > 0 ? `${selectedLapsed.size} selected` : 'None selected'}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* CTA */}
+                            <button
+                              onClick={() => {
+                                const lrPatientList = Array.from(selectedLapsed).length > 0 
+                                  ? Array.from(selectedLapsed)
+                                  : Array.from({ length: Math.min(Math.round(patientCount * 0.08), 20) }, (_, i) => `LP-${String(i + 1).padStart(3, '0')}`);
+                                openActionModal(
+                                  'lapsed-regulars',
+                                  'Lapsed regulars',
+                                  selectedLapsed.size || Math.round(patientCount * 0.08),
+                                  lrPatientList,
+                                  'personal-outreach',
+                                  'Start personal outreach'
+                                );
+                              }}
+                              className="w-full mt-4 px-4 py-2.5 bg-[#6366f1] text-white text-sm font-medium rounded-lg hover:bg-[#4f46e5] transition-colors"
+                            >
+                              {selectedLapsed.size > 0 ? `Start outreach to ${selectedLapsed.size}` : 'Start personal outreach'}
+                            </button>
                           </div>
                         </>
                       )}
@@ -1042,7 +1717,7 @@ export default function PatientInsights() {
 
               <div className="grid md:grid-cols-2 gap-6">
                 {/* Primary Play - Protect what's working */}
-                <div className="bg-gradient-to-br from-[#2251CC] to-[#1A3FA8] rounded-2xl p-6 md:p-8 text-white shadow-lg">
+                <div className="bg-gradient-to-br from-[#6366f1] to-[#4f46e5] rounded-2xl p-6 md:p-8 text-white shadow-lg">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-[10px] font-semibold uppercase tracking-[0.12em] mb-5">
                     <span className="h-1.5 w-1.5 rounded-full bg-white" />
                     Protect what's working
@@ -1052,7 +1727,7 @@ export default function PatientInsights() {
                     {(churnData?.at_risk_percent || 0) > 30 ? 'Keep your regulars close' : 'Turn loyalty into referrals'}
                   </h3>
                   
-                  <p className="text-sm text-blue-100 leading-relaxed mb-6">
+                  <p className="text-sm text-indigo-100 leading-relaxed mb-6">
                     {(churnData?.at_risk_percent || 0) > 30 
                       ? `Your best patients are steady, but ${Math.round(patientCount * (churnData?.at_risk_percent || 0) / 100)} are starting to drift. A quick thank-you or VIP offer keeps them choosing you.`
                       : `${Math.round(patientCount * 0.18)} patients have referred before. One referral can offset a whole quarter of churn. This is the easiest win on the board.`
@@ -1062,13 +1737,13 @@ export default function PatientInsights() {
                   <button
                     onClick={generateCampaign}
                     disabled={selectedCount === 0}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#2251CC] text-sm font-semibold shadow-md hover:bg-blue-50 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#6366f1] text-sm font-semibold shadow-md hover:bg-indigo-50 transition-colors disabled:opacity-50"
                   >
                     {(churnData?.at_risk_percent || 0) > 30 ? 'Send thank-you offer' : 'Launch referral program'}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                   
-                  <p className="text-xs text-blue-200 mt-4">
+                  <p className="text-xs text-indigo-200 mt-4">
                     Best sent in the next 7–14 days
                   </p>
                 </div>
@@ -1179,7 +1854,7 @@ export default function PatientInsights() {
                         </div>
                       </div>
 
-                      <div className="text-sm text-[#111827] bg-blue-50 rounded-lg p-3">
+                      <div className="text-sm text-[#111827] bg-indigo-50 rounded-lg p-3">
                         <div className="font-medium mb-1">Text template for the rest:</div>
                         <p className="text-[#6B7280] italic">"Hey [name], it's [you]. Rates are at [X.X]% — your $[loan] pre-approval could save you $[amount]/mo. Worth 5 mins this week?"</p>
                       </div>
@@ -1188,7 +1863,7 @@ export default function PatientInsights() {
                     {/* MORTGAGE CARD 2 - How to open the call */}
                     <article className="bg-white rounded-xl p-6 shadow-sm border border-[#E5E7EB]">
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="h-8 w-8 rounded-full bg-blue-50 flex items-center justify-center">
+                        <div className="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center">
                           <Target className="h-4 w-4 text-indigo-600" />
                         </div>
                         <h3 className="font-semibold text-[#111827]">How to open the call</h3>
@@ -1294,7 +1969,7 @@ export default function PatientInsights() {
                       }
                     }}
                     disabled={selectedCount === 0}
-                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#2251CC] text-white text-sm md:text-base font-semibold shadow-md hover:bg-[#1A3FA8] transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-[#6366f1] text-white text-sm md:text-base font-semibold shadow-md hover:bg-[#4f46e5] transition-colors disabled:opacity-50"
                   >
                     Get call list + scripts
                     <ArrowRight className="h-4 w-4" />
@@ -1347,7 +2022,7 @@ export default function PatientInsights() {
                 
                 {/* Insight callout */}
                 {recoveryAnalytics.buckets.length >= 2 && recoveryAnalytics.buckets[0].conversion_rate > 0 && (
-                  <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                  <div className="mt-6 p-4 bg-indigo-50 rounded-xl border border-indigo-100">
                     <div className="flex items-start gap-3">
                       <span className="text-xl">💡</span>
                       <div>
@@ -1699,7 +2374,7 @@ export default function PatientInsights() {
                       <div className="text-[10px] font-semibold uppercase tracking-wider text-[#9CA3AF] mb-2">
                         Full Strategy Potential
                       </div>
-                      <div className="text-2xl font-semibold text-[#2251CC] mb-1">
+                      <div className="text-2xl font-semibold text-[#6366f1] mb-1">
                         ${Math.round((totalRevenue * 1.52) / 1000)}K
                       </div>
                       <p className="text-sm text-[#6B7280]">
@@ -1724,7 +2399,7 @@ export default function PatientInsights() {
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
-                            className="bg-[#2251CC] h-2 rounded-full"
+                            className="bg-[#6366f1] h-2 rounded-full"
                             style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Injectable Treatments"] || 0}%` }}
                           ></div>
                         </div>
@@ -1740,7 +2415,7 @@ export default function PatientInsights() {
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
-                            className="bg-[#2251CC] h-2 rounded-full"
+                            className="bg-[#6366f1] h-2 rounded-full"
                             style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Laser & Energy"] || 0}%` }}
                           ></div>
                         </div>
@@ -1756,7 +2431,7 @@ export default function PatientInsights() {
                         </div>
                         <div className="w-full bg-[#E5E7EB] rounded-full h-2">
                           <div
-                            className="bg-[#2251CC] h-2 rounded-full"
+                            className="bg-[#6366f1] h-2 rounded-full"
                             style={{ width: `${analysisData?.behavior_patterns?.treatment_categories?.["Skincare & Other"] || 0}%` }}
                           ></div>
                         </div>
@@ -1842,7 +2517,7 @@ export default function PatientInsights() {
                                   setShowWinbackModal(true);
                                 }
                               }}
-                              className="mt-3 w-full px-4 py-2 bg-[#2251CC] text-white text-xs font-semibold rounded-lg hover:bg-[#1A3FA8] transition-colors"
+                              className="mt-3 w-full px-4 py-2 bg-[#6366f1] text-white text-xs font-semibold rounded-lg hover:bg-[#4f46e5] transition-colors"
                             >
                               Launch Win-Back Campaign ({churnData.high_risk_patients.length} {terms.customers})
                             </button>
@@ -1906,7 +2581,7 @@ export default function PatientInsights() {
                                 });
                                 setSelectedZips(next);
                               }}
-                              className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
+                              className="rounded border-[#CBD5E1] text-[#6366f1] focus:ring-[#6366f1]"
                             />
                           </th>
                           <th className="text-left py-3 px-6">ZIP</th>
@@ -1928,7 +2603,7 @@ export default function PatientInsights() {
                                 type="checkbox"
                                 checked={selectedZips[seg.zip] || false}
                                 onChange={() => toggleZip(seg.zip)}
-                                className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
+                                className="rounded border-[#CBD5E1] text-[#6366f1] focus:ring-[#6366f1]"
                               />
                             </td>
                             <td className="py-3 px-6 font-medium text-[#111827]">
@@ -1940,7 +2615,7 @@ export default function PatientInsights() {
                                 {seg.distance_miles.toFixed(1)} mi
                               </span>
                             </td>
-                            <td className="py-3 px-6 text-right font-semibold text-[#2251CC]">
+                            <td className="py-3 px-6 text-right font-semibold text-[#6366f1]">
                               {seg.expected_bookings}
                             </td>
                             <td className="py-3 px-6 text-right font-semibold text-[#111827]">
@@ -1986,7 +2661,7 @@ export default function PatientInsights() {
                                 });
                                 setSelectedZips(next);
                               }}
-                              className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
+                              className="rounded border-[#CBD5E1] text-[#6366f1] focus:ring-[#6366f1]"
                             />
                           </th>
                           <th className="text-left py-3 px-6">ZIP</th>
@@ -2008,7 +2683,7 @@ export default function PatientInsights() {
                                 type="checkbox"
                                 checked={selectedZips[seg.zip] || false}
                                 onChange={() => toggleZip(seg.zip)}
-                                className="rounded border-[#CBD5E1] text-[#2251CC] focus:ring-[#2251CC]"
+                                className="rounded border-[#CBD5E1] text-[#6366f1] focus:ring-[#6366f1]"
                               />
                             </td>
                             <td className="py-3 px-6 font-medium text-[#111827]">
@@ -2020,7 +2695,7 @@ export default function PatientInsights() {
                                 {seg.distance_miles.toFixed(1)} mi
                               </span>
                             </td>
-                            <td className="py-3 px-6 text-right font-semibold text-[#2251CC]">
+                            <td className="py-3 px-6 text-right font-semibold text-[#6366f1]">
                               {seg.expected_bookings}
                             </td>
                             <td className="py-3 px-6 text-right font-semibold text-[#111827]">
@@ -2108,7 +2783,7 @@ export default function PatientInsights() {
               <button
                 onClick={generateCampaign}
                 disabled={selectedCount === 0}
-                className="w-full px-10 py-4 text-base md:text-lg font-semibold text-white bg-[#2251CC] rounded-xl hover:bg-[#1A3FA8] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg transition-colors"
+                className="w-full px-10 py-4 text-base md:text-lg font-semibold text-white bg-[#6366f1] rounded-xl hover:bg-[#4f46e5] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 shadow-lg transition-colors"
               >
                 Generate campaign
                 <ArrowRight className="h-5 w-5" />
@@ -2122,6 +2797,205 @@ export default function PatientInsights() {
         </div>
       </div>
     </div>
+
+    {/* Retention Action Modal */}
+    {showActionModal && actionModalData && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
+          {/* Header */}
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">{actionModalData.title}</h2>
+                <p className="text-sm text-gray-500 mt-1">{actionModalData.count} patients selected</p>
+              </div>
+              <button 
+                onClick={() => setShowActionModal(false)} 
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Content */}
+          <div className="p-6 space-y-6">
+            {/* Patient List */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-sm font-medium text-gray-900">Patients in this segment</h3>
+                <button
+                  onClick={() => handleExportCSV(actionModalData.patients, actionModalData.title)}
+                  className="flex items-center gap-1.5 text-xs text-[#6366f1] hover:text-[#4f46e5]"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Export CSV
+                </button>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
+                <div className="flex flex-wrap gap-2">
+                  {actionModalData.patients.slice(0, 10).map((id) => (
+                    <span key={id} className="text-xs px-2 py-1 bg-white rounded border border-gray-200 text-gray-700 font-mono">
+                      {id}
+                    </span>
+                  ))}
+                  {actionModalData.patients.length > 10 && (
+                    <span className="text-xs px-2 py-1 text-gray-500">
+                      +{actionModalData.patients.length - 10} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Message Tabs */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex gap-1 bg-gray-100 rounded-lg p-1 flex-1 mr-3">
+                  <button
+                    onClick={() => setActiveMessageTab('email')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      activeMessageTab === 'email'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </button>
+                  <button
+                    onClick={() => setActiveMessageTab('sms')}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                      activeMessageTab === 'sms'
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    SMS
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    // Regenerate copy
+                    openActionModal(
+                      actionModalData.segment,
+                      actionModalData.title,
+                      actionModalData.count,
+                      actionModalData.patients,
+                      actionModalData.action,
+                      actionModalData.cta
+                    );
+                  }}
+                  disabled={copyLoading}
+                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#6366f1] disabled:opacity-50"
+                  title="Generate new copy"
+                >
+                  <RefreshCw className={`h-3.5 w-3.5 ${copyLoading ? 'animate-spin' : ''}`} />
+                  Regenerate
+                </button>
+              </div>
+
+              {/* Loading State */}
+              {copyLoading && (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6366f1] mx-auto mb-3"></div>
+                    <p className="text-sm text-gray-500">Generating personalized copy...</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Email Content */}
+              {!copyLoading && activeMessageTab === 'email' && dynamicCopy && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-900">Email Template</h3>
+                    <button
+                      onClick={() => {
+                        handleCopy(`Subject: ${dynamicCopy.email_subject}\n\n${dynamicCopy.email_body}`, 'email');
+                      }}
+                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-colors ${
+                        copiedField === 'email'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-indigo-100 text-[#6366f1] hover:bg-indigo-200'
+                      }`}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {copiedField === 'email' ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
+                    <div className="font-medium text-gray-900 mb-3 pb-2 border-b border-gray-200">
+                      Subject: {dynamicCopy.email_subject}
+                    </div>
+                    <div className="whitespace-pre-wrap leading-relaxed">
+                      {dynamicCopy.email_body}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SMS Content */}
+              {!copyLoading && activeMessageTab === 'sms' && dynamicCopy && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-900">SMS Template</h3>
+                    <button
+                      onClick={() => {
+                        handleCopy(dynamicCopy.sms, 'sms');
+                      }}
+                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-colors ${
+                        copiedField === 'sms'
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-indigo-100 text-[#6366f1] hover:bg-indigo-200'
+                      }`}
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {copiedField === 'sms' ? 'Copied!' : 'Copy'}
+                    </button>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
+                    {dynamicCopy.sms}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    💡 Keep SMS under 160 characters for best delivery rates. Current: {dynamicCopy.sms.length} chars
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Advanced option */}
+            <div className="pt-4 border-t border-gray-100">
+              <button
+                onClick={() => {
+                  setShowActionModal(false);
+                  const params = new URLSearchParams({
+                    segment: actionModalData.segment,
+                    action: actionModalData.action,
+                    count: String(actionModalData.count)
+                  });
+                  router.push(`/campaign-generator?${params.toString()}`);
+                }}
+                className="text-sm text-[#6366f1] hover:text-[#4f46e5] hover:underline"
+              >
+                Open in full Campaign Generator →
+              </button>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+            <button
+              onClick={() => setShowActionModal(false)}
+              className="w-full px-6 py-3 bg-[#6366f1] text-white font-semibold rounded-lg hover:bg-[#4f46e5] transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
     {showWinbackModal && (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -2151,7 +3025,7 @@ export default function PatientInsights() {
                           body: new URLSearchParams({ treatment: analysisData?.available_procedures?.[0] || 'appointment', template_type: 'email' })
                         });
                       }} 
-                      className="text-xs px-3 py-1 bg-blue-100 text-indigo-700 rounded-full hover:bg-blue-200"
+                      className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200"
                     >
                       Copy
                     </button>
@@ -2173,7 +3047,7 @@ export default function PatientInsights() {
                           body: new URLSearchParams({ treatment: analysisData?.available_procedures?.[0] || 'appointment', template_type: 'sms' })
                         });
                       }} 
-                      className="text-xs px-3 py-1 bg-blue-100 text-indigo-700 rounded-full hover:bg-blue-200"
+                      className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200"
                     >
                       Copy
                     </button>
@@ -2192,7 +3066,7 @@ export default function PatientInsights() {
                           body: new URLSearchParams({ treatment: analysisData?.available_procedures?.[0] || 'appointment', template_type: 'phone' })
                         });
                       }} 
-                      className="text-xs px-3 py-1 bg-blue-100 text-indigo-700 rounded-full hover:bg-blue-200"
+                      className="text-xs px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full hover:bg-indigo-200"
                     >
                       Copy
                     </button>
@@ -2218,7 +3092,7 @@ export default function PatientInsights() {
                         <div className="font-medium text-gray-900 mb-1">If they seemed nervous or unsure</div>
                         <p className="text-sm text-gray-600">"Just checking in — any questions I can help clear up?"</p>
                       </div>
-                      <div className="rounded-lg p-3 bg-blue-50 border border-blue-200">
+                      <div className="rounded-lg p-3 bg-indigo-50 border border-indigo-200">
                         <div className="font-medium text-gray-900 mb-1">If they wanted all the details</div>
                         <p className="text-sm text-gray-600">"I ran your numbers against today's rates — got 3 mins to compare?"</p>
                       </div>
@@ -2244,7 +3118,7 @@ export default function PatientInsights() {
                               p.disc_type === 'D' ? 'bg-red-100 text-red-700' :
                               p.disc_type === 'I' ? 'bg-yellow-100 text-yellow-700' :
                               p.disc_type === 'S' ? 'bg-green-100 text-green-700' :
-                              'bg-blue-100 text-blue-700'
+                              'bg-indigo-100 text-indigo-700'
                             }`}>{p.disc_type}</span>
                           )}
                         </div>
