@@ -567,7 +567,7 @@ export default function PatientInsights() {
       ? 'all'
       : selectedProcedures.join(',');
     router.push(
-      `/campaign-generator?zip=${selected.join(',')}&procedure=${procedureParam}&vertical=${vertical}`
+      `/campaign-generator?segmentId=${currentRunId}&zip=${selected.join(',')}&procedure=${procedureParam}&vertical=${vertical}`
     );
   };
 
@@ -2975,7 +2975,7 @@ ${clinicName} Team`
                     action: actionModalData.action,
                     count: String(actionModalData.count)
                   });
-                  router.push(`/campaign-generator?${params.toString()}`);
+                  router.push(`/campaign-generator?segmentId=${currentRunId}&${params.toString()}`);
                 }}
                 className="text-sm text-[#6366f1] hover:text-[#4f46e5] hover:underline"
               >
