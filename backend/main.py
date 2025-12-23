@@ -3851,6 +3851,20 @@ Write the insight copy. Reference "{cta_action}" explicitly in the action bridge
         return fallbacks.get(segment_type, "Insight generation temporarily unavailable.")
 
 
+
+def extract_patient_list(df: pd.DataFrame, limit: int = 100) -> list:
+    """Extract patient list with id, name, phone for SMS sending"""
+    cols = ["patient_id"]
+    if "name" in df.columns: cols.append("name")
+    if "first_name" in df.columns: cols.append("first_name")
+    if "phone" in df.columns: cols.append("phone")
+    result = df[cols].head(limit).to_dict("records")
+    # Normalize to expected format
+    for p in result:
+        if "first_name" in p and "name" not in p:
+            p["name"] = p.pop("first_name")
+        p["phone"] = p.get("phone", "")
+    return result
 def compute_segment_details(df: pd.DataFrame, segment_type: str) -> dict:
     """
     Compute detailed stats for a specific segment.
@@ -3881,7 +3895,7 @@ def compute_segment_details(df: pd.DataFrame, segment_type: str) -> dict:
             market_avg = df['total_revenue'].mean() if 'total_revenue' in df.columns else df['revenue'].mean() if 'revenue' in df.columns else 1
             
             result["count"] = len(segment_df)
-            result["patients"] = segment_df['patient_id'].tolist()[:100] if 'patient_id' in segment_df.columns else []
+            result["patients"] = extract_patient_list(segment_df, 100) if 'patient_id' in segment_df.columns else []
             result["stats"] = {
                 "avg_ltv": avg_ltv,
                 "multiplier": avg_ltv / market_avg if market_avg > 0 else 1,
@@ -3905,7 +3919,7 @@ def compute_segment_details(df: pd.DataFrame, segment_type: str) -> dict:
         avg_ltv = top_df['revenue'].mean() if 'revenue' in top_df.columns else 3600
         
         result["count"] = estimated_count
-        result["patients"] = top_df['patient_id'].head(estimated_count).tolist() if 'patient_id' in top_df.columns else []
+        result["patients"] = extract_patient_list(top_df, estimated_count) if 'patient_id' in top_df.columns else []
         result["stats"] = {
             "count": estimated_count,
             "avg_referral_value": avg_ltv * 0.5,  # Estimated value per referral
@@ -3932,7 +3946,7 @@ def compute_segment_details(df: pd.DataFrame, segment_type: str) -> dict:
             days_since = segment_df['days_since_last_visit'].mean() if 'days_since_last_visit' in segment_df.columns else 120
             
             result["count"] = len(segment_df)
-            result["patients"] = segment_df['patient_id'].tolist()[:100] if 'patient_id' in segment_df.columns else []
+            result["patients"] = extract_patient_list(segment_df, 100) if 'patient_id' in segment_df.columns else []
             result["stats"] = {
                 "count": len(segment_df),
                 "potential_ltv": len(segment_df) * 500,  # Conservative LTV estimate
@@ -3960,7 +3974,7 @@ def compute_segment_details(df: pd.DataFrame, segment_type: str) -> dict:
             days_since = segment_df['days_since_last_visit'].mean() if 'days_since_last_visit' in segment_df.columns else 150
             
             result["count"] = len(segment_df)
-            result["patients"] = segment_df['patient_id'].tolist()[:100] if 'patient_id' in segment_df.columns else []
+            result["patients"] = extract_patient_list(segment_df, 100) if 'patient_id' in segment_df.columns else []
             result["stats"] = {
                 "count": len(segment_df),
                 "revenue_at_risk": revenue_at_risk,

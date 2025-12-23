@@ -16,9 +16,11 @@ import {
   Download,
   Copy,
   RefreshCw,
+  Send,
 } from 'lucide-react';
 import { useState, useEffect, useRef} from 'react';
 import { useRouter } from 'next/navigation';
+import { SMSSendModal } from './sms-send-modal';
 import { DISC_TYPES } from '@/lib/industryConfig';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
@@ -249,11 +251,12 @@ export default function PatientInsights() {
   
   // Retention action modal state
   const [showActionModal, setShowActionModal] = useState(false);
+  const [showSMSModal, setShowSMSModal] = useState(false);
   const [actionModalData, setActionModalData] = useState<{
     segment: string;
     title: string;
     count: number;
-    patients: string[];
+    patients: Array<{patient_id: string; name?: string; phone?: string} | string>;
     action: string;
     cta: string;
   } | null>(null);
@@ -1231,7 +1234,7 @@ ${clinicName} Team`
                                       {Array.from({ length: 5 }, (_, i) => {
                                         const id = `HF-${String(i + 1).padStart(3, '0')}`;
                                         return (
-                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                          <label key={typeof p === "object" ? p.patient_id : p} className="flex items-center gap-3 py-1.5 cursor-pointer group">
                                             <input
                                               type="checkbox"
                                               checked={selectedHighFreq.has(id)}
@@ -1242,7 +1245,7 @@ ${clinicName} Team`
                                               }}
                                               className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
                                             />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{typeof p === "object" ? p.patient_id : p}</span>
                                             <span className="text-xs text-[#9CA3AF]">{4 + i} visits/yr</span>
                                           </label>
                                         );
@@ -1345,7 +1348,7 @@ ${clinicName} Team`
                                       {Array.from({ length: 5 }, (_, i) => {
                                         const id = `RF-${String(i + 1).padStart(3, '0')}`;
                                         return (
-                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                          <label key={typeof p === "object" ? p.patient_id : p} className="flex items-center gap-3 py-1.5 cursor-pointer group">
                                             <input
                                               type="checkbox"
                                               checked={selectedReferrers.has(id)}
@@ -1356,7 +1359,7 @@ ${clinicName} Team`
                                               }}
                                               className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
                                             />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{typeof p === "object" ? p.patient_id : p}</span>
                                             <span className="text-xs text-[#9CA3AF]">{1 + i} referrals</span>
                                           </label>
                                         );
@@ -1505,7 +1508,7 @@ ${clinicName} Team`
                                         const id = `OD-${String(i + 1).padStart(3, '0')}`;
                                         const daysAgo = 60 + (i * 25);
                                         return (
-                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                          <label key={typeof p === "object" ? p.patient_id : p} className="flex items-center gap-3 py-1.5 cursor-pointer group">
                                             <input
                                               type="checkbox"
                                               checked={selectedOneDone.has(id)}
@@ -1516,7 +1519,7 @@ ${clinicName} Team`
                                               }}
                                               className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
                                             />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{typeof p === "object" ? p.patient_id : p}</span>
                                             <span className="text-xs text-[#9CA3AF]">{daysAgo}d ago</span>
                                           </label>
                                         );
@@ -1640,7 +1643,7 @@ ${clinicName} Team`
                                         const daysAgo = 120 + (i * 15);
                                         const prevVisits = 3 + i;
                                         return (
-                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                          <label key={typeof p === "object" ? p.patient_id : p} className="flex items-center gap-3 py-1.5 cursor-pointer group">
                                             <input
                                               type="checkbox"
                                               checked={selectedLapsed.has(id)}
@@ -1651,7 +1654,7 @@ ${clinicName} Team`
                                               }}
                                               className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
                                             />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{typeof p === "object" ? p.patient_id : p}</span>
                                             <span className="text-xs text-[#9CA3AF]">{prevVisits} visits</span>
                                             <span className="text-xs text-[#9CA3AF]">{daysAgo}d</span>
                                           </label>
@@ -2834,9 +2837,9 @@ ${clinicName} Team`
               </div>
               <div className="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
                 <div className="flex flex-wrap gap-2">
-                  {actionModalData.patients.slice(0, 10).map((id) => (
-                    <span key={id} className="text-xs px-2 py-1 bg-white rounded border border-gray-200 text-gray-700 font-mono">
-                      {id}
+                  {actionModalData.patients.slice(0, 10).map((p) => (
+                    <span key={typeof p === "object" ? p.patient_id : p} className="text-xs px-2 py-1 bg-white rounded border border-gray-200 text-gray-700 font-mono">
+                      {typeof p === "object" ? p.patient_id : p}
                     </span>
                   ))}
                   {actionModalData.patients.length > 10 && (
@@ -2961,6 +2964,13 @@ ${clinicName} Team`
                   <p className="text-xs text-gray-500">
                     💡 Keep SMS under 160 characters for best delivery rates. Current: {dynamicCopy.sms.length} chars
                   </p>
+                  <button
+                    onClick={() => setShowSMSModal(true)}
+                    className="w-full mt-3 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Send className="h-4 w-4" />
+                    Send {actionModalData.count} SMS
+                  </button>
                 </div>
               )}
             </div>
@@ -3152,6 +3162,18 @@ ${clinicName} Team`
           </div>
         </div>
       </div>
+    )}
+    {showSMSModal && actionModalData && (
+      <SMSSendModal
+        isOpen={showSMSModal}
+        onClose={() => setShowSMSModal(false)}
+        segment={actionModalData.segment}
+        segmentLabel={actionModalData.title}
+        patientCount={actionModalData.count}
+        message={dynamicCopy?.sms || ""}
+        recipients={actionModalData.patients.filter(p => typeof p === "object" && p.phone).map(p => typeof p === "object" ? {patient_id: p.patient_id, name: p.name, phone: p.phone || ""} : {patient_id: p, phone: ""})}
+        runId={currentRunId}
+      />
     )}
     </>
   );
