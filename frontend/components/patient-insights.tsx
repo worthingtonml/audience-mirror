@@ -444,6 +444,7 @@ export default function PatientInsights() {
     
     fetchChurnData();
 
+  }, [currentRunId, loading]);
   // Fetch SMS campaigns
   useEffect(() => {
     if (!currentRunId || loading) return;
@@ -459,7 +460,6 @@ export default function PatientInsights() {
       }
     };
     fetchSMSCampaigns();
-  }, [currentRunId, loading]);
   }, [currentRunId, loading]);
 
   // Poll analysis results
@@ -783,7 +783,7 @@ ${clinicName} Team`
   };
 
   // Handle opening the action modal
-  const openActionModal = async (segment: string, title: string, count: number, patients: string[], action: string, cta: string) => {
+  const openActionModal = async (segment: string, title: string, count: number, patients: Array<{patient_id: string; name?: string; phone?: string} | string>, action: string, cta: string) => {
     setActionModalData({ segment, title, count, patients, action, cta });
     setShowActionModal(true);
     setActiveMessageTab('email');
@@ -850,8 +850,9 @@ ${clinicName} Team`
   };
 
   // Handle CSV export
-  const handleExportCSV = (patients: string[], segmentName: string) => {
-    const csvContent = "Patient ID\n" + patients.join("\n");
+  const handleExportCSV = (patients: Array<{patient_id: string; name?: string; phone?: string} | string>, segmentName: string) => {
+    const patientIds = patients.map(p => typeof p === "object" ? p.patient_id : p);
+    const csvContent = "Patient ID\n" + patientIds.join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -860,14 +861,6 @@ ${clinicName} Team`
     a.click();
     window.URL.revokeObjectURL(url);
   };
-
-  // Calculate overall risk level from strategic insights
-  // Calculate overall risk level from strategic insights
-  let overallRiskLevel = { label: 'Analyzing', color: 'bg-[#F3F4F6] text-[#6B7280]', dotColor: 'bg-[#9CA3AF]' };
-  
-  if (analysisData?.strategic_insights && analysisData.strategic_insights.length > 0) {
-    const hasHighRisk = analysisData.strategic_insights.some((i: any) => i.severity === 'high');
-    const hasMediumRisk = analysisData.strategic_insights.some((i: any) => i.severity === 'medium');
 
   const recordConversion = async (campaignId: string, delta: number) => {
     try {
@@ -880,6 +873,15 @@ ${clinicName} Team`
       console.error("Failed to record conversion:", e);
     }
   };
+
+  // Calculate overall risk level from strategic insights
+  // Calculate overall risk level from strategic insights
+  let overallRiskLevel = { label: 'Analyzing', color: 'bg-[#F3F4F6] text-[#6B7280]', dotColor: 'bg-[#9CA3AF]' };
+  
+  if (analysisData?.strategic_insights && analysisData.strategic_insights.length > 0) {
+    const hasHighRisk = analysisData.strategic_insights.some((i: any) => i.severity === 'high');
+    const hasMediumRisk = analysisData.strategic_insights.some((i: any) => i.severity === 'medium');
+
     const warningCount = analysisData.strategic_insights.filter((i: any) => i.type === 'warning').length;
     
     if (hasHighRisk || warningCount >= 2) {
@@ -1264,7 +1266,7 @@ ${clinicName} Team`
                                       {Array.from({ length: 5 }, (_, i) => {
                                         const id = `HF-${String(i + 1).padStart(3, '0')}`;
                                         return (
-                                          <label key={typeof p === "object" ? p.patient_id : p} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
                                             <input
                                               type="checkbox"
                                               checked={selectedHighFreq.has(id)}
@@ -1275,7 +1277,7 @@ ${clinicName} Team`
                                               }}
                                               className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
                                             />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{typeof p === "object" ? p.patient_id : p}</span>
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
                                             <span className="text-xs text-[#9CA3AF]">{4 + i} visits/yr</span>
                                           </label>
                                         );
@@ -1378,7 +1380,7 @@ ${clinicName} Team`
                                       {Array.from({ length: 5 }, (_, i) => {
                                         const id = `RF-${String(i + 1).padStart(3, '0')}`;
                                         return (
-                                          <label key={typeof p === "object" ? p.patient_id : p} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
                                             <input
                                               type="checkbox"
                                               checked={selectedReferrers.has(id)}
@@ -1389,7 +1391,7 @@ ${clinicName} Team`
                                               }}
                                               className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
                                             />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{typeof p === "object" ? p.patient_id : p}</span>
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
                                             <span className="text-xs text-[#9CA3AF]">{1 + i} referrals</span>
                                           </label>
                                         );
@@ -1538,7 +1540,7 @@ ${clinicName} Team`
                                         const id = `OD-${String(i + 1).padStart(3, '0')}`;
                                         const daysAgo = 60 + (i * 25);
                                         return (
-                                          <label key={typeof p === "object" ? p.patient_id : p} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
                                             <input
                                               type="checkbox"
                                               checked={selectedOneDone.has(id)}
@@ -1549,7 +1551,7 @@ ${clinicName} Team`
                                               }}
                                               className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
                                             />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{typeof p === "object" ? p.patient_id : p}</span>
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
                                             <span className="text-xs text-[#9CA3AF]">{daysAgo}d ago</span>
                                           </label>
                                         );
@@ -1673,7 +1675,7 @@ ${clinicName} Team`
                                         const daysAgo = 120 + (i * 15);
                                         const prevVisits = 3 + i;
                                         return (
-                                          <label key={typeof p === "object" ? p.patient_id : p} className="flex items-center gap-3 py-1.5 cursor-pointer group">
+                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
                                             <input
                                               type="checkbox"
                                               checked={selectedLapsed.has(id)}
@@ -1684,7 +1686,7 @@ ${clinicName} Team`
                                               }}
                                               className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
                                             />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{typeof p === "object" ? p.patient_id : p}</span>
+                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
                                             <span className="text-xs text-[#9CA3AF]">{prevVisits} visits</span>
                                             <span className="text-xs text-[#9CA3AF]">{daysAgo}d</span>
                                           </label>
@@ -3247,7 +3249,7 @@ ${clinicName} Team`
         patientCount={actionModalData.count}
         message={dynamicCopy?.sms || ""}
         recipients={actionModalData.patients.filter(p => typeof p === "object" && p.phone).map(p => typeof p === "object" ? {patient_id: p.patient_id, name: p.name, phone: p.phone || ""} : {patient_id: p, phone: ""})}
-        runId={currentRunId}
+        runId={currentRunId || undefined}
       />
     )}
     </>
