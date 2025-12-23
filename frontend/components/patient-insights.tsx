@@ -198,6 +198,7 @@ export default function PatientInsights() {
   const router = useRouter();
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [smsCampaigns, setSmsCampaigns] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedZips, setSelectedZips] = useState<Record<string, boolean>>({});
   const [showZipEditor, setShowZipEditor] = useState(false);
@@ -442,6 +443,23 @@ export default function PatientInsights() {
     };
     
     fetchChurnData();
+
+  // Fetch SMS campaigns
+  useEffect(() => {
+    if (!currentRunId || loading) return;
+    const fetchSMSCampaigns = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/sms/campaigns?run_id=${currentRunId}&limit=10`);
+        if (res.ok) {
+          const data = await res.json();
+          setSmsCampaigns(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch SMS campaigns:", e);
+      }
+    };
+    fetchSMSCampaigns();
+  }, [currentRunId, loading]);
   }, [currentRunId, loading]);
 
   // Poll analysis results
@@ -850,6 +868,18 @@ ${clinicName} Team`
   if (analysisData?.strategic_insights && analysisData.strategic_insights.length > 0) {
     const hasHighRisk = analysisData.strategic_insights.some((i: any) => i.severity === 'high');
     const hasMediumRisk = analysisData.strategic_insights.some((i: any) => i.severity === 'medium');
+
+  const recordConversion = async (campaignId: string, delta: number) => {
+    try {
+      const res = await fetch(`${API_URL}/api/sms/campaigns/${campaignId}/conversion?count=${delta}`, { method: "POST" });
+      if (res.ok) {
+        const data = await res.json();
+        setSmsCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, conversions: data.conversions } : c));
+      }
+    } catch (e) {
+      console.error("Failed to record conversion:", e);
+    }
+  };
     const warningCount = analysisData.strategic_insights.filter((i: any) => i.type === 'warning').length;
     
     if (hasHighRisk || warningCount >= 2) {
@@ -2538,6 +2568,51 @@ ${clinicName} Team`
                 </div>
               )}
             </div>
+
+            {/* SMS Campaign History */}
+            {smsCampaigns.length > 0 && (
+            <div className="bg-white rounded-xl border border-[#E5E7EB] overflow-hidden shadow-sm">
+              <button
+                onClick={() => toggleAccordion("sms")}
+                className="w-full px-6 md:px-8 py-5 flex items-center justify-between hover:bg-[#F9FAFB] transition-colors"
+              >
+                <div className="text-left">
+                  <h3 className="text-base md:text-lg font-semibold text-[#111827]">Campaign History</h3>
+                  <p className="text-xs md:text-sm text-[#6B7280] mt-1">{smsCampaigns.length} campaigns sent</p>
+                </div>
+                <ChevronDown className={`h-5 w-5 text-[#6B7280] transition-transform ${openAccordions["sms"] ? "rotate-180" : ""}`} />
+              </button>
+              {openAccordions["sms"] && (
+                <div className="px-6 md:px-8 py-6 border-t border-[#E5E7EB] bg-[#F9FAFB] space-y-4">
+                  {smsCampaigns.map((c) => (
+                    <div key={c.id} className="bg-white rounded-lg p-4 border border-gray-200">
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <div className="font-medium text-gray-900">{c.name}</div>
+                          <div className="text-xs text-gray-500">{c.sent_at ? new Date(c.sent_at).toLocaleDateString() : "Not sent"}</div>
+                        </div>
+                        <span className="text-xs px-2 py-1 bg-gray-100 rounded-full">{c.segment}</span>
+                      </div>
+                      <div className="grid grid-cols-4 gap-2 text-center mb-3">
+                        <div><div className="text-lg font-semibold">{c.sent_count}</div><div className="text-[10px] text-gray-500">Sent</div></div>
+                        <div><div className="text-lg font-semibold text-green-600">{c.delivered_count || 0}</div><div className="text-[10px] text-gray-500">Delivered</div></div>
+                        <div><div className="text-lg font-semibold text-red-500">{c.failed_count}</div><div className="text-[10px] text-gray-500">Failed</div></div>
+                        <div><div className="text-lg font-semibold text-indigo-600">{c.sent_count > 0 ? ((c.conversions || 0) / c.sent_count * 100).toFixed(1) : 0}%</div><div className="text-[10px] text-gray-500">Converted</div></div>
+                      </div>
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <span className="text-sm"><span className="font-medium text-green-600">{c.conversions || 0}</span> bookings</span>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => recordConversion(c.id, -1)} disabled={(c.conversions || 0) <= 0} className="h-7 w-7 flex items-center justify-center rounded border border-gray-200 hover:bg-gray-50 disabled:opacity-40">−</button>
+                          <span className="w-6 text-center font-medium">{c.conversions || 0}</span>
+                          <button onClick={() => recordConversion(c.id, 1)} className="h-7 w-7 flex items-center justify-center rounded bg-green-50 border border-green-200 hover:bg-green-100 text-green-700">+</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            )}
           </section>
 
           {/* ZIP EDITOR (COLLAPSIBLE) */}
