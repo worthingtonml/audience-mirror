@@ -4174,7 +4174,7 @@ async def analyze_behavior_patterns(
                 "insight": f"They spend {multiplier:.1f}x more than average",
                 "action": "membership",
                 "count": len(high_freq),
-                "patient_ids": high_freq['patient_id'].tolist() if 'patient_id' in high_freq.columns else []
+                "patient_ids": extract_patient_list(high_freq, 100) if "patient_id" in high_freq.columns else []
             })
     
     # Premium spenders
@@ -4190,7 +4190,7 @@ async def analyze_behavior_patterns(
                 "insight": "VIP treatment keeps them loyal",
                 "action": "vip",
                 "count": len(premium),
-                "patient_ids": premium['patient_id'].tolist() if 'patient_id' in premium.columns else []
+                "patient_ids": extract_patient_list(premium, 100) if "patient_id" in premium.columns else []
             })
     
     # Referrers estimate
@@ -4218,7 +4218,7 @@ async def analyze_behavior_patterns(
                 "action": "winback",
                 "severity": "high" if len(one_and_done) > 20 else "medium",
                 "count": len(one_and_done),
-                "patient_ids": one_and_done['patient_id'].tolist() if 'patient_id' in one_and_done.columns else []
+                "patient_ids": extract_patient_list(one_and_done, 100) if "patient_id" in one_and_done.columns else []
             })
     
     # Lapsed regulars
@@ -4234,7 +4234,7 @@ async def analyze_behavior_patterns(
                 "action": "winback_vip",
                 "severity": "high" if len(lapsed) > 10 else "medium",
                 "count": len(lapsed),
-                "patient_ids": lapsed['patient_id'].tolist() if 'patient_id' in lapsed.columns else []
+                "patient_ids": extract_patient_list(lapsed, 100) if "patient_id" in lapsed.columns else []
             })
     
     # Recommended play
