@@ -4439,3 +4439,45 @@ async def record_sms_conversion(campaign_id: str, count: int = 1, db: Session = 
     db.commit()
     
     return {"campaign_id": campaign_id, "conversions": campaign.conversions}
+
+@app.post("/api/v1/generate-outreach-copy")
+async def generate_outreach_copy(
+    request: fastapi.Request,
+    segment: str = Form(...),
+    segment_label: str = Form(""),
+    patient_count: int = Form(1),
+    vertical: str = Form("medspa"),
+):
+    """Generate dynamic outreach copy for a segment"""
+    templates = {
+        "one_and_done": {
+            "sms": "Hi {name}, it's [Your Clinic Name]! We miss you. Come back and enjoy 20% off your next visit. Book this week and we'll add a complimentary consultation. Interested?",
+            "email_subject": "We miss you! Here's 20% off your next visit",
+            "email_body": "Hi {name},\n\nWe noticed it's been a while since your last visit. We'd love to see you again!\n\nAs a thank you for being part of our community, enjoy 20% off your next treatment.\n\nBook now and we'll also include a complimentary consultation to discuss your goals.\n\nWarmly,\n[Your Clinic Name]"
+        },
+        "high_frequency": {
+            "sms": "Hi {name}! As one of our VIP guests, you get early access to our new treatment menu. Reply to book your exclusive preview appointment!",
+            "email_subject": "VIP Early Access: New Treatments Available",
+            "email_body": "Hi {name},\n\nAs one of our most valued guests, we wanted you to be the first to know about our exciting new treatments.\n\nBook this week for VIP pricing.\n\nWarmly,\n[Your Clinic Name]"
+        },
+        "lapsed_regulars": {
+            "sms": "Hi {name}, we've missed seeing you! It's been a while - come back this month for 25% off any service. We'd love to catch up!",
+            "email_subject": "We miss you! Special offer inside",
+            "email_body": "Hi {name},\n\nIt's been too long! We miss having you at the clinic.\n\nTo welcome you back, enjoy 25% off any service this month.\n\nHope to see you soon!\n\n[Your Clinic Name]"
+        },
+        "referrers": {
+            "sms": "Hi {name}! Thank you for spreading the word about us. Here's a $50 credit for your next visit as our thank you!",
+            "email_subject": "A special thank you (and $50 credit!)",
+            "email_body": "Hi {name},\n\nWe wanted to personally thank you for referring friends and family to us. It means the world!\n\nAs a token of our appreciation, please enjoy a $50 credit toward your next treatment.\n\nWith gratitude,\n[Your Clinic Name]"
+        }
+    }
+    
+    template = templates.get(segment, templates["one_and_done"])
+    
+    return {
+        "sms": template["sms"],
+        "email_subject": template["email_subject"],
+        "email_body": template["email_body"],
+        "segment": segment,
+        "patient_count": patient_count
+    }
