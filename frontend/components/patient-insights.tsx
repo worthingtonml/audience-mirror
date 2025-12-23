@@ -2979,7 +2979,7 @@ ${clinicName} Team`
                 }}
                 className="text-sm text-[#6366f1] hover:text-[#4f46e5] hover:underline"
               >
-                Open in full Campaign Generator →
+                Open in Find New Patients →
               </button>
             </div>
           </div>

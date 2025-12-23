@@ -158,7 +158,7 @@ Please generate clean, production-ready code (HTML/CSS/JS or React) with placeho
               onClick={() => router.push('/campaign-generator')}
               className="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700"
             >
-              Go to Campaign Generator
+              Go to Find New Patients
             </button>
           </div>
         </div>

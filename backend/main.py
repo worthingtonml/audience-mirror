@@ -4259,3 +4259,169 @@ async def analyze_behavior_patterns(
             "high_freq_count": best_patterns[0].get('count', 0) if best_patterns else 0
         }
     }
+
+
+# ===========================================================================
+# SMS ENDPOINTS (Twilio Integration)
+# ===========================================================================
+
+from services.sms_service import sms_service
+from database import SMSCampaign, SMSMessage
+
+class SMSRecipient(BaseModel):
+    patient_id: Optional[str] = None
+    name: Optional[str] = None
+    phone: str
+
+class SMSSendRequest(BaseModel):
+    run_id: Optional[str] = None
+    segment: Optional[str] = None
+    campaign_name: Optional[str] = None
+    message: str
+    recipients: list[SMSRecipient]
+
+
+@app.get("/api/sms/status")
+async def get_sms_status():
+    """Check if SMS (Twilio) is configured"""
+    return {
+        "configured": sms_service.is_configured(),
+        "from_number": sms_service.from_number if sms_service.is_configured() else None
+    }
+
+
+@app.post("/api/sms/send")
+async def send_sms_campaign(request: SMSSendRequest, db: Session = Depends(get_db)):
+    """Send SMS to a list of recipients"""
+    if not sms_service.is_configured():
+        raise HTTPException(status_code=400, detail="SMS not configured. Add Twilio credentials.")
+    
+    if not request.recipients:
+        raise HTTPException(status_code=400, detail="No recipients provided")
+    
+    campaign_id = str(uuid.uuid4())
+    
+    # Format recipients
+    recipients = [{"patient_id": r.patient_id, "name": r.name, "phone": r.phone} for r in request.recipients]
+    
+    # Send messages
+    results = sms_service.send_bulk_sms(
+        recipients=recipients,
+        message_template=request.message,
+        status_callback=None
+    )
+    
+    # Store campaign
+    try:
+        campaign = SMSCampaign(
+            id=campaign_id,
+            run_id=request.run_id,
+            name=request.campaign_name or f"SMS to {request.segment or 'patients'}",
+            segment=request.segment,
+            message_template=request.message,
+            total_recipients=results["total"],
+            sent_count=results["sent"],
+            failed_count=results["failed"],
+            sent_at=datetime.utcnow()
+        )
+        db.add(campaign)
+        
+        for detail in results["details"]:
+            msg = SMSMessage(
+                id=str(uuid.uuid4()),
+                campaign_id=campaign_id,
+                twilio_sid=detail.get("sid"),
+                patient_id=detail.get("patient_id"),
+                patient_name=detail.get("recipient_name"),
+                phone_number=detail.get("to", ""),
+                message_body=request.message,
+                status="sent" if detail["success"] else "failed",
+                error_code=detail.get("error_code"),
+                error_message=detail.get("error_message"),
+                sent_at=datetime.utcnow() if detail["success"] else None
+            )
+            db.add(msg)
+        
+        db.commit()
+    except Exception as e:
+        print(f"[ERROR] Failed to store SMS campaign: {e}")
+    
+    return {
+        "campaign_id": campaign_id,
+        "total": results["total"],
+        "sent": results["sent"],
+        "failed": results["failed"],
+        "message": f"Sent {results['sent']} of {results['total']} messages"
+    }
+
+
+@app.get("/api/sms/campaigns")
+async def get_sms_campaigns(run_id: Optional[str] = None, limit: int = 20, db: Session = Depends(get_db)):
+    """Get list of SMS campaigns"""
+    query = db.query(SMSCampaign).order_by(SMSCampaign.created_at.desc())
+    if run_id:
+        query = query.filter(SMSCampaign.run_id == run_id)
+    campaigns = query.limit(limit).all()
+    
+    return [
+        {
+            "id": c.id,
+            "name": c.name,
+            "segment": c.segment,
+            "total_recipients": c.total_recipients,
+            "sent_count": c.sent_count,
+            "delivered_count": c.delivered_count,
+            "failed_count": c.failed_count,
+            "conversions": c.conversions,
+            "sent_at": c.sent_at.isoformat() if c.sent_at else None
+        }
+        for c in campaigns
+    ]
+
+
+@app.get("/api/sms/campaigns/{campaign_id}")
+async def get_sms_campaign(campaign_id: str, db: Session = Depends(get_db)):
+    """Get campaign details"""
+    campaign = db.query(SMSCampaign).filter(SMSCampaign.id == campaign_id).first()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    
+    messages = db.query(SMSMessage).filter(SMSMessage.campaign_id == campaign_id).all()
+    
+    return {
+        "id": campaign.id,
+        "name": campaign.name,
+        "segment": campaign.segment,
+        "message_template": campaign.message_template,
+        "stats": {
+            "total": campaign.total_recipients,
+            "sent": campaign.sent_count,
+            "delivered": campaign.delivered_count,
+            "failed": campaign.failed_count,
+            "conversions": campaign.conversions
+        },
+        "sent_at": campaign.sent_at.isoformat() if campaign.sent_at else None,
+        "messages": [
+            {
+                "patient_id": m.patient_id,
+                "patient_name": m.patient_name,
+                "phone": m.phone_number[-4:] if m.phone_number else "",
+                "status": m.status,
+                "error": m.error_message if m.status == "failed" else None
+            }
+            for m in messages
+        ]
+    }
+
+
+@app.post("/api/sms/campaigns/{campaign_id}/conversion")
+async def record_sms_conversion(campaign_id: str, count: int = 1, db: Session = Depends(get_db)):
+    """Record conversions from a campaign"""
+    campaign = db.query(SMSCampaign).filter(SMSCampaign.id == campaign_id).first()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found")
+    
+    campaign.conversions = (campaign.conversions or 0) + count
+    db.commit()
+    
+    return {"campaign_id": campaign_id, "conversions": campaign.conversions}

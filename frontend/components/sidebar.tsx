@@ -7,8 +7,8 @@ import { LayoutDashboard, TrendingUp, Sparkles, Settings } from "lucide-react";
 
 const navigation = [
   { name: "Home", href: "/", icon: LayoutDashboard },
-  { name: "Patient Intelligence", href: "/patient-insights", icon: TrendingUp },
-  { name: "Campaign Generator", href: "/campaign-generator", icon: Sparkles },
+  { name: "Patient Retention", href: "/patient-insights", icon: TrendingUp },
+  { name: "Find New Patients", href: "/campaign-generator", icon: Sparkles },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 

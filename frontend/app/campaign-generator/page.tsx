@@ -14,6 +14,7 @@ import {
   Target,
   Zap,
   AlertCircle,
+  Bot,
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
@@ -347,6 +348,62 @@ function ChannelMixSection({ channels, segmentId, onExport, exporting }: Channel
     </div>
   );
 }
+
+// ============================================================================
+// GEO TEASER CARD (AI Search Visibility)
+// ============================================================================
+
+function GeoTeaserCard() {
+  return (
+    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 text-white relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+      <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl"></div>
+      
+      <div className="relative">
+        <div className="flex items-center gap-2 mb-3">
+          <div className="h-8 w-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+            <Bot className="h-4 w-4 text-indigo-400" />
+          </div>
+          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
+            Coming Soon
+          </span>
+        </div>
+        
+        <h3 className="text-lg font-semibold mb-2">AI Search Visibility</h3>
+        <p className="text-sm text-slate-300 mb-4">
+          See how your practice appears when patients ask ChatGPT, Perplexity, or Claude for recommendations. 
+          Track your visibility and get tips to rank higher in AI-powered search.
+        </p>
+
+        <div className="flex items-center gap-4 mb-4 text-xs text-slate-400">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+            ChatGPT
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+            Perplexity
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-orange-400"></div>
+            Claude
+          </div>
+        </div>
+
+        <a 
+          href="https://forms.gle/B7vc9PDM5udokSAu7" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors"
+        >
+          Join Waitlist
+        </a>
+      </div>
+    </div>
+  );
+}
+
 
 // ============================================================================
 // CHANNEL CARD
@@ -757,6 +814,9 @@ function AcquisitionCampaignPageContent() {
             />
           )}
 
+          {/* AI Search Visibility Teaser */}
+          {!loading && <GeoTeaserCard />}
+
           {/* Ad Campaigns */}
           {!loading && channels.length > 0 && (
             <AdCampaignsSection channels={channels} segmentId={segmentId} />
@@ -778,6 +838,7 @@ function AcquisitionCampaignPageContent() {
   );
 }
 
+// Loading fallback for Suspense
 function LoadingFallback() {
   return (
     <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
@@ -789,6 +850,7 @@ function LoadingFallback() {
   );
 }
 
+// Default export wrapped in Suspense
 export default function AcquisitionCampaignPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>

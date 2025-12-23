@@ -88,6 +88,51 @@ class WinbackTemplate(Base):
     times_converted = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class SMSCampaign(Base):
+    __tablename__ = "sms_campaigns"
+    
+    id = Column(String, primary_key=True)
+    run_id = Column(String, nullable=True)
+    
+    name = Column(String, nullable=True)
+    segment = Column(String, nullable=True)
+    message_template = Column(Text, nullable=False)
+    
+    total_recipients = Column(Integer, default=0)
+    sent_count = Column(Integer, default=0)
+    delivered_count = Column(Integer, default=0)
+    failed_count = Column(Integer, default=0)
+    
+    clicks = Column(Integer, default=0)
+    responses = Column(Integer, default=0)
+    conversions = Column(Integer, default=0)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    sent_at = Column(DateTime, nullable=True)
+
+
+class SMSMessage(Base):
+    __tablename__ = "sms_messages"
+    
+    id = Column(String, primary_key=True)
+    campaign_id = Column(String, nullable=False)
+    
+    twilio_sid = Column(String, nullable=True)
+    
+    patient_id = Column(String, nullable=True)
+    patient_name = Column(String, nullable=True)
+    phone_number = Column(String, nullable=False)
+    
+    message_body = Column(Text, nullable=False)
+    
+    status = Column(String, default="queued")
+    error_code = Column(String, nullable=True)
+    error_message = Column(Text, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    sent_at = Column(DateTime, nullable=True)
+    delivered_at = Column(DateTime, nullable=True)
+
 # ---- Session helper ----
 def get_db():
     db = SessionLocal()

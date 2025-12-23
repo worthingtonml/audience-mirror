@@ -88,7 +88,7 @@ export default function PatientIntelligence() {
 
   return (
     <div className="pi-container">
-      <h1>Patient Intelligence</h1>
+      <h1>Patient Retention</h1>
       <p className="pi-subtitle">Clear insights to grow your practice</p>
       <p className="pi-subtitle-extended">
         Your patient data reveals hidden opportunities worth thousands in monthly revenue. 

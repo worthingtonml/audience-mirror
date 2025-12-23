@@ -10,8 +10,8 @@ export default function Navigation() {
   
   const links = [
     { href: '/', label: 'Home', icon: Home },
-    { href: '/patient-insights', label: 'Patient Intelligence', icon: BarChart3 },
-    { href: '/campaign-intel', label: 'Campaign Generator', icon: Sparkles },
+    { href: '/patient-insights', label: 'Patient Retention', icon: BarChart3 },
+    { href: '/campaign-intel', label: 'Find New Patients', icon: Sparkles },
   ];
 
   return (
