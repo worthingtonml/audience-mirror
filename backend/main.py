@@ -228,7 +228,7 @@ def aggregate_visits_to_patients(df: pd.DataFrame) -> pd.DataFrame:
     if treatment_col:
         agg_dict[treatment_col] = lambda x: ', '.join(sorted(set(str(v) for v in x.dropna())))
     
-    static_cols = ['zip_code', 'dob', 'date_of_birth', 'gender', 'email', 'phone', 'city', 'state']
+    static_cols = ['zip_code', 'dob', 'date_of_birth', 'gender', 'email', 'phone', 'city', 'state', 'name', 'first_name', 'last_name']
     for col in static_cols:
         if col in df.columns and col not in agg_dict:
             agg_dict[col] = 'first'
@@ -3863,7 +3863,13 @@ def extract_patient_list(df: pd.DataFrame, limit: int = 100) -> list:
     for p in result:
         if "first_name" in p and "name" not in p:
             p["name"] = p.pop("first_name")
-        p["phone"] = p.get("phone", "")
+        # Clean phone: convert to string, strip whitespace, set to None if empty/invalid
+        phone = p.get("phone", "")
+        if pd.isna(phone) or str(phone).strip() == "" or str(phone).lower() in ["nan", "none", "null"]:
+            p["phone"] = None
+        else:
+            # Convert to string and remove common formatting
+            p["phone"] = str(phone).strip().replace("-", "").replace("(", "").replace(")", "").replace(" ", "")
     return result
 def compute_segment_details(df: pd.DataFrame, segment_type: str) -> dict:
     """

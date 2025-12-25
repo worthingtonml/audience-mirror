@@ -1573,9 +1573,11 @@ ${clinicName} Team`
                             {/* CTA */}
                             <button
                               onClick={() => {
-                                const odPatientList = Array.from(selectedOneDone).length > 0 
+                                const odPatientList = Array.from(selectedOneDone).length > 0
                                   ? Array.from(selectedOneDone)
-                                  : Array.from({ length: Math.min(Math.round(patientCount * 0.25), 20) }, (_, i) => `OD-${String(i + 1).padStart(3, '0')}`);
+                                  : behaviorPatterns?.worst_patterns?.find((p: any) => p.id === "one_and_done")?.patient_ids || [];
+                                console.log('[WINBACK] Patient list:', odPatientList);
+                                console.log('[WINBACK] Patients with phone:', odPatientList.filter((p: any) => typeof p === "object" && p.phone));
                                 openActionModal(
                                   'one-and-done',
                                   'One-and-done patients',
@@ -3248,7 +3250,7 @@ ${clinicName} Team`
         segmentLabel={actionModalData.title}
         patientCount={actionModalData.count}
         message={dynamicCopy?.sms || ""}
-        recipients={actionModalData.patients.filter(p => typeof p === "object" && p.phone).map(p => typeof p === "object" ? {patient_id: p.patient_id, name: p.name, phone: p.phone || ""} : {patient_id: p, phone: ""})}
+        recipients={actionModalData.patients.filter(p => typeof p === "object" && p.phone && String(p.phone).trim() !== "").map(p => typeof p === "object" ? {patient_id: p.patient_id, name: p.name, phone: String(p.phone || "")} : {patient_id: p, phone: ""})}
         runId={currentRunId || undefined}
       />
     )}

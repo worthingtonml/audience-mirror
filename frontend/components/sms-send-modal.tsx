@@ -121,7 +121,7 @@ export function SMSSendModal({
 
   const charCount = message.length;
   const segmentCount = Math.ceil(charCount / 160);
-  const recipientsWithPhone = recipients.filter(r => r.phone);
+  const recipientsWithPhone = recipients.filter(r => r.phone && r.phone.trim() !== "");
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
