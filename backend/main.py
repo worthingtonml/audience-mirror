@@ -4022,6 +4022,10 @@ async def get_segment_insights(
     df = normalize_patients_dataframe(df)
     df = aggregate_visits_to_patients(df)
     df = segment_patients_by_behavior(df)
+    print(f"[BEHAVIOR-PATTERNS DEBUG] Raw CSV rows: {len(pd.read_csv(dataset.patients_path))}")
+    print(f"[BEHAVIOR-PATTERNS DEBUG] After processing: {len(df)}")
+    print(f"[BEHAVIOR-PATTERNS DEBUG] Columns: {df.columns.tolist()}")
+    print(f"[BEHAVIOR-PATTERNS DEBUG] visit_count values: {df['visit_count'].value_counts().to_dict() if 'visit_count' in df.columns else 'NO visit_count'}")
     
     # Add days_since_last_visit if not present
     if 'days_since_last_visit' not in df.columns and 'last_visit' in df.columns:
