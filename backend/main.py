@@ -1687,12 +1687,15 @@ def identify_dominant_profile(
     top_treatments = ["Primary Service"]
     treatment_categories = {"Injectable Treatments": 0, "Laser & Energy": 0, "Skincare & Other": 0}
     
+    print(f"[DEBUG] top_patients columns: {top_patients.columns.tolist()}")
     treatment_col = next((c for c in ['treatments_received', 'procedure', 'treatment', 'service'] if c in top_patients.columns), None)
     if treatment_col:
         all_treatments = []
         for treatments in top_patients[treatment_col].dropna():
             treatment_list = [t.strip() for t in str(treatments).split(',') if t.strip()]
             all_treatments.extend(treatment_list)
+            
+            print(f"[DEBUG] treatment_col={treatment_col}, all_treatments sample: {all_treatments[:10]}")
         
         if all_treatments:
             treatment_counts = pd.Series(all_treatments).value_counts()
