@@ -62,8 +62,11 @@ def validate_and_load_patients(file_path: str) -> Tuple[bool, List[str], Optiona
 
     # ---- Ensure optional columns exist with defaults -----------------------
     if "procedure_type" not in df.columns:
-        df["procedure_type"] = "Unknown"
-        warnings.append("procedure_type missing; defaulted to 'Unknown'.")
+        if "procedure" in df.columns:
+            df["procedure_type"] = df["procedure"]
+        else:
+            df["procedure_type"] = "Unknown"
+            warnings.append("procedure_type missing; defaulted to 'Unknown'.")
 
     if "revenue" not in df.columns:
         df["revenue"] = np.nan
