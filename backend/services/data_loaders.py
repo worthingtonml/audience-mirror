@@ -31,7 +31,7 @@ def validate_and_load_patients(file_path: str) -> Tuple[bool, List[str], Optiona
         "zipcode": "zip_code",
         "postal_code": "zip_code",
         "transaction_type": "treatment",
-        "procedure": "treatment",
+        "treatment": "procedure",  # Any 'treatment' column becomes 'procedure'
         "procedure_type": "treatment",
         "service": "treatment",
         "type": "treatment",
