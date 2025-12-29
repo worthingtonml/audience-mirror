@@ -2232,7 +2232,7 @@ ${clinicName} Team`
                     </div>
                     <div className="space-y-2">
                       {(
-                        analysisData?.available_procedures || [
+                        analysisData?.behavior_patterns?.top_treatments || [
                           'Botox',
                           'Dermal Fillers',
                           'Laser Treatments',
