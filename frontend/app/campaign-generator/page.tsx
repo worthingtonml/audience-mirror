@@ -692,7 +692,7 @@ function AdCampaignsSection({ channels, segmentId }: AdCampaignsSectionProps) {
 function AcquisitionCampaignPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const segmentId = searchParams.get('segmentId') || searchParams.get('run_id') || '';
+  const segmentId = searchParams.get('segmentId') || searchParams.get('run_id') || (typeof window !== 'undefined' ? sessionStorage.getItem('runId') : '') || '';
 
   // State
   const [summary, setSummary] = useState<AcquisitionSegmentSummary | null>(null);
