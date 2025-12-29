@@ -1708,12 +1708,13 @@ def identify_dominant_profile(
             
             total = len(all_treatments)
             
-            # Calculate percentages for top treatments (add this AFTER total is defined)
+            # Calculate percentages for top treatments
             top_treatments_pct = [round(treatment_counts[t] / total * 100) for t in top_treatments]
 
             for treatment, pct in zip(top_treatments, top_treatments_pct):
                 print(f"[DEBUG] Top treatment: {treatment} ({pct}%)")
 
+            print(f"[DEBUG] All treatments for categorization: {set(all_treatments)}")
             for treatment in all_treatments:
                 t_lower = treatment.lower()
                 if any(inj in t_lower for inj in injectables):
