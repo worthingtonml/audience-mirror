@@ -1685,6 +1685,7 @@ def identify_dominant_profile(
     
     # Find top treatments and categorize
     top_treatments = ["Primary Service"]
+    top_treatments_pct = [100]
     treatment_categories = {"Injectable Treatments": 0, "Laser & Energy": 0, "Skincare & Other": 0}
     
     print(f"[DEBUG] top_patients columns: {top_patients.columns.tolist()}")
@@ -1706,6 +1707,13 @@ def identify_dominant_profile(
             laser_energy = ['laser', 'ipl', 'morpheus', 'coolsculpting', 'emsculpt', 'ultherapy', 'rf', 'microneedling', 'pdo']
             
             total = len(all_treatments)
+            
+            # Calculate percentages for top treatments (add this AFTER total is defined)
+            top_treatments_pct = [round(treatment_counts[t] / total * 100) for t in top_treatments]
+
+            for treatment, pct in zip(top_treatments, top_treatments_pct):
+                print(f"[DEBUG] Top treatment: {treatment} ({pct}%)")
+
             for treatment in all_treatments:
                 t_lower = treatment.lower()
                 if any(inj in t_lower for inj in injectables):
@@ -1809,6 +1817,7 @@ def identify_dominant_profile(
             "visits_lift_pct": round(visits_lift_pct, 0),
             "ltv_lift_pct": round(ltv_lift_pct, 0),
             "top_treatments": top_treatments,
+            "top_treatments_pct": top_treatments_pct,
             "treatment_categories": treatment_categories,
             "referral_rate": round(referral_rate, 3),  
             "repeat_rate_lift_vs_market": round(visits_lift_pct / 100, 3), 

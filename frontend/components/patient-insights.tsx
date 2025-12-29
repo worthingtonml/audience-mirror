@@ -2246,7 +2246,7 @@ ${clinicName} Team`
                           >
                             <span className="text-sm text-[#111827]">{proc}</span>
                             <span className="text-xs text-[#6B7280]">
-                              {[42, 28, 18][idx]}% of visits
+                              {(analysisData?.behavior_patterns?.top_treatments_pct?.[idx] ?? [42, 28, 18][idx])}% of visits
                             </span>
                           </div>
                         ))}
