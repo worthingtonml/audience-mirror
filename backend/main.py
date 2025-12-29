@@ -1688,7 +1688,7 @@ def identify_dominant_profile(
     treatment_categories = {"Injectable Treatments": 0, "Laser & Energy": 0, "Skincare & Other": 0}
     
     print(f"[DEBUG] top_patients columns: {top_patients.columns.tolist()}")
-    treatment_col = next((c for c in ['treatments_received', 'procedure', 'treatment', 'service'] if c in top_patients.columns), None)
+    treatment_col = next((c for c in ['procedure_norm', 'treatments_received', 'procedure', 'treatment', 'service'] if c in top_patients.columns), None)
     if treatment_col:
         all_treatments = []
         for treatments in top_patients[treatment_col].dropna():
