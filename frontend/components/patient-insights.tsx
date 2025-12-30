@@ -1246,16 +1246,16 @@ ${clinicName} Team`
                                       <span className="text-[#374151]">{analysisData?.available_procedures?.slice(0, 3).join(', ') || 'Botox, Filler, Laser'}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Peak booking</span>
-                                      <span className="text-[#374151]">Tue–Thu, 10am–2pm</span>
+                                      <span className="text-[#9CA3AF]">Top procedures</span>
+                                      <span className="text-[#374151]">{analysisData?.available_procedures?.slice(0, 3).join(', ') || 'Botox, Filler, Laser'}</span>
                                     </div>
                                     <div className="flex justify-between">
                                       <span className="text-[#9CA3AF]">Retention rate</span>
-                                      <span className="text-[#374151]">94%</span>
+                                      <span className="text-[#374151]">{analysisData?.patient_segments?.high_frequency?.retention_rate || 94}%</span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Common trait</span>
-                                      <span className="text-[#374151]">Pre-books next visit</span>
+                                      <span className="text-[#9CA3AF]">Avg visits/year</span>
+                                      <span className="text-[#374151]">{analysisData?.behavior_patterns?.avg_visits_per_year || 4}+</span>
                                     </div>
                                   </div>
                                   
@@ -1504,12 +1504,8 @@ ${clinicName} Team`
                                       <span className="text-[#374151]">${analysisData?.patient_segments?.one_and_done?.avg_spend || 320}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Time since visit</span>
-                                      <span className="text-[#374151]">60–180 days</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Common trait</span>
-                                      <span className="text-[#374151]">No follow-up booked</span>
+                                      <span className="text-[#9CA3AF]">Win-back rate</span>
+                                      <span className="text-[#374151]">{analysisData?.patient_segments?.one_and_done?.win_back_rate || '12-18%'}</span>
                                     </div>
                                   </div>
                                   
