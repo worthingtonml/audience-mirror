@@ -1703,8 +1703,8 @@ def identify_dominant_profile(
             top_treatments = treatment_counts.head(3).index.tolist()
             
             # Categorize treatments
-            injectables = ['botox', 'filler', 'juvederm', 'restylane', 'sculptra', 'kybella', 'dysport', 'xeomin']
-            laser_energy = ['laser', 'ipl', 'morpheus', 'coolsculpting', 'emsculpt', 'ultherapy', 'rf', 'microneedling', 'pdo']
+            injectables = ['botox', 'filler', 'juvederm', 'restylane', 'sculptra', 'kybella', 'dysport', 'xeomin', 'lip filler', 'cheek filler', 'dermal']
+            laser_energy = ['laser', 'ipl', 'morpheus', 'coolsculpting', 'emsculpt', 'ultherapy', 'rf', 'microneedling', 'pdo', 'bbl', 'brazilian butt', 'breast', 'lipo', 'tummy', 'mommy makeover', 'augmentation', 'body contouring']
             
             total = len(all_treatments)
             

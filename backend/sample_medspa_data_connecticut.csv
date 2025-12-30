@@ -1,51 +1,51 @@
 patient_id,age,gender,zip_code,city,state,visit_number,days_since_last_visit,total_spent,avg_transaction,treatments,referral_source,last_visit_date
-CT001,62,F,06830,Greenwich,CT,12,45,28500,2375,"Botox, Filler, Laser, Chemical Peel",Friend Referral,2024-09-25
-CT002,68,F,06880,Westport,CT,8,62,19200,2400,"Botox, Filler, Microneedling",Friend Referral,2024-09-08
-CT003,71,M,06840,New Canaan,CT,6,78,14400,2400,"Botox, Laser",Friend Referral,2024-08-23
-CT004,59,F,06830,Greenwich,CT,15,38,33750,2250,"Botox, Filler, Chemical Peel, Microneedling",Friend Referral,2024-10-02
-CT005,65,F,06903,Stamford,CT,10,55,24000,2400,"Botox, Filler, Laser",Website,2024-09-15
-CT006,57,F,06880,Westport,CT,18,41,41400,2300,"Botox, Filler, Chemical Peel, Laser",Friend Referral,2024-09-29
-CT007,73,F,06840,New Canaan,CT,5,85,13500,2700,"Botox, Filler",Friend Referral,2024-08-16
-CT008,61,M,06830,Greenwich,CT,9,58,23400,2600,"Botox, Laser, Chemical Peel",Friend Referral,2024-09-12
-CT009,69,F,06903,Stamford,CT,7,68,18900,2700,"Botox, Filler, Microneedling",Friend Referral,2024-09-02
-CT010,64,F,06880,Westport,CT,14,48,35000,2500,"Botox, Filler, Laser, Chemical Peel",Friend Referral,2024-09-22
-CT011,58,F,06840,New Canaan,CT,11,52,28600,2600,"Botox, Filler, Microneedling, Laser",Friend Referral,2024-09-18
-CT012,72,M,06830,Greenwich,CT,4,92,11200,2800,"Botox, Laser",Friend Referral,2024-08-09
-CT013,60,F,06903,Stamford,CT,13,44,31200,2400,"Botox, Filler, Chemical Peel, Laser",Website,2024-09-26
-CT014,66,F,06880,Westport,CT,9,60,24300,2700,"Botox, Filler, Microneedling",Friend Referral,2024-09-10
-CT015,55,F,06840,New Canaan,CT,16,39,38400,2400,"Botox, Filler, Laser, Chemical Peel",Friend Referral,2024-10-01
-CT016,70,F,06830,Greenwich,CT,6,75,17400,2900,"Botox, Filler, Laser",Friend Referral,2024-08-26
-CT017,63,M,06903,Stamford,CT,8,64,20800,2600,"Botox, Laser, Chemical Peel",Website,2024-09-06
-CT018,67,F,06880,Westport,CT,10,56,26000,2600,"Botox, Filler, Microneedling, Laser",Friend Referral,2024-09-14
-CT019,74,F,06840,New Canaan,CT,4,88,12000,3000,"Botox, Filler",Friend Referral,2024-08-13
-CT020,56,F,06830,Greenwich,CT,17,42,40800,2400,"Botox, Filler, Laser, Chemical Peel, Microneedling",Friend Referral,2024-09-28
-CT021,61,F,06903,Stamford,CT,12,50,30000,2500,"Botox, Filler, Chemical Peel, Laser",Friend Referral,2024-09-20
-CT022,69,M,06880,Westport,CT,5,80,14500,2900,"Botox, Laser",Friend Referral,2024-08-21
-CT023,64,F,06840,New Canaan,CT,11,54,29700,2700,"Botox, Filler, Microneedling, Laser",Friend Referral,2024-09-16
-CT024,58,F,06830,Greenwich,CT,14,46,35700,2550,"Botox, Filler, Chemical Peel, Laser",Friend Referral,2024-09-24
-CT025,71,F,06903,Stamford,CT,7,70,19600,2800,"Botox, Filler, Laser",Website,2024-08-31
-CT026,62,F,06880,Westport,CT,13,47,32500,2500,"Botox, Filler, Chemical Peel, Microneedling",Friend Referral,2024-09-23
-CT027,75,M,06840,New Canaan,CT,3,95,9300,3100,"Botox, Laser",Friend Referral,2024-08-06
-CT028,59,F,06830,Greenwich,CT,15,43,36750,2450,"Botox, Filler, Laser, Chemical Peel",Friend Referral,2024-09-27
-CT029,66,F,06903,Stamford,CT,9,61,23400,2600,"Botox, Filler, Microneedling",Friend Referral,2024-09-09
-CT030,68,F,06880,Westport,CT,8,65,21600,2700,"Botox, Filler, Laser",Friend Referral,2024-09-05
-CT031,57,F,06840,New Canaan,CT,16,40,38400,2400,"Botox, Filler, Chemical Peel, Laser, Microneedling",Friend Referral,2024-10-00
-CT032,72,F,06830,Greenwich,CT,5,82,14500,2900,"Botox, Filler",Friend Referral,2024-08-19
-CT033,60,M,06903,Stamford,CT,10,57,26000,2600,"Botox, Laser, Chemical Peel",Website,2024-09-13
-CT034,65,F,06880,Westport,CT,11,53,28600,2600,"Botox, Filler, Microneedling, Laser",Friend Referral,2024-09-17
-CT035,73,F,06840,New Canaan,CT,4,90,11600,2900,"Botox, Filler",Friend Referral,2024-08-11
-CT036,58,F,06830,Greenwich,CT,17,41,42500,2500,"Botox, Filler, Laser, Chemical Peel, Microneedling",Friend Referral,2024-09-29
-CT037,70,M,06903,Stamford,CT,6,76,16800,2800,"Botox, Laser",Website,2024-08-25
-CT038,63,F,06880,Westport,CT,12,49,31200,2600,"Botox, Filler, Chemical Peel, Laser",Friend Referral,2024-09-21
-CT039,67,F,06840,New Canaan,CT,9,62,24300,2700,"Botox, Filler, Microneedling",Friend Referral,2024-09-08
-CT040,55,F,06830,Greenwich,CT,18,38,43200,2400,"Botox, Filler, Laser, Chemical Peel, Microneedling",Friend Referral,2024-10-02
-CT041,69,F,06903,Stamford,CT,8,66,21600,2700,"Botox, Filler, Laser",Friend Referral,2024-09-04
-CT042,74,M,06880,Westport,CT,3,98,9600,3200,"Botox, Laser",Friend Referral,2024-08-03
-CT043,61,F,06840,New Canaan,CT,13,48,33800,2600,"Botox, Filler, Chemical Peel, Microneedling",Friend Referral,2024-09-22
-CT044,64,F,06830,Greenwich,CT,10,56,26000,2600,"Botox, Filler, Laser, Chemical Peel",Friend Referral,2024-09-14
-CT045,56,F,06903,Stamford,CT,16,42,38400,2400,"Botox, Filler, Microneedling, Laser",Website,2024-09-28
-CT046,71,F,06880,Westport,CT,6,74,17400,2900,"Botox, Filler, Laser",Friend Referral,2024-08-27
-CT047,62,M,06840,New Canaan,CT,9,59,23400,2600,"Botox, Laser, Chemical Peel",Friend Referral,2024-09-11
-CT048,68,F,06830,Greenwich,CT,11,52,28600,2600,"Botox, Filler, Microneedling, Laser",Friend Referral,2024-09-18
-CT049,75,F,06903,Stamford,CT,4,86,12400,3100,"Botox, Filler",Website,2024-08-15
-CT050,59,F,06880,Westport,CT,14,45,35000,2500,"Botox, Filler, Chemical Peel, Laser",Friend Referral,2024-09-25
+CT001,62,F,6830,Greenwich,CT,12,45,28500,2375,"Botox, Filler, Laser, Chemical Peel",Friend Referral,2025-01-06
+CT002,68,F,6880,Westport,CT,8,8,19200,2400,"Botox, Filler, Microneedling",Friend Referral,2025-09-13
+CT003,71,M,6840,New Canaan,CT,6,72,14400,2400,"Botox, Laser",Friend Referral,2025-01-06
+CT004,59,F,6830,Greenwich,CT,15,24,33750,2250,"Botox, Filler, Chemical Peel, Microneedling",Friend Referral,2025-03-15
+CT005,65,F,6903,Stamford,CT,10,41,24000,2400,"Botox, Filler, Laser",Website,2025-09-14
+CT006,57,F,6880,Westport,CT,18,1,41400,2300,"Botox, Filler, Chemical Peel, Laser",Friend Referral,2025-12-22
+CT007,73,F,6840,New Canaan,CT,5,1,13500,2700,"Botox, Filler",Friend Referral,2025-03-16
+CT008,61,M,6830,Greenwich,CT,9,9,23400,2600,"Botox, Laser, Chemical Peel",Friend Referral,2025-02-24
+CT009,69,F,6903,Stamford,CT,7,36,18900,2700,"Botox, Filler, Microneedling",Friend Referral,2025-04-08
+CT010,64,F,6880,Westport,CT,14,6,35000,2500,"Botox, Filler, Laser, Chemical Peel",Friend Referral,2025-12-16
+CT011,58,F,6840,New Canaan,CT,11,8,28600,2600,"Botox, Filler, Microneedling, Laser",Friend Referral,2025-08-19
+CT012,72,M,6830,Greenwich,CT,4,11,11200,2800,"Botox, Laser",Friend Referral,2025-07-27
+CT013,60,F,6903,Stamford,CT,13,9,31200,2400,"Botox, Filler, Chemical Peel, Laser",Website,2025-12-06
+CT014,66,F,6880,Westport,CT,9,28,24300,2700,"Botox, Filler, Microneedling",Friend Referral,2025-07-22
+CT015,55,F,6840,New Canaan,CT,16,2,38400,2400,"Botox, Filler, Laser, Chemical Peel",Friend Referral,2025-11-19
+CT016,70,F,6830,Greenwich,CT,6,102,17400,2900,"Botox, Filler, Laser",Friend Referral,2025-05-31
+CT017,63,M,6903,Stamford,CT,8,12,20800,2600,"Botox, Laser, Chemical Peel",Website,2025-01-26
+CT018,67,F,6880,Westport,CT,10,33,26000,2600,"Botox, Filler, Microneedling, Laser",Friend Referral,2025-11-06
+CT019,74,F,6840,New Canaan,CT,4,19,12000,3000,"Botox, Filler",Friend Referral,2025-01-27
+CT020,56,F,6830,Greenwich,CT,17,37,40800,2400,"Botox, Filler, Laser, Chemical Peel, Microneedling",Friend Referral,2025-10-05
+CT021,61,F,6903,Stamford,CT,12,49,30000,2500,"Botox, Filler, Chemical Peel, Laser",Friend Referral,2025-05-06
+CT022,69,M,6880,Westport,CT,5,120,14500,2900,"Botox, Laser",Friend Referral,2025-05-24
+CT023,64,F,6840,New Canaan,CT,11,11,29700,2700,"Botox, Filler, Microneedling, Laser",Friend Referral,2025-09-13
+CT024,58,F,6830,Greenwich,CT,14,99,35700,2550,"Botox, Filler, Chemical Peel, Laser",Friend Referral,2025-03-19
+CT025,71,F,6903,Stamford,CT,7,99,19600,2800,"Botox, Filler, Laser",Website,2025-05-25
+CT026,62,F,6880,Westport,CT,13,117,32500,2500,"Botox, Filler, Chemical Peel, Microneedling",Friend Referral,2025-01-11
+CT027,75,M,6840,New Canaan,CT,3,32,9300,3100,"Botox, Laser",Friend Referral,2025-11-16
+CT028,59,F,6830,Greenwich,CT,15,18,36750,2450,"Botox, Filler, Laser, Chemical Peel",Friend Referral,2025-11-08
+CT029,66,F,6903,Stamford,CT,9,76,23400,2600,"Botox, Filler, Microneedling",Friend Referral,2025-08-31
+CT030,68,F,6880,Westport,CT,8,4,21600,2700,"Botox, Filler, Laser",Friend Referral,2025-11-24
+CT031,57,F,6840,New Canaan,CT,16,35,38400,2400,"Botox, Filler, Chemical Peel, Laser, Microneedling",Friend Referral,2025-01-22
+CT032,72,F,6830,Greenwich,CT,5,93,14500,2900,"Botox, Filler",Friend Referral,2025-03-04
+CT033,60,M,6903,Stamford,CT,10,36,26000,2600,"Botox, Laser, Chemical Peel",Website,2025-11-11
+CT034,65,F,6880,Westport,CT,11,32,28600,2600,"Botox, Filler, Microneedling, Laser",Friend Referral,2025-04-20
+CT035,73,F,6840,New Canaan,CT,4,15,11600,2900,"Botox, Filler",Friend Referral,2025-04-07
+CT036,58,F,6830,Greenwich,CT,17,66,42500,2500,"Botox, Filler, Laser, Chemical Peel, Microneedling",Friend Referral,2025-07-06
+CT037,70,M,6903,Stamford,CT,6,61,16800,2800,"Botox, Laser",Website,2025-10-28
+CT038,63,F,6880,Westport,CT,12,63,31200,2600,"Botox, Filler, Chemical Peel, Laser",Friend Referral,2025-08-11
+CT039,67,F,6840,New Canaan,CT,9,70,24300,2700,"Botox, Filler, Microneedling",Friend Referral,2025-03-19
+CT040,55,F,6830,Greenwich,CT,18,14,43200,2400,"Botox, Filler, Laser, Chemical Peel, Microneedling",Friend Referral,2025-07-10
+CT041,69,F,6903,Stamford,CT,8,1,21600,2700,"Botox, Filler, Laser",Friend Referral,2025-09-17
+CT042,74,M,6880,Westport,CT,3,52,9600,3200,"Botox, Laser",Friend Referral,2025-07-12
+CT043,61,F,6840,New Canaan,CT,13,62,33800,2600,"Botox, Filler, Chemical Peel, Microneedling",Friend Referral,2025-10-18
+CT044,64,F,6830,Greenwich,CT,10,30,26000,2600,"Botox, Filler, Laser, Chemical Peel",Friend Referral,2025-03-24
+CT045,56,F,6903,Stamford,CT,16,31,38400,2400,"Botox, Filler, Microneedling, Laser",Website,2025-01-25
+CT046,71,F,6880,Westport,CT,6,100,17400,2900,"Botox, Filler, Laser",Friend Referral,2025-04-05
+CT047,62,M,6840,New Canaan,CT,9,12,23400,2600,"Botox, Laser, Chemical Peel",Friend Referral,2025-06-11
+CT048,68,F,6830,Greenwich,CT,11,35,28600,2600,"Botox, Filler, Microneedling, Laser",Friend Referral,2025-06-26
+CT049,75,F,6903,Stamford,CT,4,33,12400,3100,"Botox, Filler",Website,2025-09-23
+CT050,59,F,6880,Westport,CT,14,71,35000,2500,"Botox, Filler, Chemical Peel, Laser",Friend Referral,2025-04-25
