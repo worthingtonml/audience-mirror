@@ -46,6 +46,7 @@ from services.scoring import (
 )
 from services.churn_scoring import calculate_churn_risk, get_churn_summary, analyze_patient_churn
 from services.verticals import detect_vertical, get_vertical, get_prompt_context
+from services.patient_segments import calculate_patient_segments
 from services.validate import validate_algorithm_accuracy
 from database import get_db, Dataset, AnalysisRun, PatientOutreach, create_tables
 
@@ -1794,6 +1795,9 @@ def identify_dominant_profile(
     print(f"[PROFILE]   - {existing_zips} ZIPs with existing patients")
     print(f"[PROFILE]   - {expansion_zips} expansion opportunity ZIPs")
     print(f"[PROFILE]   - {sum(g['patient_count'] for g in geo_concentration) * 1000:,} total addressable households")
+    # Calculate patient segments
+    patient_segments = calculate_patient_segments(patients_df, top_patients, revenue_col)
+    print(f"[PROFILE] Patient segments: {patient_segments}")
     
     return {
         "segment_patient_count": len(top_patients),
@@ -1833,7 +1837,8 @@ def identify_dominant_profile(
             "primary_city": primary_city
         },
         "profile_summary": summary,
-        "cohort_descriptor": cohort_descriptor
+        "cohort_descriptor": cohort_descriptor,
+        "patient_segments": patient_segments
     }
 def generate_strategic_insights(
     patients_df: pd.DataFrame,

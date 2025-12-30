@@ -1208,7 +1208,7 @@ ${clinicName} Team`
                             <div className="flex items-center justify-between mb-4">
                               <h4 className="text-sm font-semibold text-[#111827]">High-frequency patients</h4>
                               <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
-                                {Math.round(patientCount * 0.15)} patients
+                                {analysisData?.patient_segments?.high_frequency?.count || Math.round(patientCount * 0.15)} patients
                               </span>
                             </div>
                             
@@ -1220,11 +1220,11 @@ ${clinicName} Team`
                             <div className="flex gap-6 text-sm mb-4">
                               <div>
                                 <span className="text-[#9CA3AF]">Avg LTV:</span>{' '}
-                                <span className="text-[#111827] font-medium">${Math.round((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) * 1.5).toLocaleString()}</span>
+                                <span className="text-[#111827] font-medium">${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()}</span>
                               </div>
                               <div>
                                 <span className="text-[#9CA3AF]">vs average:</span>{' '}
-                                <span className="text-[#111827] font-medium">+2.4×</span>
+                                <span className="text-[#111827] font-medium">+{analysisData?.patient_segments?.high_frequency?.ltv_multiplier || 2.4}×</span>
                               </div>
                             </div>
 
@@ -1334,11 +1334,11 @@ ${clinicName} Team`
                             <div className="flex gap-6 text-sm mb-4">
                               <div>
                                 <span className="text-[#9CA3AF]">Avg referrals:</span>{' '}
-                                <span className="text-[#111827] font-medium">2.3</span>
+                                <span className="text-[#111827] font-medium">{analysisData?.patient_segments?.referral_champions?.avg_referrals || 2.3}</span>
                               </div>
                               <div>
                                 <span className="text-[#9CA3AF]">Conversion:</span>{' '}
-                                <span className="text-[#111827] font-medium">73%</span>
+                                <span className="text-[#111827] font-medium">{analysisData?.patient_segments?.referral_champions?.conversion_rate || 73}%</span>
                               </div>
                             </div>
 
@@ -1474,11 +1474,11 @@ ${clinicName} Team`
                             <div className="flex gap-6 text-sm mb-4">
                               <div>
                                 <span className="text-[#9CA3AF]">If recovered:</span>{' '}
-                                <span className="text-[#111827] font-medium">${(Math.round(patientCount * 0.25) * 450).toLocaleString()}</span>
+                                <span className="text-[#111827] font-medium">${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()}</span>
                               </div>
                               <div>
                                 <span className="text-[#9CA3AF]">Win-back rate:</span>{' '}
-                                <span className="text-[#111827] font-medium">12–18%</span>
+                                <span className="text-[#111827] font-medium">{analysisData?.patient_segments?.one_and_done?.win_back_rate || '12–18%'}</span>
                               </div>
                             </div>
 
@@ -1501,7 +1501,7 @@ ${clinicName} Team`
                                     </div>
                                     <div className="flex justify-between">
                                       <span className="text-[#9CA3AF]">Avg first spend</span>
-                                      <span className="text-[#374151]">$320</span>
+                                      <span className="text-[#374151]">${analysisData?.patient_segments?.one_and_done?.avg_spend || 320}</span>
                                     </div>
                                     <div className="flex justify-between">
                                       <span className="text-[#9CA3AF]">Time since visit</span>
@@ -1598,7 +1598,7 @@ ${clinicName} Team`
                             <div className="flex items-center justify-between mb-4">
                               <h4 className="text-sm font-semibold text-[#111827]">Lapsed regulars</h4>
                               <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
-                                {Math.round(patientCount * 0.08)} patients
+                                {analysisData?.patient_segments?.lapsed_regulars?.count || Math.round(patientCount * 0.08)} patients
                               </span>
                             </div>
                             
@@ -1610,11 +1610,11 @@ ${clinicName} Team`
                             <div className="flex gap-6 text-sm mb-4">
                               <div>
                                 <span className="text-[#9CA3AF]">Avg prev visits:</span>{' '}
-                                <span className="text-[#111827] font-medium">3.2</span>
+                                <span className="text-[#111827] font-medium">{analysisData?.patient_segments?.lapsed_regulars?.avg_prev_visits || 3.2}</span>
                               </div>
                               <div>
                                 <span className="text-[#9CA3AF]">At risk:</span>{' '}
-                                <span className="text-[#111827] font-medium">${(Math.round(patientCount * 0.08) * 2880).toLocaleString()}</span>
+                                <span className="text-[#111827] font-medium">${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()}</span>
                               </div>
                             </div>
 
@@ -1767,7 +1767,7 @@ ${clinicName} Team`
                   <p className="text-sm text-indigo-100 leading-relaxed mb-6">
                     {(churnData?.at_risk_percent || 0) > 30 
                       ? `Your best patients are steady, but ${Math.round(patientCount * (churnData?.at_risk_percent || 0) / 100)} are starting to drift. A quick thank-you or VIP offer keeps them choosing you.`
-                      : `${Math.round(patientCount * 0.18)} patients have referred before. One referral can offset a whole quarter of churn. This is the easiest win on the board.`
+                      : `${analysisData?.patient_segments?.referral_champions?.count || Math.round(patientCount * 0.18)} patients have referred before. One referral can offset a whole quarter of churn. This is the easiest win on the board.`
                     }
                   </p>
 
@@ -1798,7 +1798,7 @@ ${clinicName} Team`
                   
                   <p className="text-sm text-[#6B7280] leading-relaxed mb-6">
                     {behaviorPatterns?.recommended_play?.subcopy || 
-                      `${Math.round(patientCount * 0.25)} patients tried once and left. A simple "we miss you" text brings 12–18% of them back. That's money already on the table.`
+                      `${analysisData?.patient_segments?.one_and_done?.count || Math.round(patientCount * 0.25)} patients tried once and left. A simple "we miss you" text brings 12–18% of them back. That's money already on the table.`
                     }
                   </p>
 
