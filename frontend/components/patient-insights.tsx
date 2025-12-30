@@ -1629,11 +1629,11 @@ ${clinicName} Team`
                                   <div className="space-y-2">
                                     <div className="flex justify-between">
                                       <span className="text-[#9CA3AF]">Top procedures</span>
-                                      <span className="text-[#374151]">Botox, Filler</span>
+                                      <span className="text-[#374151]">{analysisData?.behavior_patterns?.top_treatments?.slice(0, 2).join(', ') || 'Botox, Filler'}</span>
                                     </div>
                                     <div className="flex justify-between">
                                       <span className="text-[#9CA3AF]">Avg lifetime value</span>
-                                      <span className="text-[#374151]">${Math.round((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) * 0.8).toLocaleString()}</span>
+                                      <span className="text-[#374151]">${(analysisData?.patient_segments?.lapsed_regulars?.avg_ltv || 0).toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between">
                                       <span className="text-[#9CA3AF]">Recovery window</span>
