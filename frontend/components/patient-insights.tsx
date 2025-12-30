@@ -1322,7 +1322,7 @@ ${clinicName} Team`
                             <div className="flex items-center justify-between mb-4">
                               <h4 className="text-sm font-semibold text-[#111827]">Referral champions</h4>
                               <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
-                                {Math.round(patientCount * 0.18)} patients
+                                {analysisData?.patient_segments?.referral_champions?.count || Math.round(patientCount * 0.18)} patients
                               </span>
                             </div>
                             
@@ -1462,7 +1462,7 @@ ${clinicName} Team`
                             <div className="flex items-center justify-between mb-4">
                               <h4 className="text-sm font-semibold text-[#111827]">One-and-done patients</h4>
                               <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
-                                {Math.round(patientCount * 0.25)} patients
+                                {analysisData?.patient_segments?.one_and_done?.count || Math.round(patientCount * 0.25)} patients
                               </span>
                             </div>
                             
