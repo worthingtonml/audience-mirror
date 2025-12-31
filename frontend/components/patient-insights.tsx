@@ -2205,7 +2205,7 @@ ${clinicName} Team`
                         )}
                       </div>
                       <p className="text-sm text-[#6B7280]">
-                        Up 8% year-over-year. {terms.Customers} are choosing premium
+                        Up {analysisData?.behavior_patterns?.spend_change_pct || 8}% year-over-year. {terms.Customers} are choosing premium
                         services when they do visit.
                       </p>
                     </div>
@@ -2214,11 +2214,11 @@ ${clinicName} Team`
                         Retention Rate
                       </div>
                       <div className="text-2xl font-semibold text-[#111827] mb-1">
-                        73%
+                        {analysisData?.behavior_patterns?.retention_rate || 73}%
                       </div>
                       <p className="text-sm text-[#6B7280]">
                         12-month retention. Market average is 58%, so you're
-                        outperforming by 15 percentage points.
+                        outperforming by {Math.abs((analysisData?.behavior_patterns?.retention_rate || 73) - 58)} percentage points.
                       </p>
                     </div>
                   </div>
