@@ -1213,7 +1213,7 @@ ${clinicName} Team`
                             </div>
                             
                             <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              They figured out what works and built you into their routine. The risk is they start feeling like just another appointment. A VIP reward reminds them they're not — and keeps future visits locked in.
+                              Your top performers — {analysisData?.patient_segments?.high_frequency?.pct_of_total || 15}% of patients generating ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV each. They visit regularly and spend more. Keep them engaged with VIP treatment.
                             </p>
                             
                             {/* Supporting metrics - plain text */}
@@ -1327,9 +1327,8 @@ ${clinicName} Team`
                             </div>
                             
                             <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              They talk about you without being asked — that's your strongest signal. Without structure, word of mouth stays inconsistent. A referral program gives them a reason to do it more.
+                              {analysisData?.patient_segments?.referral_champions?.count || 0} patients averaging {analysisData?.patient_segments?.referral_champions?.avg_referrals || 2} referrals each with {analysisData?.patient_segments?.referral_champions?.conversion_rate || 70}% conversion. A structured program amplifies their word-of-mouth.
                             </p>
-                            
                             {/* Supporting metrics - plain text */}
                             <div className="flex gap-6 text-sm mb-4">
                               <div>
@@ -1467,7 +1466,7 @@ ${clinicName} Team`
                             </div>
                             
                             <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              They came in curious but left without a clear next step. The window to re-engage is 30–60 days — after that, they've moved on. A win-back text surfaces what held them back.
+                              {analysisData?.patient_segments?.one_and_done?.count || 0} patients tried once and didn't return — ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} in potential recovery. A simple "we miss you" text brings {analysisData?.patient_segments?.one_and_done?.win_back_rate || '10-15%'} back.
                             </p>
                             
                             {/* Supporting metrics - plain text */}
@@ -1599,7 +1598,7 @@ ${clinicName} Team`
                             </div>
                             
                             <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              They were consistent, then stopped — something changed. After 6 months, win-back rates collapse. Personal outreach finds out what happened and often reopens the door.
+                              {analysisData?.patient_segments?.lapsed_regulars?.count || 0} former regulars (avg {analysisData?.patient_segments?.lapsed_regulars?.avg_prev_visits || 3} visits) have gone quiet — ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk. Personal outreach reopens the door.
                             </p>
                             
                             {/* Supporting metrics - plain text */}
