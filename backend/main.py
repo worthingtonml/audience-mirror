@@ -213,6 +213,10 @@ def aggregate_visits_to_patients(df: pd.DataFrame) -> pd.DataFrame:
     
     if df[patient_id_col].nunique() == len(df):
         print(f"[AGGREGATE] All {len(df)} rows have unique patient_id - no aggregation needed")
+        # Map visit_number to visit_count if present
+        if 'visit_number' in df.columns and 'visit_count' not in df.columns:
+            df = df.rename(columns={'visit_number': 'visit_count'})
+            print(f"[AGGREGATE] Mapped visit_number to visit_count")
         return df
     
     print(f"[AGGREGATE] Collapsing {len(df)} visits into {df[patient_id_col].nunique()} patients")
