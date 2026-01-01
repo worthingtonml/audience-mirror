@@ -668,9 +668,10 @@ export default function PatientInsights() {
   const costPerBooking =
     totalBookings > 0 ? Math.round(recommendedBudget / totalBookings) : 0;
 
+  const avgLtv = analysisData?.behavior_patterns?.avg_lifetime_value || 3600;
   const roas =
     costPerBooking > 0
-      ? (totalRevenue / totalBookings / costPerBooking).toFixed(1)
+      ? (avgLtv / costPerBooking).toFixed(1)
       : '0';
 
   const localZips = (analysisData.top_segments || []).filter(
