@@ -1172,7 +1172,8 @@ ${clinicName} Team`
           {!isMortgage && (
             <section className="relative -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-10 bg-gradient-to-b from-slate-50 to-white">
               <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-8">
+                {/* Section Header */}
+                <div className="text-center mb-6">
                   <h2 className="text-lg font-semibold text-[#111827] mb-2">
                     Here's what the data tells you
                   </h2>
@@ -1181,551 +1182,299 @@ ${clinicName} Team`
                   </p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-8">
-                  {/* What's Working */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                        <Check className="h-5 w-5 text-emerald-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-[#111827]">What's working</h3>
-                        <p className="text-xs text-emerald-600">Keep doing this</p>
-                      </div>
+                {/* Summary Strip */}
+                <div className="bg-white/60 rounded-lg px-6 py-4 mb-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm border border-gray-200/60">
+                  <div>
+                    <span className="text-[#9CA3AF]">Revenue at risk:</span>{' '}
+                    <span className="text-red-600 font-semibold">
+                      ${((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) + 
+                         (analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0)).toLocaleString()}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[#9CA3AF]">Patients slipping:</span>{' '}
+                    <span className="text-[#111827] font-medium">
+                      {(analysisData?.patient_segments?.one_and_done?.count || 0) + 
+                       (analysisData?.patient_segments?.lapsed_regulars?.count || 0)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[#9CA3AF]">VIP revenue:</span>{' '}
+                    <span className="text-emerald-600 font-semibold">
+                      ${((analysisData?.patient_segments?.high_frequency?.count || 0) * 
+                         (analysisData?.patient_segments?.high_frequency?.avg_ltv || 0)).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* ============================================
+                    RISK BLOCK - "Revenue you can recover"
+                    ============================================ */}
+                <div className="bg-red-50/50 rounded-2xl p-6 mb-6 border border-red-100">
+                  {/* Block Header */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
+                      <AlertCircle className="h-4 w-4 text-red-500" />
                     </div>
-                    
-                    <div className="space-y-3">
-                      {behaviorPatterns?.best_patterns?.slice(0, 2).map((pattern: any, idx: number) => (
-                        <div key={idx} className="bg-white rounded-xl p-5 shadow-sm border border-emerald-100">
-                          <div className="text-sm font-medium text-[#111827] mb-2">{pattern.label}</div>
-                          <p className="text-sm text-[#6B7280] leading-relaxed">
-                            {pattern.metric}. <span className="text-emerald-600 font-medium">{pattern.insight}</span>
-                          </p>
-                        </div>
-                      )) || (
-                        <>
-                          {/* High-frequency patients card */}
-                          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200/60">
-                            <div className="flex items-center justify-between mb-4">
-                              <h4 className="text-sm font-semibold text-[#111827]">High-frequency patients</h4>
-                              <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
-                                {analysisData?.patient_segments?.high_frequency?.count || Math.round(patientCount * 0.15)} patients
-                              </span>
-                            </div>
-                            
-                            <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              These {analysisData?.patient_segments?.high_frequency?.count || 0} patients aren't thinking about alternatives — ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} each, built on trust. Trust on autopilot becomes routine. A small gesture reminds them they're not just another appointment.
-                            </p>
-                            
-                            {/* Supporting metrics - plain text */}
-                            <div className="flex gap-6 text-sm mb-4">
-                              <div>
-                                <span className="text-[#9CA3AF]">Avg LTV:</span>{' '}
-                                <span className="text-[#111827] font-medium">${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()}</span>
-                              </div>
-                              <div>
-                                <span className="text-[#9CA3AF]">vs average:</span>{' '}
-                                <span className="text-[#111827] font-medium">+{analysisData?.patient_segments?.high_frequency?.ltv_multiplier || 2.4}×</span>
-                              </div>
-                            </div>
-
-                            {/* Progressive disclosure accordion */}
-                            <div className="border-t border-gray-100 pt-3">
-                              <button 
-                                onClick={() => setExpandedInsight(expandedInsight === 'high-freq' ? null : 'high-freq')}
-                                className="w-full text-left text-xs text-[#6B7280] hover:text-[#111827] flex items-center justify-between py-1"
-                              >
-                                <span>View insights</span>
-                                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedInsight === 'high-freq' ? 'rotate-180' : ''}`} />
-                              </button>
-                              
-                              {expandedInsight === 'high-freq' && (
-                                <div className="mt-3 space-y-4 text-sm">
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Top procedures</span>
-                                      <span className="text-[#374151]">{analysisData?.available_procedures?.slice(0, 3).join(', ') || 'Botox, Filler, Laser'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Top procedures</span>
-                                      <span className="text-[#374151]">{analysisData?.available_procedures?.slice(0, 3).join(', ') || 'Botox, Filler, Laser'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Retention rate</span>
-                                      <span className="text-[#374151]">{analysisData?.patient_segments?.high_frequency?.retention_rate || 94}%</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Avg visits/year</span>
-                                      <span className="text-[#374151]">{analysisData?.behavior_patterns?.avg_visits_per_year || 4}+</span>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Patient list with checkboxes */}
-                                  <div className="pt-3 border-t border-gray-100">
-                                    <div className="text-xs text-[#9CA3AF] mb-2">Select patients</div>
-                                    <div className="space-y-1">
-                                      {Array.from({ length: 5 }, (_, i) => {
-                                        const id = `HF-${String(i + 1).padStart(3, '0')}`;
-                                        return (
-                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
-                                            <input
-                                              type="checkbox"
-                                              checked={selectedHighFreq.has(id)}
-                                              onChange={(e) => {
-                                                const next = new Set(selectedHighFreq);
-                                                e.target.checked ? next.add(id) : next.delete(id);
-                                                setSelectedHighFreq(next);
-                                              }}
-                                              className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
-                                            />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
-                                            <span className="text-xs text-[#9CA3AF]">{4 + i} visits/yr</span>
-                                          </label>
-                                        );
-                                      })}
-                                    </div>
-                                    {Math.round(patientCount * 0.15) > 5 && (
-                                      <button className="text-xs text-[#6366f1] mt-2 hover:underline">
-                                        +{Math.round(patientCount * 0.15) - 5} more
-                                      </button>
-                                    )}
-                                    <div className="text-[10px] text-[#9CA3AF] mt-2">
-                                      {selectedHighFreq.size > 0 ? `${selectedHighFreq.size} selected` : 'None selected'}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* CTA */}
-                            <button
-                              onClick={() => {
-                                const hfPatientList = Array.from(selectedHighFreq).length > 0 
-                                  ? Array.from(selectedHighFreq)
-                                  : Array.from({ length: Math.min(Math.round(patientCount * 0.15), 20) }, (_, i) => `HF-${String(i + 1).padStart(3, '0')}`);
-                                openActionModal(
-                                  'high-frequency',
-                                  'High-frequency patients',
-                                  selectedHighFreq.size || Math.round(patientCount * 0.15),
-                                  hfPatientList,
-                                  'vip-reward',
-                                  'Send VIP reward'
-                                );
-                              }}
-                              className="w-full mt-4 px-4 py-2.5 bg-[#6366f1] text-white text-sm font-medium rounded-lg hover:bg-[#4f46e5] transition-colors"
-                            >
-                              {selectedHighFreq.size > 0 ? `Send VIP reward to ${selectedHighFreq.size}` : 'Send VIP reward'}
-                            </button>
-                          </div>
-
-                          {/* Referral champions card */}
-                          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200/60">
-                            <div className="flex items-center justify-between mb-4">
-                              <h4 className="text-sm font-semibold text-[#111827]">Referral champions</h4>
-                              <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
-                                {analysisData?.patient_segments?.referral_champions?.count || Math.round(patientCount * 0.18)} patients
-                              </span>
-                            </div>
-                            
-                            <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              {analysisData?.patient_segments?.referral_champions?.count || 0} patients send friends who actually show up — {analysisData?.patient_segments?.referral_champions?.conversion_rate || 70}% conversion. That's trust at scale. When it's noticed, it multiplies.
-                            </p>
-                            {/* Supporting metrics - plain text */}
-                            <div className="flex gap-6 text-sm mb-4">
-                              <div>
-                                <span className="text-[#9CA3AF]">Avg referrals:</span>{' '}
-                                <span className="text-[#111827] font-medium">{analysisData?.patient_segments?.referral_champions?.avg_referrals || 2.3}</span>
-                              </div>
-                              <div>
-                                <span className="text-[#9CA3AF]">Conversion:</span>{' '}
-                                <span className="text-[#111827] font-medium">{analysisData?.patient_segments?.referral_champions?.conversion_rate || 73}%</span>
-                              </div>
-                            </div>
-
-                            {/* Progressive disclosure accordion */}
-                            <div className="border-t border-gray-100 pt-3">
-                              <button 
-                                onClick={() => setExpandedInsight(expandedInsight === 'referrals' ? null : 'referrals')}
-                                className="w-full text-left text-xs text-[#6B7280] hover:text-[#111827] flex items-center justify-between py-1"
-                              >
-                                <span>View insights</span>
-                                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedInsight === 'referrals' ? 'rotate-180' : ''}`} />
-                              </button>
-                              
-                              {expandedInsight === 'referrals' && (
-                                <div className="mt-3 space-y-4 text-sm">
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Top procedures</span>
-                                      <span className="text-[#374151]">Botox, Hydrafacial</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Referrer LTV</span>
-                                      <span className="text-[#374151]">${Math.round((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) * 1.4).toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Best channel</span>
-                                      <span className="text-[#374151]">Word of mouth</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Common trait</span>
-                                      <span className="text-[#374151]">Posts on social media</span>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Patient list with checkboxes */}
-                                  <div className="pt-3 border-t border-gray-100">
-                                    <div className="text-xs text-[#9CA3AF] mb-2">Select patients</div>
-                                    <div className="space-y-1">
-                                      {Array.from({ length: 5 }, (_, i) => {
-                                        const id = `RF-${String(i + 1).padStart(3, '0')}`;
-                                        return (
-                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
-                                            <input
-                                              type="checkbox"
-                                              checked={selectedReferrers.has(id)}
-                                              onChange={(e) => {
-                                                const next = new Set(selectedReferrers);
-                                                e.target.checked ? next.add(id) : next.delete(id);
-                                                setSelectedReferrers(next);
-                                              }}
-                                              className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
-                                            />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
-                                            <span className="text-xs text-[#9CA3AF]">{1 + i} referrals</span>
-                                          </label>
-                                        );
-                                      })}
-                                    </div>
-                                    {Math.round(patientCount * 0.18) > 5 && (
-                                      <button className="text-xs text-[#6366f1] mt-2 hover:underline">
-                                        +{Math.round(patientCount * 0.18) - 5} more
-                                      </button>
-                                    )}
-                                    <div className="text-[10px] text-[#9CA3AF] mt-2">
-                                      {selectedReferrers.size > 0 ? `${selectedReferrers.size} selected` : 'None selected'}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* CTA */}
-                            <button
-                              onClick={() => {
-                                const rfPatientList = Array.from(selectedReferrers).length > 0 
-                                  ? Array.from(selectedReferrers)
-                                  : Array.from({ length: Math.min(Math.round(patientCount * 0.18), 20) }, (_, i) => `RF-${String(i + 1).padStart(3, '0')}`);
-                                openActionModal(
-                                  'referrers',
-                                  'Referral champions',
-                                  selectedReferrers.size || Math.round(patientCount * 0.18),
-                                  rfPatientList,
-                                  'referral-program',
-                                  'Launch referral program'
-                                );
-                              }}
-                              className="w-full mt-4 px-4 py-2.5 bg-[#6366f1] text-white text-sm font-medium rounded-lg hover:bg-[#4f46e5] transition-colors"
-                            >
-                              {selectedReferrers.size > 0 ? `Launch program for ${selectedReferrers.size}` : 'Launch referral program'}
-                            </button>
-                          </div>
-                        </>
-                      )}
+                    <div>
+                      <h3 className="font-semibold text-[#111827]">Revenue you can recover</h3>
+                      <p className="text-xs text-red-600">These patients are slipping — small moves here pay off quickly</p>
                     </div>
                   </div>
 
-                  {/* What's Not */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
-                        <AlertCircle className="h-5 w-5 text-red-500" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-[#111827]">Where you're leaking value</h3>
-                        <p className="text-xs text-red-600">Fix this or stop feeding it</p>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-3">
-                      {behaviorPatterns?.worst_patterns?.slice(0, 2).map((pattern: any, idx: number) => (
-                        <div key={idx} className="bg-white rounded-xl p-5 shadow-sm border border-red-100">
-                          <div className="text-sm font-medium text-[#111827] mb-2">{pattern.label}</div>
-                          <p className="text-sm text-[#6B7280] leading-relaxed">
-                            {pattern.metric}. <span className="text-red-600 font-medium">{pattern.insight}</span>
-                          </p>
+                  <div className="space-y-4 mt-5">
+                    {/* One-and-done patients card */}
+                    <div className="bg-white rounded-xl p-5 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-semibold text-[#111827]">One-and-done patients</h4>
+                          <span className="text-xs text-[#6B7280]">
+                            {analysisData?.patient_segments?.one_and_done?.count || 0} patients
+                          </span>
                         </div>
-                      )) || (
-                        <>
-                          {/* One-and-done patients card */}
-                          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200/60">
-                            <div className="flex items-center justify-between mb-4">
-                              <h4 className="text-sm font-semibold text-[#111827]">One-and-done patients</h4>
-                              <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
-                                {analysisData?.patient_segments?.one_and_done?.count || Math.round(patientCount * 0.25)} patients
-                              </span>
-                            </div>
-                            
-                            <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              They didn't leave upset — they left undecided. {analysisData?.patient_segments?.one_and_done?.count || 0} patients, one visit, then silence. 60 days before that fades into "something I tried once."
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700 font-medium">
+                          ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable
+                        </span>
+                      </div>
+                      
+                      <p className="text-sm text-[#374151] leading-relaxed mb-4">
+                        They didn't leave upset — they left undecided. {analysisData?.patient_segments?.one_and_done?.count || 0} patients, 
+                        one visit, then silence. You've got about 60 days before that fades into "something I tried once."
+                      </p>
+
+                      {/* Progressive disclosure */}
+                      <div className="border-t border-gray-100 pt-3">
+                        <button 
+                          onClick={() => setExpandedInsight(expandedInsight === 'one-done' ? null : 'one-done')}
+                          className="text-xs text-[#6B7280] hover:text-[#111827] flex items-center gap-1"
+                        >
+                          <span>Why this works</span>
+                          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedInsight === 'one-done' ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {expandedInsight === 'one-done' && (
+                          <div className="mt-3 text-xs text-[#6B7280] bg-gray-50 rounded-lg p-3">
+                            <p className="mb-2">
+                              <strong className="text-[#374151]">The window:</strong> After 60 days, re-engagement rates drop by half. Most practices wait too long.
                             </p>
-                            
-                            {/* Supporting metrics - plain text */}
-                            <div className="flex gap-6 text-sm mb-4">
-                              <div>
-                                <span className="text-[#9CA3AF]">If recovered:</span>{' '}
-                                <span className="text-[#111827] font-medium">${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()}</span>
-                              </div>
-                              <div>
-                                <span className="text-[#9CA3AF]">Win-back rate:</span>{' '}
-                                <span className="text-[#111827] font-medium">{analysisData?.patient_segments?.one_and_done?.win_back_rate || '12–18%'}</span>
-                              </div>
-                            </div>
-
-                            {/* Progressive disclosure accordion */}
-                            <div className="border-t border-gray-100 pt-3">
-                              <button 
-                                onClick={() => setExpandedInsight(expandedInsight === 'one-done' ? null : 'one-done')}
-                                className="w-full text-left text-xs text-[#6B7280] hover:text-[#111827] flex items-center justify-between py-1"
-                              >
-                                <span>View insights</span>
-                                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedInsight === 'one-done' ? 'rotate-180' : ''}`} />
-                              </button>
-                              
-                              {expandedInsight === 'one-done' && (
-                                <div className="mt-3 space-y-4 text-sm">
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Common first visit</span>
-                                      <span className="text-[#374151]">{analysisData?.available_procedures?.[0] || 'Consultation'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Avg first spend</span>
-                                      <span className="text-[#374151]">${analysisData?.patient_segments?.one_and_done?.avg_spend || 320}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Win-back rate</span>
-                                      <span className="text-[#374151]">{analysisData?.patient_segments?.one_and_done?.win_back_rate || '12-18%'}</span>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Patient list with checkboxes */}
-                                  <div className="pt-3 border-t border-gray-100">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-xs text-[#9CA3AF]">Select patients</span>
-                                      <div className="flex gap-3">
-                                        <button 
-                                          onClick={() => {
-                                            const allIds = Array.from({ length: 5 }, (_, i) => `OD-${String(i + 1).padStart(3, '0')}`);
-                                            setSelectedOneDone(new Set(allIds));
-                                          }}
-                                          className="text-[10px] text-[#6366f1] hover:underline"
-                                        >
-                                          Select all
-                                        </button>
-                                        <button 
-                                          onClick={() => setSelectedOneDone(new Set())}
-                                          className="text-[10px] text-[#9CA3AF] hover:underline"
-                                        >
-                                          Clear
-                                        </button>
-                                      </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                      {Array.from({ length: 5 }, (_, i) => {
-                                        const id = `OD-${String(i + 1).padStart(3, '0')}`;
-                                        const daysAgo = 60 + (i * 25);
-                                        return (
-                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
-                                            <input
-                                              type="checkbox"
-                                              checked={selectedOneDone.has(id)}
-                                              onChange={(e) => {
-                                                const next = new Set(selectedOneDone);
-                                                e.target.checked ? next.add(id) : next.delete(id);
-                                                setSelectedOneDone(next);
-                                              }}
-                                              className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
-                                            />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
-                                            <span className="text-xs text-[#9CA3AF]">{daysAgo}d ago</span>
-                                          </label>
-                                        );
-                                      })}
-                                    </div>
-                                    {Math.round(patientCount * 0.25) > 5 && (
-                                      <button className="text-xs text-[#6366f1] mt-2 hover:underline">
-                                        +{Math.round(patientCount * 0.25) - 5} more
-                                      </button>
-                                    )}
-                                    <div className="text-[10px] text-[#9CA3AF] mt-2">
-                                      {selectedOneDone.size > 0 ? `${selectedOneDone.size} selected` : 'None selected'}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* CTA */}
-                            <button
-                              onClick={() => {
-                                const odPatientList = Array.from(selectedOneDone).length > 0
-                                  ? Array.from(selectedOneDone)
-                                  : behaviorPatterns?.worst_patterns?.find((p: any) => p.id === "one_and_done")?.patient_ids || [];
-                                console.log('[WINBACK] Patient list:', odPatientList);
-                                console.log('[WINBACK] Patients with phone:', odPatientList.filter((p: any) => typeof p === "object" && p.phone));
-                                openActionModal(
-                                  'one-and-done',
-                                  'One-and-done patients',
-                                  selectedOneDone.size || Math.round(patientCount * 0.25),
-                                  odPatientList,
-                                  'win-back',
-                                  'Send win-back text'
-                                );
-                              }}
-                              className="w-full mt-4 px-4 py-2.5 bg-[#6366f1] text-white text-sm font-medium rounded-lg hover:bg-[#4f46e5] transition-colors"
-                            >
-                              {selectedOneDone.size > 0 ? `Send win-back to ${selectedOneDone.size}` : 'Send win-back text'}
-                            </button>
-                          </div>
-
-                          {/* Lapsed regulars card */}
-                          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200/60">
-                            <div className="flex items-center justify-between mb-4">
-                              <h4 className="text-sm font-semibold text-[#111827]">Lapsed regulars</h4>
-                              <span className="text-xs px-2 py-1 rounded-md bg-gray-100 text-[#6B7280] font-medium">
-                                {analysisData?.patient_segments?.lapsed_regulars?.count || Math.round(patientCount * 0.08)} patients
-                              </span>
-                            </div>
-                            
-                            <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients had a rhythm — {analysisData?.patient_segments?.lapsed_regulars?.avg_prev_visits || 3} visits on average — then went quiet. Usually life, not dissatisfaction. A familiar voice reopens that door.
+                            <p>
+                              <strong className="text-[#374151]">What works:</strong> A personal check-in (not a promo) converts 12-18% of one-and-done patients into repeat visitors.
                             </p>
-                            
-                            {/* Supporting metrics - plain text */}
-                            <div className="flex gap-6 text-sm mb-4">
-                              <div>
-                                <span className="text-[#9CA3AF]">Avg prev visits:</span>{' '}
-                                <span className="text-[#111827] font-medium">{analysisData?.patient_segments?.lapsed_regulars?.avg_prev_visits || 3.2}</span>
-                              </div>
-                              <div>
-                                <span className="text-[#9CA3AF]">At risk:</span>{' '}
-                                <span className="text-[#111827] font-medium">${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()}</span>
-                              </div>
-                            </div>
-
-                            {/* Progressive disclosure accordion */}
-                            <div className="border-t border-gray-100 pt-3">
-                              <button 
-                                onClick={() => setExpandedInsight(expandedInsight === 'lapsed' ? null : 'lapsed')}
-                                className="w-full text-left text-xs text-[#6B7280] hover:text-[#111827] flex items-center justify-between py-1"
-                              >
-                                <span>View insights</span>
-                                <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${expandedInsight === 'lapsed' ? 'rotate-180' : ''}`} />
-                              </button>
-                              
-                              {expandedInsight === 'lapsed' && (
-                                <div className="mt-3 space-y-4 text-sm">
-                                  <div className="space-y-2">
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Top procedures</span>
-                                      <span className="text-[#374151]">{analysisData?.behavior_patterns?.top_treatments?.slice(0, 2).join(', ') || 'Botox, Filler'}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Avg lifetime value</span>
-                                      <span className="text-[#374151]">${(analysisData?.patient_segments?.lapsed_regulars?.avg_ltv || 0).toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Recovery window</span>
-                                      <span className="text-[#374151]">&lt;6 months optimal</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-[#9CA3AF]">Best approach</span>
-                                      <span className="text-[#374151]">Personal outreach</span>
-                                    </div>
-                                  </div>
-                                  
-                                  {/* Patient list with checkboxes */}
-                                  <div className="pt-3 border-t border-gray-100">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-xs text-[#9CA3AF]">Select patients</span>
-                                      <div className="flex gap-3">
-                                        <button 
-                                          onClick={() => {
-                                            const allIds = Array.from({ length: 5 }, (_, i) => `LP-${String(i + 1).padStart(3, '0')}`);
-                                            setSelectedLapsed(new Set(allIds));
-                                          }}
-                                          className="text-[10px] text-[#6366f1] hover:underline"
-                                        >
-                                          Select all
-                                        </button>
-                                        <button 
-                                          onClick={() => setSelectedLapsed(new Set())}
-                                          className="text-[10px] text-[#9CA3AF] hover:underline"
-                                        >
-                                          Clear
-                                        </button>
-                                      </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                      {Array.from({ length: 5 }, (_, i) => {
-                                        const id = `LP-${String(i + 1).padStart(3, '0')}`;
-                                        const daysAgo = 120 + (i * 15);
-                                        const prevVisits = 3 + i;
-                                        return (
-                                          <label key={id} className="flex items-center gap-3 py-1.5 cursor-pointer group">
-                                            <input
-                                              type="checkbox"
-                                              checked={selectedLapsed.has(id)}
-                                              onChange={(e) => {
-                                                const next = new Set(selectedLapsed);
-                                                e.target.checked ? next.add(id) : next.delete(id);
-                                                setSelectedLapsed(next);
-                                              }}
-                                              className="h-3.5 w-3.5 rounded border-gray-300 text-[#6366f1] focus:ring-[#6366f1] focus:ring-offset-0"
-                                            />
-                                            <span className="flex-1 text-xs text-[#374151] group-hover:text-[#111827]">{id}</span>
-                                            <span className="text-xs text-[#9CA3AF]">{prevVisits} visits</span>
-                                            <span className="text-xs text-[#9CA3AF]">{daysAgo}d</span>
-                                          </label>
-                                        );
-                                      })}
-                                    </div>
-                                    {Math.round(patientCount * 0.08) > 5 && (
-                                      <button className="text-xs text-[#6366f1] mt-2 hover:underline">
-                                        +{Math.round(patientCount * 0.08) - 5} more
-                                      </button>
-                                    )}
-                                    <div className="text-[10px] text-[#9CA3AF] mt-2">
-                                      {selectedLapsed.size > 0 ? `${selectedLapsed.size} selected` : 'None selected'}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* CTA */}
-                            <button
-                              onClick={() => {
-                                const lrPatientList = Array.from(selectedLapsed).length > 0 
-                                  ? Array.from(selectedLapsed)
-                                  : Array.from({ length: Math.min(Math.round(patientCount * 0.08), 20) }, (_, i) => `LP-${String(i + 1).padStart(3, '0')}`);
-                                openActionModal(
-                                  'lapsed-regulars',
-                                  'Lapsed regulars',
-                                  selectedLapsed.size || Math.round(patientCount * 0.08),
-                                  lrPatientList,
-                                  'personal-outreach',
-                                  'Start personal outreach'
-                                );
-                              }}
-                              className="w-full mt-4 px-4 py-2.5 bg-[#6366f1] text-white text-sm font-medium rounded-lg hover:bg-[#4f46e5] transition-colors"
-                            >
-                              {selectedLapsed.size > 0 ? `Start outreach to ${selectedLapsed.size}` : 'Start personal outreach'}
-                            </button>
                           </div>
-                        </>
-                      )}
+                        )}
+                      </div>
+
+                      {/* CTA */}
+                      <button
+                        onClick={() => {
+                          openActionModal(
+                            'one-and-done',
+                            'One-and-done patients',
+                            analysisData?.patient_segments?.one_and_done?.count || 0,
+                            [],
+                            'win-back',
+                            'Send win-back text'
+                          );
+                        }}
+                        className="w-full mt-4 px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        Recover lost patients
+                      </button>
+                    </div>
+
+                    {/* Lapsed regulars card */}
+                    <div className="bg-white rounded-xl p-5 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-semibold text-[#111827]">Lapsed regulars</h4>
+                          <span className="text-xs text-[#6B7280]">
+                            {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients
+                          </span>
+                        </div>
+                        <span className="text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700 font-medium">
+                          ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk
+                        </span>
+                      </div>
+                      
+                      <p className="text-sm text-[#374151] leading-relaxed mb-4">
+                        {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients had a rhythm — {analysisData?.patient_segments?.lapsed_regulars?.avg_prev_visits || 3} visits 
+                        on average — then went quiet. Usually life, not dissatisfaction. A familiar voice reopens that door.
+                      </p>
+
+                      {/* Progressive disclosure */}
+                      <div className="border-t border-gray-100 pt-3">
+                        <button 
+                          onClick={() => setExpandedInsight(expandedInsight === 'lapsed' ? null : 'lapsed')}
+                          className="text-xs text-[#6B7280] hover:text-[#111827] flex items-center gap-1"
+                        >
+                          <span>Why this works</span>
+                          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedInsight === 'lapsed' ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {expandedInsight === 'lapsed' && (
+                          <div className="mt-3 text-xs text-[#6B7280] bg-gray-50 rounded-lg p-3">
+                            <p className="mb-2">
+                              <strong className="text-[#374151]">The insight:</strong> Lapsed regulars already trusted you. They're not comparing you to competitors — they just got busy.
+                            </p>
+                            <p>
+                              <strong className="text-[#374151]">What works:</strong> A personal message from the provider (not the front desk) recovers 25-35% within 2 weeks.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* CTA */}
+                      <button
+                        onClick={() => {
+                          openActionModal(
+                            'lapsed-regulars',
+                            'Lapsed regulars',
+                            analysisData?.patient_segments?.lapsed_regulars?.count || 0,
+                            [],
+                            'personal-outreach',
+                            'Start personal outreach'
+                          );
+                        }}
+                        className="w-full mt-4 px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        Start personal outreach
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ============================================
+                    STRENGTH BLOCK - "What's working well"
+                    ============================================ */}
+                <div className="bg-emerald-50/50 rounded-2xl p-6 border border-emerald-100">
+                  {/* Block Header */}
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
+                      <Check className="h-4 w-4 text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-[#111827]">What's working well</h3>
+                      <p className="text-xs text-emerald-600">These segments are pulling their weight — a bit of care keeps them steady</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 mt-5">
+                    {/* High-frequency patients card */}
+                    <div className="bg-white rounded-xl p-5 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-semibold text-[#111827]">High-frequency patients</h4>
+                          <span className="text-xs text-[#6B7280]">
+                            {analysisData?.patient_segments?.high_frequency?.count || 0} patients
+                          </span>
+                        </div>
+                        <span className="text-xs text-[#6B7280]">
+                          ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV · {analysisData?.patient_segments?.high_frequency?.ltv_multiplier || 2.4}× average
+                        </span>
+                      </div>
+                      
+                      <p className="text-sm text-[#374151] leading-relaxed mb-4">
+                        These {analysisData?.patient_segments?.high_frequency?.count || 0} patients aren't thinking about alternatives — ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} each, 
+                        built on trust. Trust on autopilot becomes routine. A small gesture reminds them they're not just another appointment.
+                      </p>
+
+                      {/* Progressive disclosure */}
+                      <div className="border-t border-gray-100 pt-3">
+                        <button 
+                          onClick={() => setExpandedInsight(expandedInsight === 'high-freq' ? null : 'high-freq')}
+                          className="text-xs text-[#6B7280] hover:text-[#111827] flex items-center gap-1"
+                        >
+                          <span>Why this works</span>
+                          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedInsight === 'high-freq' ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {expandedInsight === 'high-freq' && (
+                          <div className="mt-3 text-xs text-[#6B7280] bg-gray-50 rounded-lg p-3">
+                            <p className="mb-2">
+                              <strong className="text-[#374151]">The risk:</strong> High-value patients rarely leave for competitors. They leave because they stopped feeling special.
+                            </p>
+                            <p>
+                              <strong className="text-[#374151]">What works:</strong> Early access to new treatments, birthday notes, or a simple "we saved your favorite time slot" — small signals that say "we see you."
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* CTA */}
+                      <button
+                        onClick={() => {
+                          openActionModal(
+                            'high-frequency',
+                            'High-frequency patients',
+                            analysisData?.patient_segments?.high_frequency?.count || 0,
+                            [],
+                            'vip-reward',
+                            'Send VIP reward'
+                          );
+                        }}
+                        className="w-full mt-4 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+                      >
+                        Protect your best patients
+                      </button>
+                    </div>
+
+                    {/* Referral champions card */}
+                    <div className="bg-white rounded-xl p-5 shadow-sm">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-sm font-semibold text-[#111827]">Referral champions</h4>
+                          <span className="text-xs text-[#6B7280]">
+                            {analysisData?.patient_segments?.referral_champions?.count || 0} patients
+                          </span>
+                        </div>
+                        <span className="text-xs text-[#6B7280]">
+                          {analysisData?.patient_segments?.referral_champions?.avg_referrals || 2} avg referrals · {analysisData?.patient_segments?.referral_champions?.conversion_rate || 70}% convert
+                        </span>
+                      </div>
+                      
+                      <p className="text-sm text-[#374151] leading-relaxed mb-4">
+                        {analysisData?.patient_segments?.referral_champions?.count || 0} patients send friends who actually show up — {analysisData?.patient_segments?.referral_champions?.conversion_rate || 70}% conversion. 
+                        That's trust at scale. When it's noticed, it multiplies.
+                      </p>
+
+                      {/* Progressive disclosure */}
+                      <div className="border-t border-gray-100 pt-3">
+                        <button 
+                          onClick={() => setExpandedInsight(expandedInsight === 'referrals' ? null : 'referrals')}
+                          className="text-xs text-[#6B7280] hover:text-[#111827] flex items-center gap-1"
+                        >
+                          <span>Why this works</span>
+                          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedInsight === 'referrals' ? 'rotate-180' : ''}`} />
+                        </button>
+                        
+                        {expandedInsight === 'referrals' && (
+                          <div className="mt-3 text-xs text-[#6B7280] bg-gray-50 rounded-lg p-3">
+                            <p className="mb-2">
+                              <strong className="text-[#374151]">The insight:</strong> These patients are already marketing for you — without being asked. Their referrals convert because they come with built-in trust.
+                            </p>
+                            <p>
+                              <strong className="text-[#374151]">What works:</strong> Acknowledge the referral (a thank-you note, a small credit). Don't incentivize — recognize.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* CTA */}
+                      <button
+                        onClick={() => {
+                          openActionModal(
+                            'referrers',
+                            'Referral champions',
+                            analysisData?.patient_segments?.referral_champions?.count || 0,
+                            [],
+                            'referral-program',
+                            'Launch referral program'
+                          );
+                        }}
+                        className="w-full mt-4 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+                      >
+                        Turn referrals into bookings
+                      </button>
                     </div>
                   </div>
                 </div>
