@@ -1214,7 +1214,7 @@ ${clinicName} Team`
                             </div>
                             
                             <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              Your top performers — {analysisData?.patient_segments?.high_frequency?.pct_of_total || 15}% of patients generating ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV each. They visit regularly and spend more. Keep them engaged with VIP treatment.
+                              These {analysisData?.patient_segments?.high_frequency?.count || 0} patients aren't thinking about alternatives — ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} each, built on trust. Trust on autopilot becomes routine. A small gesture reminds them they're not just another appointment.
                             </p>
                             
                             {/* Supporting metrics - plain text */}
@@ -1328,7 +1328,7 @@ ${clinicName} Team`
                             </div>
                             
                             <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              {analysisData?.patient_segments?.referral_champions?.count || 0} patients averaging {analysisData?.patient_segments?.referral_champions?.avg_referrals || 2} referrals each with {analysisData?.patient_segments?.referral_champions?.conversion_rate || 70}% conversion. A structured program amplifies their word-of-mouth.
+                              {analysisData?.patient_segments?.referral_champions?.count || 0} patients send friends who actually show up — {analysisData?.patient_segments?.referral_champions?.conversion_rate || 70}% conversion. That's trust at scale. When it's noticed, it multiplies.
                             </p>
                             {/* Supporting metrics - plain text */}
                             <div className="flex gap-6 text-sm mb-4">
@@ -1467,7 +1467,7 @@ ${clinicName} Team`
                             </div>
                             
                             <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              {analysisData?.patient_segments?.one_and_done?.count || 0} patients tried once and didn't return — ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} in potential recovery. A simple "we miss you" text brings {analysisData?.patient_segments?.one_and_done?.win_back_rate || '10-15%'} back.
+                              They didn't leave upset — they left undecided. {analysisData?.patient_segments?.one_and_done?.count || 0} patients, one visit, then silence. 60 days before that fades into "something I tried once."
                             </p>
                             
                             {/* Supporting metrics - plain text */}
@@ -1599,7 +1599,7 @@ ${clinicName} Team`
                             </div>
                             
                             <p className="text-sm text-[#6B7280] leading-relaxed mb-4">
-                              {analysisData?.patient_segments?.lapsed_regulars?.count || 0} former regulars (avg {analysisData?.patient_segments?.lapsed_regulars?.avg_prev_visits || 3} visits) have gone quiet — ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk. Personal outreach reopens the door.
+                              {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients had a rhythm — {analysisData?.patient_segments?.lapsed_regulars?.avg_prev_visits || 3} visits on average — then went quiet. Usually life, not dissatisfaction. A familiar voice reopens that door.
                             </p>
                             
                             {/* Supporting metrics - plain text */}
