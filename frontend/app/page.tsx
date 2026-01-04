@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronDown, ExternalLink, Shield } from 'lucide-react';
+import { ChevronDown, ExternalLink, Shield, ArrowRight } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
@@ -173,30 +173,30 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       <main className="frame py-12 md:py-16 lg:py-20">
         {/* Hero */}
-        <section className="mx-auto mb-8 max-w-4xl text-center md:mb-10 lg:mb-12">
+        <section className="mx-auto mb-8 max-w-3xl text-center md:mb-10 lg:mb-12">
           <h1 className="mb-3 text-[28px] font-bold leading-[1.2] text-gray-900 md:mb-4 md:text-[36px] lg:text-[44px]">
             Stop losing your best patients.
             <br />
             <span className="bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent">
-              Recover their revenue before they're gone.
+              Turn your patient data into a monthly revenue game plan.
             </span>
           </h1>
           <p className="mx-auto max-w-2xl text-[15px] font-normal leading-[1.5] text-gray-600 md:text-[17px] lg:text-[18px]">
-            Connect your patient data to instantly see which high-value patients are slipping away, how much revenue is at risk, and what to do to win them back. Then use the profiles of your top patients to find more like them.
+            Connect your patient data to see which high-value patients are slipping, how much revenue is at risk, and what to do to win them back.
           </p>
         </section>
 
         {/* Upload */}
-        <section className="mx-auto mb-12 w-full max-w-5xl md:mb-16 lg:mb-20">
-          <div className="rounded-[20px] bg-gray-50 px-8 py-10 md:px-12 md:py-12 lg:px-16 lg:py-14">
-            <div className="mx-auto max-w-xl">
+        <section className="mx-auto mb-12 w-full max-w-xl md:mb-16 lg:mb-20">
+          <div className="rounded-[20px] bg-gray-50 px-6 py-8 md:px-10 md:py-10">
+            <div className="mx-auto max-w-md">
               
               {!file ? (
                 <>
                   {/* Upload Area First */}
-                  <div className="text-center mb-8">
-                    <div className="mx-auto mb-6 grid h-16 w-16 place-items-center rounded-full bg-violet-100">
-                      <svg className="h-7 w-7 text-violet-600" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <div className="text-center mb-6">
+                    <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-full bg-violet-100">
+                      <svg className="h-6 w-6 text-violet-600" viewBox="0 0 24 24" fill="none" aria-hidden>
                         <path d="M12 15V3M12 3L8 7M12 3L16 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         <path d="M2 17L2 19C2 20.1046 2.89543 21 4 21L20 21C21.1046 21 22 20.1046 22 19V17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                       </svg>
@@ -210,15 +210,15 @@ export default function HomePage() {
                       onChange={(e) => onPick(e.target.files?.[0] ?? undefined)}
                     />
 
-                    <h3 className="mb-2 text-[18px] font-semibold leading-[1.3] text-gray-900 md:text-[20px] lg:text-[22px]">Drop your patient file</h3>
-                    <p className="mb-6 text-[14px] font-normal leading-[1.4] text-gray-500 lg:text-[15px]">CSV or Excel · Max 10MB</p>
+                    <h3 className="mb-1 text-[17px] font-semibold leading-[1.3] text-gray-900 md:text-[18px]">Drop your patient file</h3>
+                    <p className="mb-5 text-[14px] font-normal leading-[1.4] text-gray-500">CSV or Excel · Max 10MB</p>
 
-                    <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                    <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                       <button
                         type="button"
                         onClick={() => fileRef.current?.click()}
                         disabled={loading}
-                        className="rounded-[10px] bg-indigo-600 px-8 py-3 text-[15px] font-semibold leading-[1.2] text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-[16px]"
+                        className="rounded-lg bg-indigo-600 px-6 py-2.5 text-[14px] font-semibold leading-[1.2] text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-[15px]"
                       >
                         Select file
                       </button>
@@ -226,7 +226,7 @@ export default function HomePage() {
                         type="button"
                         onClick={handleSample}
                         disabled={loading}
-                        className="px-6 py-3 text-[15px] font-semibold leading-[1.2] text-indigo-600 transition-colors hover:text-indigo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 md:text-[16px]"
+                        className="px-4 py-2.5 text-[14px] font-semibold leading-[1.2] text-indigo-600 transition-colors hover:text-indigo-700 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 md:text-[15px]"
                       >
                         Use sample data
                       </button>
@@ -234,7 +234,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Divider */}
-                  <div className="relative my-8">
+                  <div className="relative my-6">
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-gray-200"></div>
                     </div>
@@ -256,7 +256,7 @@ export default function HomePage() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </div>
-                        <span className="text-sm font-medium text-gray-900">View export instructions for your system</span>
+                        <span className="text-sm font-medium text-gray-900">View export instructions</span>
                       </div>
                       <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${selectedEHR ? 'rotate-180' : ''}`} />
                     </button>
@@ -323,13 +323,13 @@ export default function HomePage() {
                   </div>
 
                   {/* Privacy - Subtle footer */}
-                  <p className="mt-6 text-center text-xs text-gray-400">
+                  <p className="mt-5 text-center text-xs text-gray-400">
                     <Shield className="inline h-3 w-3 mr-1" />
-                    We hash patient IDs and convert birthdates to ages. No names or contact info stored.
+                    We hash patient IDs. No names or contact info stored.
                   </p>
                 </>
               ) : (
-                <div className="flex flex-col items-center gap-6">
+                <div className="flex flex-col items-center gap-5">
                   <div className="flex max-w-full items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                     <div className="grid h-8 w-8 place-items-center rounded-lg bg-indigo-100 text-indigo-700">
                       <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
@@ -358,7 +358,7 @@ export default function HomePage() {
                       type="button"
                       onClick={handleAnalyze}
                       disabled={loading}
-                      className="w-full rounded-[10px] bg-indigo-600 px-8 py-3 text-[15px] font-semibold leading-[1.2] text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto md:text-[16px]"
+                      className="w-full rounded-lg bg-indigo-600 px-6 py-2.5 text-[14px] font-semibold leading-[1.2] text-white transition-colors hover:bg-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto md:text-[15px]"
                     >
                       {loading ? "Analyzing…" : "Analyze data"}
                     </button>
@@ -366,7 +366,7 @@ export default function HomePage() {
                       type="button"
                       onClick={handleSample}
                       disabled={loading}
-                      className="w-full rounded-[10px] border border-gray-300 bg-white px-8 py-3 text-[15px] font-semibold leading-[1.2] text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto md:text-[16px]"
+                      className="w-full rounded-lg border border-gray-300 bg-white px-6 py-2.5 text-[14px] font-semibold leading-[1.2] text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto md:text-[15px]"
                     >
                       Try with sample data
                     </button>
@@ -375,7 +375,7 @@ export default function HomePage() {
               )}
 
               {error && (
-                <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-[14px] leading-[1.4] text-red-700" role="alert">
+                <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-3 text-[13px] leading-[1.4] text-red-700" role="alert">
                   {error}
                 </div>
               )}
@@ -384,22 +384,111 @@ export default function HomePage() {
         </section>
 
         {/* How it works */}
-        <section className="mx-auto max-w-6xl">
-          <h2 className="mb-8 text-center text-[12px] font-semibold uppercase leading-[1.3] tracking-[0.15em] text-gray-500 md:mb-10 md:text-[13px] lg:text-[14px]">
+        <section className="mx-auto max-w-3xl mb-16">
+          <h2 className="mb-8 text-center text-[11px] font-semibold uppercase leading-[1.3] tracking-[0.15em] text-gray-400 md:text-[12px]">
             How it works
           </h2>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-8 lg:gap-12">
-            <Step n="1" t="Upload data" d="Import a CSV or Excel file containing your patient ZIP codes, visit history, and revenue data to get started." />
-            <Step n="2" t="See your top patients" d="We identify spending habits, visit frequency, and lifestyle traits to create clear profiles of your best patients." />
-            <Step n="3" t="Find more like them" d="We show you where these high-value profiles live, with growth opportunities and expected bookings." />
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3 md:gap-6">
+            <Step n="1" t="Connect" d="Import a CSV or connect your EMR. No workflow changes." />
+            <Step n="2" t="See" d="Know which patients are slipping and how much revenue is at risk." />
+            <Step n="3" t="Act" d="Launch win-backs with proven scripts and track what comes back." />
           </div>
+
+          <p className="mt-10 text-center text-[14px] text-gray-500 max-w-lg mx-auto">
+            Once the leaks are under control, use what you learn about your best patients to deepen relationships and guide smarter growth.
+          </p>
+        </section>
+
+        {/* Why not your EMR */}
+        <section className="mx-auto max-w-2xl mb-16 px-4">
+          <h2 className="text-[18px] font-bold text-gray-900 text-center mb-6 md:text-[20px]">
+            Your EMR stores data. We tell you what to do with it.
+          </h2>
+          
+          <div className="bg-gray-50 rounded-xl p-5">
+            <div className="grid grid-cols-2 gap-6 text-sm">
+              <div>
+                <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-3">Your EMR</p>
+                <ul className="space-y-2 text-gray-500">
+                  <li>— Total patients seen this month</li>
+                  <li>— Revenue by service type</li>
+                  <li>— Appointment history</li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-indigo-600 uppercase tracking-wider mb-3">Audience Mirror</p>
+                <ul className="space-y-2 text-gray-900">
+                  <li>→ Which VIPs are overdue and how much is at stake</li>
+                  <li>→ Prioritized list of who to reach out to first</li>
+                  <li>→ "Do these 3 things this month"</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* What you'll see */}
+        <section className="mx-auto max-w-3xl mb-16">
+          <h2 className="text-[18px] font-bold text-gray-900 text-center mb-2 md:text-[20px]">
+            What you'll see
+          </h2>
+          <p className="text-sm text-gray-500 text-center mb-6">
+            Your patients, organized by what they need from you
+          </p>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="border border-rose-200 bg-rose-50 rounded-lg p-4">
+              <p className="text-xs font-medium text-rose-600 mb-1">Revenue at risk</p>
+              <h4 className="font-semibold text-gray-900 text-sm mb-1">One-and-done patients</h4>
+              <p className="text-xs text-gray-600 mb-2">Visited once, then disappeared. 60 days to bring them back.</p>
+              <p className="text-lg font-bold text-rose-600">$726K recoverable</p>
+            </div>
+
+            <div className="border border-orange-200 bg-orange-50 rounded-lg p-4">
+              <p className="text-xs font-medium text-orange-600 mb-1">Revenue at risk</p>
+              <h4 className="font-semibold text-gray-900 text-sm mb-1">Lapsed regulars</h4>
+              <p className="text-xs text-gray-600 mb-2">Had a rhythm, then went quiet.</p>
+              <p className="text-lg font-bold text-orange-600">$174K at risk</p>
+            </div>
+
+            <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-4">
+              <p className="text-xs font-medium text-emerald-600 mb-1">Protect these</p>
+              <h4 className="font-semibold text-gray-900 text-sm mb-1">High-frequency patients</h4>
+              <p className="text-xs text-gray-600 mb-2">Your VIPs. They don't complain — they just leave.</p>
+              <p className="text-lg font-bold text-emerald-600">$17,919 avg LTV</p>
+            </div>
+
+            <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
+              <p className="text-xs font-medium text-blue-600 mb-1">Growth engine</p>
+              <h4 className="font-semibold text-gray-900 text-sm mb-1">Referral champions</h4>
+              <p className="text-xs text-gray-600 mb-2">They send friends who show up.</p>
+              <p className="text-lg font-bold text-blue-600">85% convert</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="mx-auto max-w-xl bg-indigo-600 rounded-2xl p-8 text-center">
+          <h2 className="text-[20px] font-bold text-white mb-2 md:text-[22px]">
+            See which patients are slipping
+          </h2>
+          <p className="text-sm text-indigo-100 mb-6">
+            Upload your patient data and get your revenue game plan in minutes.
+          </p>
+          <button 
+            onClick={() => fileRef.current?.click()}
+            className="px-6 py-3 bg-white text-indigo-600 font-semibold rounded-lg hover:bg-indigo-50 inline-flex items-center gap-2"
+          >
+            See your revenue at risk
+            <ArrowRight className="w-4 h-4" />
+          </button>
         </section>
       </main>
 
       <style jsx>{`
         .frame {
-          max-width: 1280px;
+          max-width: 1024px;
           margin: 0 auto;
           padding-left: clamp(20px, 4vw, 32px);
           padding-right: clamp(20px, 4vw, 32px);
@@ -412,12 +501,12 @@ export default function HomePage() {
 
 function Step({ n, t, d }: { n: string; t: string; d: string }) {
   return (
-    <div className="text-left">
-      <div className="mb-5 grid h-10 w-10 place-items-center rounded-full bg-indigo-600 text-[18px] font-bold leading-[1.2] text-white">
+    <div className="text-center">
+      <div className="mx-auto mb-3 grid h-8 w-8 place-items-center rounded-full bg-indigo-600 text-[14px] font-bold leading-[1.2] text-white">
         {n}
       </div>
-      <h3 className="mb-3 text-[18px] font-semibold leading-[1.3] text-gray-900 md:text-[20px] lg:text-[22px]">{t}</h3>
-      <p className="text-pretty text-[15px] font-normal leading-[1.5] text-gray-600 md:text-[16px]">{d}</p>
+      <h3 className="mb-2 text-[16px] font-semibold leading-[1.3] text-gray-900 md:text-[17px]">{t}</h3>
+      <p className="text-[14px] font-normal leading-[1.5] text-gray-600">{d}</p>
     </div>
   );
 }
