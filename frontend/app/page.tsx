@@ -377,35 +377,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* How it works */}
-        <section className="mb-14">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider text-center mb-8">
-            How it works
-          </p>
-
-          <div className="grid grid-cols-3 gap-6">
-            <div className="text-center">
-              <div className="mx-auto mb-3 h-8 w-8 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center">1</div>
-              <h3 className="font-semibold text-gray-900 mb-1">Connect</h3>
-              <p className="text-sm text-gray-600">Import a CSV or connect your EMR. No workflow changes.</p>
-            </div>
-            <div className="text-center">
-              <div className="mx-auto mb-3 h-8 w-8 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center">2</div>
-              <h3 className="font-semibold text-gray-900 mb-1">See</h3>
-              <p className="text-sm text-gray-600">Know which patients are slipping and how much revenue is at risk.</p>
-            </div>
-            <div className="text-center">
-              <div className="mx-auto mb-3 h-8 w-8 rounded-full bg-indigo-600 text-white text-sm font-bold flex items-center justify-center">3</div>
-              <h3 className="font-semibold text-gray-900 mb-1">Act</h3>
-              <p className="text-sm text-gray-600">Launch win-backs with proven scripts and track what comes back.</p>
-            </div>
-          </div>
-
-          <p className="text-sm text-gray-500 text-center mt-8 max-w-md mx-auto">
-            Once the leaks are under control, use what you learn about your best patients to deepen relationships and guide smarter growth.
-          </p>
-        </section>
-
         {/* Why not your EMR */}
         <section className="mb-14">
           <h2 className="text-xl font-bold text-gray-900 text-center mb-6">
