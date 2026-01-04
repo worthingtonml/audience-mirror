@@ -179,10 +179,10 @@ export default function HomePage() {
             Stop losing your best patients.
           </h1>
           <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-violet-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-            Turn your patient data into a monthly revenue game plan.
+            See who needs attention before they're gone.
           </h2>
           <p className="text-base text-gray-600 max-w-xl mx-auto">
-            Connect your patient data to see which high-value patients are slipping, how much revenue is at risk, and what to do to win them back.
+            Connect your patient data and we'll show you which patients are slipping, how much revenue is at risk, and what tends to work to bring them back.
           </p>
         </section>
 
