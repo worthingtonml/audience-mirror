@@ -182,7 +182,7 @@ export default function HomePage() {
             See who needs attention before they're gone.
           </h2>
           <p className="text-base text-gray-600 max-w-xl mx-auto">
-            Connect your patient data and we'll show you which patients are slipping, how much revenue is at risk, and what tends to work to bring them back.
+            Connect your patient data and we'll show you which patients are slipping — by procedure, by segment, by ZIP — how much revenue is at risk, and what tends to work to bring them back.
           </p>
         </section>
 
