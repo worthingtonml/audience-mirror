@@ -379,56 +379,40 @@ export default function HomePage() {
 
         {/* Why not your EMR */}
         <section className="mb-14">
-          <h2 className="text-xl font-bold text-gray-900 text-center mb-6">
+          <h2 className="text-xl font-bold text-gray-900 text-center mb-8">
             Your EMR stores data. We tell you what to do with it.
           </h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* EMR side */}
-            <div className="bg-white border border-gray-200 rounded-lg p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="w-2 h-2 rounded-full bg-gray-300"></div>
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Your EMR</span>
-              </div>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3 text-sm text-gray-500">
-                  <span className="text-gray-300 mt-0.5">○</span>
-                  Total patients seen this month
-                </li>
-                <li className="flex items-start gap-3 text-sm text-gray-500">
-                  <span className="text-gray-300 mt-0.5">○</span>
-                  Revenue by service type
-                </li>
-                <li className="flex items-start gap-3 text-sm text-gray-500">
-                  <span className="text-gray-300 mt-0.5">○</span>
-                  Appointment history
-                </li>
-              </ul>
+          <div className="space-y-4 max-w-lg mx-auto">
+            <div className="flex items-start gap-4">
+              <span className="text-sm text-gray-400 w-24 shrink-0 pt-0.5">EMR</span>
+              <span className="text-sm text-gray-400">Total patients seen this month</span>
             </div>
-
-            {/* Audience Mirror side */}
-            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-violet-400 to-indigo-400"></div>
-              <div className="p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
-                  <span className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">Audience Mirror</span>
-                </div>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-3 text-sm text-gray-900">
-                    <span className="text-indigo-500 mt-0.5">●</span>
-                    Which VIPs are overdue and how much is at stake
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-900">
-                    <span className="text-indigo-500 mt-0.5">●</span>
-                    Prioritized list of who to reach out to first
-                  </li>
-                  <li className="flex items-start gap-3 text-sm text-gray-900">
-                    <span className="text-indigo-500 mt-0.5">●</span>
-                    "Do these 3 things this month"
-                  </li>
-                </ul>
-              </div>
+            <div className="flex items-start gap-4">
+              <span className="text-sm font-medium text-indigo-600 w-24 shrink-0 pt-0.5">Mirror</span>
+              <span className="text-sm text-gray-900">Which VIPs are overdue — and how much is at stake</span>
+            </div>
+            
+            <div className="border-t border-gray-100 my-2"></div>
+            
+            <div className="flex items-start gap-4">
+              <span className="text-sm text-gray-400 w-24 shrink-0 pt-0.5">EMR</span>
+              <span className="text-sm text-gray-400">Revenue by service type</span>
+            </div>
+            <div className="flex items-start gap-4">
+              <span className="text-sm font-medium text-indigo-600 w-24 shrink-0 pt-0.5">Mirror</span>
+              <span className="text-sm text-gray-900">Prioritized list of who to reach out to first</span>
+            </div>
+            
+            <div className="border-t border-gray-100 my-2"></div>
+            
+            <div className="flex items-start gap-4">
+              <span className="text-sm text-gray-400 w-24 shrink-0 pt-0.5">EMR</span>
+              <span className="text-sm text-gray-400">Appointment history</span>
+            </div>
+            <div className="flex items-start gap-4">
+              <span className="text-sm font-medium text-indigo-600 w-24 shrink-0 pt-0.5">Mirror</span>
+              <span className="text-sm text-gray-900">"Do these 3 things this month"</span>
             </div>
           </div>
         </section>
