@@ -419,7 +419,7 @@ export default function HomePage() {
                 <div className="flex-1 p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <span className="text-[11px] font-medium text-rose-400/80 uppercase tracking-wide">Act first</span>
+                      <span className="text-[11px] font-semibold text-rose-500 uppercase tracking-wide">Act first</span>
                       <h3 className="font-semibold text-gray-900 mt-1 mb-1">One-and-done patients</h3>
                       <p className="text-sm text-gray-500 mb-2">Visited once, then disappeared.</p>
                       <div className="flex items-center gap-2 text-sm">
@@ -444,7 +444,7 @@ export default function HomePage() {
                 <div className="flex-1 p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <span className="text-[11px] font-medium text-orange-400/80 uppercase tracking-wide">At risk</span>
+                      <span className="text-[11px] font-semibold text-orange-500 uppercase tracking-wide">At risk</span>
                       <h3 className="font-semibold text-gray-900 mt-1 mb-1">Lapsed regulars</h3>
                       <p className="text-sm text-gray-500 mb-2">Had a rhythm, then went quiet.</p>
                       <div className="flex items-center gap-2 text-sm">
@@ -469,7 +469,7 @@ export default function HomePage() {
                 <div className="flex-1 p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <span className="text-[11px] font-medium text-emerald-400/80 uppercase tracking-wide">Protect</span>
+                      <span className="text-[11px] font-semibold text-emerald-500 uppercase tracking-wide">Protect</span>
                       <h3 className="font-semibold text-gray-900 mt-1 mb-1">High-frequency patients</h3>
                       <p className="text-sm text-gray-500 mb-2">Your VIPs. They don't complain — they just leave.</p>
                       <div className="flex items-center gap-2 text-sm">
@@ -494,7 +494,7 @@ export default function HomePage() {
                 <div className="flex-1 p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <span className="text-[11px] font-medium text-blue-400/80 uppercase tracking-wide">Growth</span>
+                      <span className="text-[11px] font-semibold text-blue-500 uppercase tracking-wide">Growth</span>
                       <h3 className="font-semibold text-gray-900 mt-1 mb-1">Referral champions</h3>
                       <p className="text-sm text-gray-500 mb-2">They send friends who actually show up.</p>
                       <div className="flex items-center gap-2 text-sm">
