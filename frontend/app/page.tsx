@@ -322,6 +322,10 @@ export default function HomePage() {
                   <Shield className="inline h-3 w-3 mr-1" />
                   We only use hashed IDs. No names or contact details are stored.
                 </p>
+
+                <p className="mt-4 text-center text-sm text-gray-500">
+                  Your EMR records activity. Audience Mirror helps you decide what to do next.
+                </p>
               </>
             ) : (
               <div className="flex flex-col items-center gap-5">
@@ -375,15 +379,6 @@ export default function HomePage() {
               </div>
             )}
           </div>
-        </section>
-
-        {/* Thesis line */}
-        <section className="mb-14 py-8">
-          <p className="text-center text-lg text-gray-500">
-            Your EMR tells you what happened.
-            <br />
-            <span className="text-gray-900 font-medium">Audience Mirror tells you what to do next.</span>
-          </p>
         </section>
 
         {/* What you'll see */}
