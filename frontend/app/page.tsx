@@ -209,7 +209,7 @@ export default function HomePage() {
                   />
 
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Drop your patient file</h3>
-                  <p className="text-sm text-gray-500 mb-5">CSV or Excel · Takes ~2 minutes</p>
+                  <p className="text-sm text-gray-500 mb-5">CSV or Excel · Takes ~5seconds</p>
 
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                     <button
@@ -321,10 +321,6 @@ export default function HomePage() {
                 <p className="mt-5 text-center text-xs text-gray-400">
                   <Shield className="inline h-3 w-3 mr-1" />
                   We only use hashed IDs. No names or contact details are stored.
-                </p>
-
-                <p className="mt-4 text-center text-sm text-gray-500">
-                  Your EMR records activity. Audience Mirror helps you decide what to do next.
                 </p>
               </>
             ) : (
