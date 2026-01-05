@@ -1029,7 +1029,7 @@ ${clinicName} Team`
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
           {/* HERO SECTION - Subtle container, better alignment */}
           <section className="mb-10">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-2xl mx-auto">
               <div className="bg-gradient-to-br from-slate-50 to-indigo-50/50 rounded-2xl p-8 border border-slate-100">
                 {/* Segment Label */}
                 <p className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wide mb-2">
