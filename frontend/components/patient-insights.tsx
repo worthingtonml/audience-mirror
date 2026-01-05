@@ -1138,46 +1138,6 @@ ${clinicName} Team`
           {/* MEDSPA: DECISION QUEUE SECTION                                */}
           {/* Clean, calm aesthetic matching landing page                   */}
           {/* ================================================================ */}
-            <section className="py-10">
-              <div className="max-w-2xl mx-auto">
-                {/* Section Header */}
-                <div className="text-center mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">
-                    What the data tells you
-                  </h2>
-                  <p className="text-sm text-gray-500">
-                    A short list of who needs attention right now
-                  </p>
-                </div>
-
-                {/* KPI Strip */}
-                <div className="bg-gray-50 rounded-xl px-5 py-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-center gap-4 sm:gap-8 text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500">Revenue at risk:</span>
-                    <span className="font-semibold text-gray-900">
-                      ${((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) + 
-                         (analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0)).toLocaleString()}
-                    </span>
-                  </div>
-                  <span className="hidden sm:inline text-gray-300">·</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500">Patients slipping:</span>
-                    <span className="font-semibold text-gray-700">
-                      {(analysisData?.patient_segments?.one_and_done?.count || 0) + 
-                       (analysisData?.patient_segments?.lapsed_regulars?.count || 0)}
-                    </span>
-                  </div>
-                  <span className="hidden sm:inline text-gray-300">·</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-500">VIP revenue:</span>
-                    <span className="font-semibold text-gray-700">
-                      ${((analysisData?.patient_segments?.high_frequency?.count || 0) * 
-                         (analysisData?.patient_segments?.high_frequency?.avg_ltv || 0)).toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-             {/* DECISION QUEUE - Actions across full patient base */}
           {!isMortgage && (
             <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-10">
               <div className="max-w-2xl mx-auto">
@@ -1346,7 +1306,6 @@ ${clinicName} Team`
               </div>
             </section>
           )}
-            </section>
 
           {/* ================================================================ */}
           {/* MEDSPA: NEXT STEPS - Two action cards                          */}
