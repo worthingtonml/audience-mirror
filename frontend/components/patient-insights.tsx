@@ -1027,16 +1027,31 @@ ${clinicName} Team`
         style={{ maxWidth: 1400 }}
       >
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
-          {/* HERO SECTION - Clean, no container */}
+          {/* HERO SECTION - Clean with tooltip */}
           <section className="mb-10">
             <div className="max-w-2xl mx-auto">
-              {/* Segment Label */}
-              <p className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wide mb-2">
-                {terms.bestCustomers}
-              </p>
+              {/* Label with tooltip */}
+              <div className="flex items-center gap-1.5 mb-2">
+                <p className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wide">
+                  Who to find more of
+                </p>
+                {/* Info icon - tooltip trigger */}
+                <div className="group relative">
+                  <svg className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" strokeWidth="2"/>
+                    <path strokeLinecap="round" strokeWidth="2" d="M12 16v-4m0-4h.01"/>
+                  </svg>
+                  {/* Tooltip */}
+                  <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
+                    <p className="font-medium mb-1">How we identify your best patients</p>
+                    <p className="text-gray-300">Ranked by a composite score: spend (25%), visit frequency (25%), recency (25%), and treatment diversity (25%).</p>
+                    <div className="absolute left-3 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
+              </div>
               
               {/* Segment Name */}
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+              <h1 className="text-3xl font-bold text-gray-900 mb-3">
                 {isMortgage 
                   ? (analysisData?.borrower_profile?.label || 'Repeat Buyers, Realtor-Referred')
                   : segmentName
@@ -1044,15 +1059,15 @@ ${clinicName} Team`
               </h1>
               
               {/* Description */}
-              <p className="text-gray-600 mb-8">
+              <p className="text-gray-600 mb-6">
                 {isMortgage 
                   ? `Avg $${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K loan size. They close faster and refer more. But ${analysisData?.preapproval_metrics?.stale_count || 0} of them are going cold.`
                   : `${segmentDescription} They spend $${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit ${(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.`
                 }
               </p>
               
-              {/* Metrics - Simple inline */}
-              <div className="flex flex-wrap gap-8 mb-8 pb-8 border-b border-gray-100">
+              {/* Metrics - inline */}
+              <div className="flex flex-wrap gap-8 mb-6">
                 {isMortgage ? (
                   <>
                     <div>
@@ -1120,7 +1135,6 @@ ${clinicName} Team`
           {/* MEDSPA: DECISION QUEUE SECTION                                */}
           {/* Clean, calm aesthetic matching landing page                   */}
           {/* ================================================================ */}
-          {!isMortgage && (
             <section className="py-10">
               <div className="max-w-2xl mx-auto">
                 {/* Section Header */}
@@ -1159,14 +1173,34 @@ ${clinicName} Team`
                     </span>
                   </div>
                 </div>
-                {/* ============================================
-                    DECISION QUEUE - Patient Segments
-                    Replaces the old red/green block cards
-                    ============================================ */}
+              </div>
+             {/* DECISION QUEUE - Actions across full patient base */}
+          {!isMortgage && (
+            <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-10">
+              <div className="max-w-2xl mx-auto">
+                
+                {/* Section header */}
+                <div className="mb-5">
+                  <h2 className="text-lg font-semibold text-gray-900">What to do now</h2>
+                  <p className="text-sm text-gray-500">Actions across all {patientCount || 100} patients, prioritized by impact</p>
+                </div>
+
                 <div className="space-y-3">
                   
                   {/* 1. One-and-done patients */}
-                  <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all">
+                  <div 
+                    onClick={() => {
+                      openActionModal(
+                        'one-and-done',
+                        'One-and-done patients',
+                        analysisData?.patient_segments?.one_and_done?.count || 0,
+                        [],
+                        'win-back',
+                        'Send win-back text'
+                      );
+                    }}
+                    className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer"
+                  >
                     <div className="flex">
                       <div className="w-1 bg-rose-400"></div>
                       <div className="flex-1 p-4">
@@ -1181,29 +1215,29 @@ ${clinicName} Team`
                               <span className="text-gray-400">{analysisData?.patient_segments?.one_and_done?.count || 0} patients</span>
                             </div>
                           </div>
-                          <button 
-                            onClick={() => {
-                              openActionModal(
-                                'one-and-done',
-                                'One-and-done patients',
-                                analysisData?.patient_segments?.one_and_done?.count || 0,
-                                [],
-                                'win-back',
-                                'Send win-back text'
-                              );
-                            }}
-                            className="flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-indigo-600 transition-colors whitespace-nowrap"
-                          >
+                          <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
                             Send check-in
                             <ArrowRight className="w-4 h-4" />
-                          </button>
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* 2. Lapsed regulars */}
-                  <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all">
+                  <div 
+                    onClick={() => {
+                      openActionModal(
+                        'lapsed-regulars',
+                        'Lapsed regulars',
+                        analysisData?.patient_segments?.lapsed_regulars?.count || 0,
+                        [],
+                        'personal-outreach',
+                        'Start personal outreach'
+                      );
+                    }}
+                    className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer"
+                  >
                     <div className="flex">
                       <div className="w-1 bg-orange-400"></div>
                       <div className="flex-1 p-4">
@@ -1218,29 +1252,29 @@ ${clinicName} Team`
                               <span className="text-gray-400">{analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients</span>
                             </div>
                           </div>
-                          <button 
-                            onClick={() => {
-                              openActionModal(
-                                'lapsed-regulars',
-                                'Lapsed regulars',
-                                analysisData?.patient_segments?.lapsed_regulars?.count || 0,
-                                [],
-                                'personal-outreach',
-                                'Start personal outreach'
-                              );
-                            }}
-                            className="flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-indigo-600 transition-colors whitespace-nowrap"
-                          >
+                          <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
                             Reopen conversation
                             <ArrowRight className="w-4 h-4" />
-                          </button>
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* 3. High-frequency patients */}
-                  <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all">
+                  <div 
+                    onClick={() => {
+                      openActionModal(
+                        'high-frequency',
+                        'High-frequency patients',
+                        analysisData?.patient_segments?.high_frequency?.count || 0,
+                        [],
+                        'vip-reward',
+                        'Send VIP reward'
+                      );
+                    }}
+                    className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer"
+                  >
                     <div className="flex">
                       <div className="w-1 bg-emerald-400"></div>
                       <div className="flex-1 p-4">
@@ -1255,29 +1289,29 @@ ${clinicName} Team`
                               <span className="text-gray-400">{analysisData?.patient_segments?.high_frequency?.count || 0} patients</span>
                             </div>
                           </div>
-                          <button 
-                            onClick={() => {
-                              openActionModal(
-                                'high-frequency',
-                                'High-frequency patients',
-                                analysisData?.patient_segments?.high_frequency?.count || 0,
-                                [],
-                                'vip-reward',
-                                'Send VIP reward'
-                              );
-                            }}
-                            className="flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-indigo-600 transition-colors whitespace-nowrap"
-                          >
+                          <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
                             Add VIP touchpoint
                             <ArrowRight className="w-4 h-4" />
-                          </button>
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
 
                   {/* 4. Referral champions */}
-                  <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all">
+                  <div 
+                    onClick={() => {
+                      openActionModal(
+                        'referrers',
+                        'Referral champions',
+                        analysisData?.patient_segments?.referral_champions?.count || 0,
+                        [],
+                        'referral-program',
+                        'Launch referral program'
+                      );
+                    }}
+                    className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer"
+                  >
                     <div className="flex">
                       <div className="w-1 bg-blue-400"></div>
                       <div className="flex-1 p-4">
@@ -1287,27 +1321,15 @@ ${clinicName} Team`
                             <h3 className="font-semibold text-gray-900 mt-1 mb-1">Referral champions</h3>
                             <p className="text-sm text-gray-500 mb-2">They send friends who actually show up.</p>
                             <div className="flex items-center gap-2 text-sm">
-                              <span className="font-semibold text-gray-900">{analysisData?.patient_segments?.referral_champions?.conversion_rate || 85}% conversion</span>
+                              <span className="font-semibold text-gray-900">{analysisData?.patient_segments?.referral_champions?.conversion_rate || 68}% conversion</span>
                               <span className="text-gray-300">·</span>
                               <span className="text-gray-400">{analysisData?.patient_segments?.referral_champions?.count || 0} patients</span>
                             </div>
                           </div>
-                          <button 
-                            onClick={() => {
-                              openActionModal(
-                                'referrers',
-                                'Referral champions',
-                                analysisData?.patient_segments?.referral_champions?.count || 0,
-                                [],
-                                'referral-program',
-                                'Launch referral program'
-                              );
-                            }}
-                            className="flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-indigo-600 transition-colors whitespace-nowrap"
-                          >
+                          <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
                             Launch referral program
                             <ArrowRight className="w-4 h-4" />
-                          </button>
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -1321,6 +1343,7 @@ ${clinicName} Team`
               </div>
             </section>
           )}
+            </section>
 
           {/* ================================================================ */}
           {/* MEDSPA: NEXT STEPS - Two action cards                          */}
