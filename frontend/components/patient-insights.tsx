@@ -1027,141 +1027,121 @@ ${clinicName} Team`
         style={{ maxWidth: 1400 }}
       >
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
-          {/* HERO CARD */}
-          <section>
-            <div className="bg-gradient-to-r from-[#1e1b4b] via-[#4338ca] to-[#7c3aed] rounded-2xl p-8 md:p-10 shadow-lg">
-              {/* Top row: Label */}
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-indigo-200 mb-2">
+          {/* HERO SECTION - Clean white design */}
+          <section className="mb-8">
+            <div className="max-w-2xl mx-auto">
+              {/* Segment Label */}
+              <p className="text-[11px] font-semibold text-indigo-500 uppercase tracking-wide mb-2">
                 {terms.bestCustomers}
-              </div>
-
-              {/* Segment name - profile for mortgage */}
-              <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
+              </p>
+              
+              {/* Segment Name */}
+              <h1 className="text-3xl font-bold text-gray-900 mb-3">
                 {isMortgage 
                   ? (analysisData?.borrower_profile?.label || 'Repeat Buyers, Realtor-Referred')
                   : segmentName
                 }
               </h1>
-
-              {/* Description - profile then problem for mortgage */}
-              <p className="text-sm md:text-base text-indigo-100 leading-relaxed max-w-3xl mb-6">
+              
+              {/* Description */}
+              <p className="text-gray-600 mb-8">
                 {isMortgage 
-                  ? <>Avg <span className="font-semibold text-white">${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K</span> loan size. They close faster and refer more. But <span className="font-semibold text-amber-300">{analysisData?.preapproval_metrics?.stale_count || 0}</span> of them are going cold.</>
+                  ? `Avg $${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K loan size. They close faster and refer more. But ${analysisData?.preapproval_metrics?.stale_count || 0} of them are going cold.`
                   : `${segmentDescription} They spend $${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit ${(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.`
                 }
               </p>
-
-              {/* Stats row */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+              
+              {/* Metrics Strip */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 {isMortgage ? (
                   <>
                     {/* MORTGAGE METRICS */}
-                    <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Going Cold</div>
-                      <div className="text-2xl md:text-3xl font-bold text-amber-300">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Going Cold</p>
+                      <p className="text-2xl font-bold text-orange-500">
                         {analysisData?.preapproval_metrics?.stale_count || 0}
-                      </div>
-                      <div className="text-[10px] text-indigo-200">need outreach</div>
+                      </p>
+                      <p className="text-xs text-gray-400">need outreach</p>
                     </div>
-                    <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Commission at Risk</div>
-                      <div className="text-2xl md:text-3xl font-bold text-red-300">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Commission at Risk</p>
+                      <p className="text-2xl font-bold text-rose-600">
                         {analysisData?.preapproval_metrics?.commission_at_risk 
                           ? `$${(analysisData.preapproval_metrics.commission_at_risk / 1000).toFixed(0)}K`
                           : churnData?.at_risk_revenue 
                           ? `$${(churnData.at_risk_revenue / 1000).toFixed(0)}K`
                           : '—'}
-                      </div>
-                      <div className="text-[10px] text-indigo-200">if they close elsewhere</div>
+                      </p>
+                      <p className="text-xs text-gray-400">if they close elsewhere</p>
                     </div>
-                    <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Loan Size</div>
-                      <div className="text-2xl md:text-3xl font-bold text-white">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg Loan Size</p>
+                      <p className="text-2xl font-bold text-gray-900">
                         ${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K
-                      </div>
-                      <div className="text-[10px] text-indigo-200">this segment</div>
+                      </p>
+                      <p className="text-xs text-gray-400">this segment</p>
                     </div>
-                    <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Commission</div>
-                      <div className="text-2xl md:text-3xl font-bold text-emerald-300">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg Commission</p>
+                      <p className="text-2xl font-bold text-emerald-600">
                         ${((analysisData?.preapproval_metrics?.avg_commission || 4000) / 1000).toFixed(1)}K
-                      </div>
-                      <div className="text-[10px] text-indigo-200">per funded loan</div>
+                      </p>
+                      <p className="text-xs text-gray-400">per funded loan</p>
                     </div>
                   </>
                 ) : (
                   <>
                     {/* MEDSPA METRICS */}
-                    <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Avg Lifetime Value</div>
-                      <div className="text-2xl md:text-3xl font-bold text-white">
-                        {(analysisData?.behavior_patterns?.avg_lifetime_value || 3600) >= 1000 
-                          ? `$${((analysisData?.behavior_patterns?.avg_lifetime_value || 3600) / 1000).toFixed(1)}K`
-                          : `$${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toFixed(0)}`}
-                      </div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg Lifetime Value</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        ${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()}
+                      </p>
                     </div>
-                    <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Visit Frequency</div>
-                      <div className="text-2xl md:text-3xl font-bold text-white">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Visit Frequency</p>
+                      <p className="text-2xl font-bold text-gray-900">
                         {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}×
-                      </div>
-                      <div className="text-[10px] text-indigo-200">per year</div>
+                      </p>
+                      <p className="text-xs text-gray-400">per year</p>
                     </div>
-                    <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Revenue at Risk</div>
-                      <div className={`text-2xl md:text-3xl font-bold ${
-                        churnData?.at_risk_percent > 25 
-                          ? 'text-red-300' 
-                          : churnData?.at_risk_percent > 15 
-                          ? 'text-amber-300' 
-                          : 'text-emerald-300'
-                      }`}>
-                        ${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '—'}K
-                      </div>
-                      <div className="text-[10px] text-indigo-200">from {churnData?.at_risk_count || 0} {terms.customers}</div>
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Revenue at Risk</p>
+                      <p className="text-2xl font-bold text-rose-600">
+                        ${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '0'}K
+                      </p>
+                      <p className="text-xs text-gray-400">from {churnData?.at_risk_count || 0} patients</p>
                     </div>
-                    <div>
-                      <div className="text-[10px] font-medium text-indigo-200 mb-1">Churn Rate</div>
-                      <div className={`text-2xl md:text-3xl font-bold ${
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Churn Rate</p>
+                      <p className={`text-2xl font-bold ${
                         churnData?.at_risk_percent > 25 
-                          ? 'text-red-300' 
+                          ? 'text-rose-600' 
                           : churnData?.at_risk_percent > 15 
-                          ? 'text-amber-300' 
-                          : 'text-emerald-300'
+                          ? 'text-orange-500' 
+                          : 'text-emerald-600'
                       }`}>
-                        {churnData ? `${churnData.at_risk_percent.toFixed(0)}%` : '—'}
-                      </div>
-                      <div className="text-[10px] text-indigo-200">at risk</div>
+                        {churnData ? `${churnData.at_risk_percent.toFixed(0)}%` : '0%'}
+                      </p>
+                      <p className="text-xs text-gray-400">at risk</p>
                     </div>
                   </>
                 )}
               </div>
-
-              <div className="h-px bg-white/20 my-6" />
               
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-indigo-200 mb-2">
-                {isMortgage ? 'Protect This Segment' : 'What This Means'}
-              </div>
-              <p className="text-sm text-indigo-100 leading-relaxed">
-                {isMortgage 
-                  ? `These are your best borrowers — high loan amounts, likely to close, likely to refer. But ${analysisData?.preapproval_metrics?.stale_count || 0} of them have gone quiet. That's $${((analysisData?.preapproval_metrics?.commission_at_risk || 0) / 1000).toFixed(0)}K in commission you've already earned the right to. Time to reach out.`
-                  : `Your best ${terms.customers} average $${((analysisData?.behavior_patterns?.avg_lifetime_value || 0) / 1000).toFixed(1)}K in lifetime value across ${(analysisData?.behavior_patterns?.avg_visits_per_year || 0).toFixed(1)} ${terms.visits} per year. ${churnData ? `${churnData.at_risk_percent.toFixed(0)}% haven't returned within their expected visit interval, putting $${((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0)}K in revenue at risk.` : ''}`
-                }
-              </p>
-              
+              {/* Export Button */}
               <button
                 onClick={() => {
                   if (!currentRunId) return;
                   window.open(`${API_URL}/api/v1/runs/${currentRunId}/export-patients`, '_blank');
                 }}
-                className="mt-4 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Export Labeled {terms.Customers}
               </button>
-              
             </div>
           </section>
 
