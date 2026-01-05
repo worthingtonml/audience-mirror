@@ -2446,211 +2446,643 @@ ${clinicName} Team`
       </div>
     </div>
 
-    {/* Retention Action Modal */}
-    {showActionModal && actionModalData && (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
-          {/* Header */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">{actionModalData.title}</h2>
-                <p className="text-sm text-gray-500 mt-1">{actionModalData.count} patients selected</p>
+    import React, { useState } from 'react';
+import { 
+  X, 
+  MessageSquare, 
+  Mail, 
+  Phone, 
+  Instagram,
+  Send,
+  ChevronDown,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  RefreshCw,
+  Download,
+  ExternalLink,
+  Clock,
+  Sparkles
+} from 'lucide-react';
+
+export default function CampaignWorkflowModal() {
+  const [expandedStep, setExpandedStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState([]);
+  const [callNotes, setCallNotes] = useState({});
+  const [calledPatients, setCalledPatients] = useState([]);
+  const [feedbackGiven, setFeedbackGiven] = useState({});
+  const [regenerating, setRegenrating] = useState(null);
+  const [selectedPatients, setSelectedPatients] = useState(patients.map(p => p.id));
+  const [showSendList, setShowSendList] = useState(null); // stepId or null
+
+  const segment = {
+    title: 'One-and-done patients',
+    count: 25,
+    brief: "These patients were curious enough to book once, but didn't return. The win-back window is 30-60 days — after that, they've moved on mentally. A 3-touch sequence recovers 12-18%, vs ~5% for a single message.",
+    recoverable: '$26,058'
+  };
+
+  const patients = [
+    { id: 1, name: 'Sarah Mitchell', phone: '(512) 555-1234', email: 'sarah.m@email.com', instagram: '@sarah_m', lastVisit: 'Oct 12, 2024', spent: '$320', treatment: 'Botox' },
+    { id: 2, name: 'Jennifer Kim', phone: '(512) 555-5678', email: 'jen.kim@email.com', instagram: null, lastVisit: 'Sep 28, 2024', spent: '$450', treatment: 'Filler' },
+    { id: 3, name: 'Amanda Roberts', phone: '(512) 555-9012', email: 'amanda.r@email.com', instagram: '@amandaroberts', lastVisit: 'Sep 15, 2024', spent: '$275', treatment: 'Chemical Peel' },
+    { id: 4, name: 'Lisa Chen', phone: '(512) 555-3456', email: 'lisa.chen@email.com', instagram: '@lisachen_atx', lastVisit: 'Oct 5, 2024', spent: '$580', treatment: 'Botox + Filler' },
+    { id: 5, name: 'Michelle Park', phone: '(512) 555-7890', email: 'mpark@email.com', instagram: null, lastVisit: 'Aug 22, 2024', spent: '$220', treatment: 'Facial' },
+    { id: 6, name: 'Rachel Green', phone: '(512) 555-2345', email: 'rgreen@email.com', instagram: '@rachelg', lastVisit: 'Oct 1, 2024', spent: '$395', treatment: 'Laser' },
+    { id: 7, name: 'Emily Davis', phone: '(512) 555-6789', email: 'emily.d@email.com', instagram: null, lastVisit: 'Sep 10, 2024', spent: '$310', treatment: 'Botox' },
+  ];
+
+  const patientsWithSocial = patients.filter(p => p.instagram);
+
+  const handleFeedback = (stepId, type) => {
+    setFeedbackGiven({...feedbackGiven, [stepId]: type});
+    // This would send to your backend to improve future copy generation
+    console.log(`Feedback for step ${stepId}: ${type}`);
+  };
+
+  const handleRegenerate = async (stepId) => {
+    setRegenrating(stepId);
+    // Simulate API call to regenerate copy
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    setRegenrating(null);
+    setFeedbackGiven({...feedbackGiven, [stepId]: null});
+  };
+
+  const steps = [
+    {
+      id: 1,
+      day: 'Day 1',
+      channel: 'Text message',
+      icon: MessageSquare,
+      iconBg: 'bg-indigo-100',
+      iconColor: 'text-indigo-600',
+      badge: '98% open rate',
+      badgeColor: 'bg-green-100 text-green-700',
+      why: 'Highest open rate. Start soft — a human check-in, not a sales pitch.',
+      template: "Hey {name}, it's [Your Clinic]! We noticed it's been a while and just wanted to check in — everything okay? We'd love to see you again. 💜",
+      type: 'sms'
+    },
+    {
+      id: 2,
+      day: 'Day 4',
+      channel: 'Email with offer',
+      icon: Mail,
+      iconBg: 'bg-blue-100',
+      iconColor: 'text-blue-600',
+      badge: null,
+      why: "More space to explain value. Include a reason to return.",
+      template: {
+        subject: "We miss you! Here's 20% off your next visit",
+        body: "Hi {name},\n\nWe noticed it's been a while since your last visit. We'd love to see you again!\n\nAs a thank you for being part of our community, enjoy 20% off your next treatment.\n\nBook now and we'll also include a complimentary consultation to discuss your goals.\n\nWarmly,\n[Your Clinic Name]"
+      },
+      type: 'email'
+    },
+    {
+      id: 3,
+      day: 'Day 10',
+      channel: 'Final text',
+      icon: MessageSquare,
+      iconBg: 'bg-amber-100',
+      iconColor: 'text-amber-600',
+      badge: 'Last chance',
+      badgeColor: 'bg-amber-100 text-amber-700',
+      why: 'Create gentle urgency. Make it easy to say yes.',
+      template: "Hi {name}! Just wanted to let you know your 20% off expires this week. Want me to hold a spot for you? Reply YES and I'll send options 🙌",
+      type: 'sms'
+    }
+  ];
+
+  const alternativeChannels = [
+    {
+      id: 4,
+      channel: 'Phone call',
+      icon: Phone,
+      iconBg: 'bg-emerald-100',
+      iconColor: 'text-emerald-600',
+      badge: 'For non-responders',
+      badgeColor: 'bg-gray-100 text-gray-600',
+      why: "Personal call cuts through when digital doesn't.",
+      script: {
+        opener: "Hey {name}, this is [Your Name] from [Clinic]. I noticed it's been a while since your last visit and just wanted to check in — everything okay?",
+        keyPoints: [
+          "Listen first — don't pitch",
+          "If bad experience → apologize sincerely",
+          "If life got busy → empathize, offer to book",
+          "If switched providers → thank them, note it"
+        ],
+        closer: "We'd love to see you again whenever you're ready. Can I help you find a time that works?"
+      },
+      type: 'phone'
+    },
+    {
+      id: 5,
+      channel: 'Social DM',
+      icon: Instagram,
+      iconBg: 'bg-purple-100',
+      iconColor: 'text-purple-600',
+      badge: `${patientsWithSocial.length} with profiles`,
+      badgeColor: 'bg-purple-100 text-purple-700',
+      why: 'Reach them where they already spend time.',
+      template: "Hey {name}! 👋 It's been a minute since we've seen you at the clinic — we'd love to have you back! Let me know if you want me to save you a spot 💜",
+      type: 'social'
+    },
+    {
+      id: 6,
+      channel: 'Direct mail',
+      icon: Send,
+      iconBg: 'bg-gray-100',
+      iconColor: 'text-gray-600',
+      badge: null,
+      why: 'Physical touchpoint for patients who ignore digital.',
+      type: 'mail'
+    }
+  ];
+
+  const toggleStep = (stepId) => {
+    setExpandedStep(expandedStep === stepId ? null : stepId);
+  };
+
+  const markComplete = (stepId) => {
+    if (completedSteps.includes(stepId)) {
+      setCompletedSteps(completedSteps.filter(id => id !== stepId));
+    } else {
+      setCompletedSteps([...completedSteps, stepId]);
+    }
+  };
+
+  const renderFeedbackButtons = (stepId) => (
+    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
+      <span className="text-xs text-gray-400">How's this copy?</span>
+      <button 
+        onClick={() => handleFeedback(stepId, 'good')}
+        className={`p-1.5 rounded-md transition-colors ${
+          feedbackGiven[stepId] === 'good' 
+            ? 'bg-green-100 text-green-600' 
+            : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'
+        }`}
+      >
+        <ThumbsUp className="w-3.5 h-3.5" />
+      </button>
+      <button 
+        onClick={() => handleFeedback(stepId, 'bad')}
+        className={`p-1.5 rounded-md transition-colors ${
+          feedbackGiven[stepId] === 'bad' 
+            ? 'bg-red-100 text-red-600' 
+            : 'hover:bg-gray-100 text-gray-400 hover:text-gray-600'
+        }`}
+      >
+        <ThumbsDown className="w-3.5 h-3.5" />
+      </button>
+      <button 
+        onClick={() => handleRegenerate(stepId)}
+        disabled={regenerating === stepId}
+        className="ml-auto flex items-center gap-1 text-xs text-gray-500 hover:text-indigo-600 transition-colors disabled:opacity-50"
+      >
+        <RefreshCw className={`w-3 h-3 ${regenerating === stepId ? 'animate-spin' : ''}`} />
+        {regenerating === stepId ? 'Regenerating...' : 'Try different copy'}
+      </button>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-900/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-2xl w-full shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+        
+        {/* Header */}
+        <div className="p-6 border-b border-gray-100 flex-shrink-0">
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-xs font-semibold text-rose-600 uppercase tracking-wide">Act first</span>
+                <span className="text-xs text-gray-300">·</span>
+                <span className="text-xs font-medium text-gray-900">{segment.recoverable} recoverable</span>
               </div>
-              <button 
-                onClick={() => setShowActionModal(false)} 
-                className="text-gray-400 hover:text-gray-600 p-1"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <h2 className="text-xl font-semibold text-gray-900">{segment.title}</h2>
             </div>
+            <button className="text-gray-400 hover:text-gray-600 p-1 -mr-1 -mt-1">
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          {/* Content */}
-          <div className="p-6 space-y-6">
-            {/* Patient List */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-medium text-gray-900">Patients in this segment</h3>
-                <button
-                  onClick={() => handleExportCSV(actionModalData.patients, actionModalData.title)}
-                  className="flex items-center gap-1.5 text-xs text-[#6366f1] hover:text-[#4f46e5]"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  Export CSV
-                </button>
+
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-6">
+            
+            {/* Strategy Brief */}
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-6">
+              <div className="flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-900 leading-relaxed">
+                  <span className="font-semibold">Strategy:</span> {segment.brief}
+                </p>
               </div>
-              <div className="bg-gray-50 rounded-lg p-3 max-h-32 overflow-y-auto">
-                <div className="flex flex-wrap gap-2">
-                  {actionModalData.patients.slice(0, 10).map((p) => (
-                    <span key={typeof p === "object" ? p.patient_id : p} className="text-xs px-2 py-1 bg-white rounded border border-gray-200 text-gray-700 font-mono">
-                      {typeof p === "object" ? p.patient_id : p}
-                    </span>
-                  ))}
-                  {actionModalData.patients.length > 10 && (
-                    <span className="text-xs px-2 py-1 text-gray-500">
-                      +{actionModalData.patients.length - 10} more
-                    </span>
+            </div>
+
+            {/* Campaign Steps */}
+            <div className="space-y-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Recommended sequence</p>
+              
+              {steps.map((step) => (
+                <div key={step.id} className={`border rounded-xl overflow-hidden transition-all ${
+                  completedSteps.includes(step.id) ? 'border-green-200 bg-green-50/30' : 'border-gray-200'
+                }`}>
+                  {/* Step Header */}
+                  <button
+                    onClick={() => toggleStep(step.id)}
+                    className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-9 h-9 rounded-lg ${step.iconBg} flex items-center justify-center`}>
+                        {completedSteps.includes(step.id) ? (
+                          <Check className="w-4 h-4 text-green-600" />
+                        ) : (
+                          <step.icon className={`w-4 h-4 ${step.iconColor}`} />
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900">{step.day}</span>
+                          <span className="text-gray-300">·</span>
+                          <span className="text-sm text-gray-600">{step.channel}</span>
+                          {step.badge && (
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${step.badgeColor}`}>{step.badge}</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">{step.why}</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedStep === step.id ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Expanded Content */}
+                  {expandedStep === step.id && (
+                    <div className="px-4 pb-4 border-t border-gray-100">
+                      <div className="pt-4">
+                        {/* SMS Template */}
+                        {step.type === 'sms' && (
+                          <>
+                            <div className="bg-gray-50 rounded-lg p-4 mb-3">
+                              <div className="flex justify-between items-center mb-2">
+                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Message</p>
+                                <button className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Edit</button>
+                              </div>
+                              <p className="text-sm text-gray-700 leading-relaxed">{step.template}</p>
+                              {renderFeedbackButtons(step.id)}
+                            </div>
+                            
+                            {/* Patient Selection */}
+                            {showSendList === step.id && (
+                              <div className="mb-3 border border-gray-200 rounded-lg overflow-hidden">
+                                <div className="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                                  <span className="text-xs font-medium text-gray-600">
+                                    {selectedPatients.length} of {patients.length} selected
+                                  </span>
+                                  <div className="flex gap-2">
+                                    <button 
+                                      onClick={() => setSelectedPatients(patients.map(p => p.id))}
+                                      className="text-xs text-indigo-600 hover:text-indigo-700"
+                                    >
+                                      Select all
+                                    </button>
+                                    <span className="text-gray-300">·</span>
+                                    <button 
+                                      onClick={() => setSelectedPatients([])}
+                                      className="text-xs text-gray-500 hover:text-gray-700"
+                                    >
+                                      Clear
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                                  {patients.map((patient) => (
+                                    <label key={patient.id} className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer">
+                                      <input 
+                                        type="checkbox" 
+                                        checked={selectedPatients.includes(patient.id)}
+                                        onChange={() => {
+                                          if (selectedPatients.includes(patient.id)) {
+                                            setSelectedPatients(selectedPatients.filter(id => id !== patient.id));
+                                          } else {
+                                            setSelectedPatients([...selectedPatients, patient.id]);
+                                          }
+                                        }}
+                                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-sm font-medium text-gray-900">{patient.name}</span>
+                                        <span className="text-sm text-gray-500 ml-2">{patient.phone}</span>
+                                      </div>
+                                      <span className="text-xs text-gray-400">{patient.lastVisit}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => showSendList === step.id ? setShowSendList(null) : setShowSendList(step.id)}
+                                className="flex-1 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                              >
+                                <Send className="w-4 h-4" />
+                                {showSendList === step.id ? `Send to ${selectedPatients.length} patients` : `Send to ${patients.length} patients`}
+                              </button>
+                              <button 
+                                onClick={() => markComplete(step.id)}
+                                className={`px-4 py-2.5 border text-sm font-medium rounded-lg transition-colors ${
+                                  completedSteps.includes(step.id)
+                                    ? 'bg-green-50 border-green-200 text-green-700'
+                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                }`}
+                              >
+                                {completedSteps.includes(step.id) ? 'Done ✓' : 'Mark done'}
+                              </button>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Email Template */}
+                        {step.type === 'email' && (
+                          <>
+                            <div className="bg-gray-50 rounded-lg p-4 mb-3">
+                              <div className="flex justify-between items-center mb-3">
+                                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Email</p>
+                                <button className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Edit</button>
+                              </div>
+                              <div className="mb-3 pb-3 border-b border-gray-200">
+                                <p className="text-[10px] text-gray-400 uppercase mb-1">Subject</p>
+                                <p className="text-sm font-medium text-gray-900">{step.template.subject}</p>
+                              </div>
+                              <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{step.template.body}</p>
+                              {renderFeedbackButtons(step.id)}
+                            </div>
+                            
+                            {/* Patient Selection */}
+                            {showSendList === step.id && (
+                              <div className="mb-3 border border-gray-200 rounded-lg overflow-hidden">
+                                <div className="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+                                  <span className="text-xs font-medium text-gray-600">
+                                    {selectedPatients.length} of {patients.length} selected
+                                  </span>
+                                  <div className="flex gap-2">
+                                    <button 
+                                      onClick={() => setSelectedPatients(patients.map(p => p.id))}
+                                      className="text-xs text-indigo-600 hover:text-indigo-700"
+                                    >
+                                      Select all
+                                    </button>
+                                    <span className="text-gray-300">·</span>
+                                    <button 
+                                      onClick={() => setSelectedPatients([])}
+                                      className="text-xs text-gray-500 hover:text-gray-700"
+                                    >
+                                      Clear
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                                  {patients.map((patient) => (
+                                    <label key={patient.id} className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer">
+                                      <input 
+                                        type="checkbox" 
+                                        checked={selectedPatients.includes(patient.id)}
+                                        onChange={() => {
+                                          if (selectedPatients.includes(patient.id)) {
+                                            setSelectedPatients(selectedPatients.filter(id => id !== patient.id));
+                                          } else {
+                                            setSelectedPatients([...selectedPatients, patient.id]);
+                                          }
+                                        }}
+                                        className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                      />
+                                      <div className="flex-1 min-w-0">
+                                        <span className="text-sm font-medium text-gray-900">{patient.name}</span>
+                                        <span className="text-sm text-gray-500 ml-2">{patient.email}</span>
+                                      </div>
+                                      <span className="text-xs text-gray-400">{patient.lastVisit}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            <div className="flex gap-2">
+                              <button 
+                                onClick={() => showSendList === step.id ? setShowSendList(null) : setShowSendList(step.id)}
+                                className="flex-1 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
+                              >
+                                <Send className="w-4 h-4" />
+                                {showSendList === step.id ? `Send to ${selectedPatients.length} patients` : `Send to ${patients.length} patients`}
+                              </button>
+                              <button 
+                                onClick={() => markComplete(step.id)}
+                                className={`px-4 py-2.5 border text-sm font-medium rounded-lg transition-colors ${
+                                  completedSteps.includes(step.id)
+                                    ? 'bg-green-50 border-green-200 text-green-700'
+                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                                }`}
+                              >
+                                {completedSteps.includes(step.id) ? 'Done ✓' : 'Mark done'}
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
-            </div>
+              ))}
 
-            {/* Message Tabs */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex gap-1 bg-gray-100 rounded-lg p-1 flex-1 mr-3">
-                  <button
-                    onClick={() => setActiveMessageTab('email')}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                      activeMessageTab === 'email'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <Mail className="h-4 w-4" />
-                    Email
-                  </button>
-                  <button
-                    onClick={() => setActiveMessageTab('sms')}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                      activeMessageTab === 'sms'
-                        ? 'bg-white text-gray-900 shadow-sm'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    SMS
-                  </button>
-                </div>
-                <button
-                  onClick={() => {
-                    // Regenerate copy
-                    openActionModal(
-                      actionModalData.segment,
-                      actionModalData.title,
-                      actionModalData.count,
-                      actionModalData.patients,
-                      actionModalData.action,
-                      actionModalData.cta
-                    );
-                  }}
-                  disabled={copyLoading}
-                  className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#6366f1] disabled:opacity-50"
-                  title="Generate new copy"
-                >
-                  <RefreshCw className={`h-3.5 w-3.5 ${copyLoading ? 'animate-spin' : ''}`} />
-                  Regenerate
-                </button>
-              </div>
-
-              {/* Loading State */}
-              {copyLoading && (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6366f1] mx-auto mb-3"></div>
-                    <p className="text-sm text-gray-500">Generating personalized copy...</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Email Content */}
-              {!copyLoading && activeMessageTab === 'email' && dynamicCopy && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-gray-900">Email Template</h3>
+              {/* Alternative Channels */}
+              <div className="mt-6 pt-6 border-t border-gray-100">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Additional channels</p>
+                
+                {alternativeChannels.map((step) => (
+                  <div key={step.id} className="border border-dashed border-gray-200 rounded-xl overflow-hidden mb-3 last:mb-0">
                     <button
-                      onClick={() => {
-                        handleCopy(`Subject: ${dynamicCopy.email_subject}\n\n${dynamicCopy.email_body}`, 'email');
-                      }}
-                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-colors ${
-                        copiedField === 'email'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-indigo-100 text-[#6366f1] hover:bg-indigo-200'
-                      }`}
+                      onClick={() => toggleStep(step.id)}
+                      className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50/50 transition-colors"
                     >
-                      <Copy className="h-3.5 w-3.5" />
-                      {copiedField === 'email' ? 'Copied!' : 'Copy'}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-lg ${step.iconBg} flex items-center justify-center`}>
+                          <step.icon className={`w-4 h-4 ${step.iconColor}`} />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-gray-900">{step.channel}</span>
+                            {step.badge && (
+                              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${step.badgeColor}`}>{step.badge}</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">{step.why}</p>
+                        </div>
+                      </div>
+                      {step.type === 'mail' ? (
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); }}
+                          className="px-3 py-1.5 bg-white border border-gray-200 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Export CSV
+                        </button>
+                      ) : (
+                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${expandedStep === step.id ? 'rotate-180' : ''}`} />
+                      )}
                     </button>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
-                    <div className="font-medium text-gray-900 mb-3 pb-2 border-b border-gray-200">
-                      Subject: {dynamicCopy.email_subject}
-                    </div>
-                    <div className="whitespace-pre-wrap leading-relaxed">
-                      {dynamicCopy.email_body}
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {/* SMS Content */}
-              {!copyLoading && activeMessageTab === 'sms' && dynamicCopy && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-medium text-gray-900">SMS Template</h3>
-                    <button
-                      onClick={() => {
-                        handleCopy(dynamicCopy.sms, 'sms');
-                      }}
-                      className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full transition-colors ${
-                        copiedField === 'sms'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-indigo-100 text-[#6366f1] hover:bg-indigo-200'
-                      }`}
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      {copiedField === 'sms' ? 'Copied!' : 'Copy'}
-                    </button>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-700">
-                    {dynamicCopy.sms}
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    💡 Keep SMS under 160 characters for best delivery rates. Current: {dynamicCopy.sms.length} chars
-                  </p>
-                  <button
-                    onClick={() => setShowSMSModal(true)}
-                    className="w-full mt-3 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Send className="h-4 w-4" />
-                    Send {actionModalData.count} SMS
-                  </button>
-                </div>
-              )}
-            </div>
+                    {/* Phone Call Expanded */}
+                    {expandedStep === step.id && step.type === 'phone' && (
+                      <div className="px-4 pb-4 border-t border-gray-100">
+                        <div className="pt-4">
+                          {/* Call Script */}
+                          <div className="bg-emerald-50 rounded-lg p-4 mb-4">
+                            <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-2">Opening</p>
+                            <p className="text-sm text-emerald-900 mb-4">"{step.script.opener}"</p>
+                            
+                            <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-2">Respond based on what you hear</p>
+                            <ul className="space-y-1.5 mb-4">
+                              {step.script.keyPoints.map((point, i) => (
+                                <li key={i} className="text-sm text-emerald-800 flex items-start gap-2">
+                                  <span className="text-emerald-400 mt-1">•</span>
+                                  {point}
+                                </li>
+                              ))}
+                            </ul>
+                            
+                            <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-2">Close with</p>
+                            <p className="text-sm text-emerald-900">"{step.script.closer}"</p>
+                            {renderFeedbackButtons(step.id)}
+                          </div>
 
-            {/* Advanced option */}
-            <div className="pt-4 border-t border-gray-100">
-              <button
-                onClick={() => {
-                  setShowActionModal(false);
-                  const params = new URLSearchParams({
-                    segment: actionModalData.segment,
-                    action: actionModalData.action,
-                    count: String(actionModalData.count)
-                  });
-                  router.push(`/campaign-generator?segmentId=${currentRunId}&${params.toString()}`);
-                }}
-                className="text-sm text-[#6366f1] hover:text-[#4f46e5] hover:underline"
-              >
-                Open in Find New Patients →
-              </button>
+                          {/* Call List */}
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Call list</p>
+                          <div className="space-y-2 max-h-64 overflow-y-auto mb-4">
+                            {patients.slice(0, 5).map((patient) => (
+                              <div key={patient.id} className={`border rounded-lg p-3 transition-colors ${
+                                calledPatients.includes(patient.id) ? 'bg-green-50 border-green-200' : 'border-gray-200 hover:border-gray-300'
+                              }`}>
+                                <div className="flex items-start gap-3">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={calledPatients.includes(patient.id)}
+                                    onChange={() => {
+                                      if (calledPatients.includes(patient.id)) {
+                                        setCalledPatients(calledPatients.filter(id => id !== patient.id));
+                                      } else {
+                                        setCalledPatients([...calledPatients, patient.id]);
+                                      }
+                                    }}
+                                    className="mt-1 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="font-medium text-gray-900">{patient.name}</span>
+                                      <span className="text-xs text-gray-400 flex items-center gap-1">
+                                        <Clock className="w-3 h-3" />
+                                        {patient.lastVisit}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-3 text-sm">
+                                      <a href={`tel:${patient.phone}`} className="text-indigo-600 hover:text-indigo-700 font-medium">{patient.phone}</a>
+                                      <span className="text-gray-300">·</span>
+                                      <span className="text-gray-500">{patient.treatment}</span>
+                                      <span className="text-gray-300">·</span>
+                                      <span className="text-gray-900 font-medium">{patient.spent}</span>
+                                    </div>
+                                    <input
+                                      type="text"
+                                      placeholder="Add note after call..."
+                                      value={callNotes[patient.id] || ''}
+                                      onChange={(e) => setCallNotes({...callNotes, [patient.id]: e.target.value})}
+                                      className="mt-2 w-full text-sm px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flex gap-2">
+                            <button className="flex-1 px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2">
+                              <Download className="w-4 h-4" />
+                              Export call sheet
+                            </button>
+                            <button 
+                              onClick={() => markComplete(step.id)}
+                              className="px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors"
+                            >
+                              Done ({calledPatients.length}/{patients.length})
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Social DM Expanded */}
+                    {expandedStep === step.id && step.type === 'social' && (
+                      <div className="px-4 pb-4 border-t border-gray-100">
+                        <div className="pt-4">
+                          <div className="bg-purple-50 rounded-lg p-4 mb-4">
+                            <div className="flex justify-between items-center mb-2">
+                              <p className="text-[10px] font-semibold text-purple-700 uppercase tracking-wide">DM template</p>
+                              <button className="text-xs text-purple-600 hover:text-purple-700 font-medium">Edit</button>
+                            </div>
+                            <p className="text-sm text-purple-900">{step.template}</p>
+                            {renderFeedbackButtons(step.id)}
+                          </div>
+
+                          <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Patients on Instagram</p>
+                          <div className="space-y-2 mb-4">
+                            {patientsWithSocial.map((patient) => (
+                              <div key={patient.id} className="border border-gray-200 rounded-lg p-3 flex items-center justify-between hover:border-gray-300 transition-colors">
+                                <div>
+                                  <span className="font-medium text-gray-900">{patient.name}</span>
+                                  <span className="ml-2 text-sm text-purple-600">{patient.instagram}</span>
+                                </div>
+                                <a 
+                                  href={`https://instagram.com/${patient.instagram.replace('@', '')}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors"
+                                >
+                                  <ExternalLink className="w-3 h-3" />
+                                  Open
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+
+                          <button 
+                            onClick={() => markComplete(step.id)}
+                            className="w-full px-4 py-2.5 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                          >
+                            Mark complete
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+        </div>
 
-          {/* Footer */}
-          <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
-            <button
-              onClick={() => setShowActionModal(false)}
-              className="w-full px-6 py-3 bg-[#6366f1] text-white font-semibold rounded-lg hover:bg-[#4f46e5] transition-colors"
-            >
-              Done
+        {/* Footer */}
+        <div className="p-4 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+          <div className="flex justify-end">
+            <button className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
+              Close
             </button>
           </div>
         </div>
       </div>
-    )}
+    </div>
+  );
+}
 
     {showWinbackModal && (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
