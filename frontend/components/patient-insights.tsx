@@ -1027,121 +1027,115 @@ ${clinicName} Team`
         style={{ maxWidth: 1400 }}
       >
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
-          {/* HERO SECTION - Clean white design */}
-          <section className="mb-8">
-            <div className="max-w-2xl mx-auto">
-              {/* Segment Label */}
-              <p className="text-[11px] font-semibold text-indigo-500 uppercase tracking-wide mb-2">
-                {terms.bestCustomers}
-              </p>
-              
-              {/* Segment Name */}
-              <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                {isMortgage 
-                  ? (analysisData?.borrower_profile?.label || 'Repeat Buyers, Realtor-Referred')
-                  : segmentName
-                }
-              </h1>
-              
-              {/* Description */}
-              <p className="text-gray-600 mb-8">
-                {isMortgage 
-                  ? `Avg $${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K loan size. They close faster and refer more. But ${analysisData?.preapproval_metrics?.stale_count || 0} of them are going cold.`
-                  : `${segmentDescription} They spend $${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit ${(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.`
-                }
-              </p>
-              
-              {/* Metrics Strip */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                {isMortgage ? (
-                  <>
-                    {/* MORTGAGE METRICS */}
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Going Cold</p>
-                      <p className="text-2xl font-bold text-orange-500">
-                        {analysisData?.preapproval_metrics?.stale_count || 0}
-                      </p>
-                      <p className="text-xs text-gray-400">need outreach</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Commission at Risk</p>
-                      <p className="text-2xl font-bold text-rose-600">
-                        {analysisData?.preapproval_metrics?.commission_at_risk 
-                          ? `$${(analysisData.preapproval_metrics.commission_at_risk / 1000).toFixed(0)}K`
-                          : churnData?.at_risk_revenue 
-                          ? `$${(churnData.at_risk_revenue / 1000).toFixed(0)}K`
-                          : '—'}
-                      </p>
-                      <p className="text-xs text-gray-400">if they close elsewhere</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg Loan Size</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        ${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K
-                      </p>
-                      <p className="text-xs text-gray-400">this segment</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg Commission</p>
-                      <p className="text-2xl font-bold text-emerald-600">
-                        ${((analysisData?.preapproval_metrics?.avg_commission || 4000) / 1000).toFixed(1)}K
-                      </p>
-                      <p className="text-xs text-gray-400">per funded loan</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* MEDSPA METRICS */}
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg Lifetime Value</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        ${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Visit Frequency</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}×
-                      </p>
-                      <p className="text-xs text-gray-400">per year</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Revenue at Risk</p>
-                      <p className="text-2xl font-bold text-rose-600">
-                        ${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '0'}K
-                      </p>
-                      <p className="text-xs text-gray-400">from {churnData?.at_risk_count || 0} patients</p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-4">
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Churn Rate</p>
-                      <p className={`text-2xl font-bold ${
-                        churnData?.at_risk_percent > 25 
-                          ? 'text-rose-600' 
-                          : churnData?.at_risk_percent > 15 
-                          ? 'text-orange-500' 
-                          : 'text-emerald-600'
-                      }`}>
-                        {churnData ? `${churnData.at_risk_percent.toFixed(0)}%` : '0%'}
-                      </p>
-                      <p className="text-xs text-gray-400">at risk</p>
-                    </div>
-                  </>
-                )}
+          {/* HERO SECTION - Subtle container, better alignment */}
+          <section className="mb-10">
+            <div className="max-w-3xl mx-auto">
+              <div className="bg-gradient-to-br from-slate-50 to-indigo-50/50 rounded-2xl p-8 border border-slate-100">
+                {/* Segment Label */}
+                <p className="text-[11px] font-semibold text-indigo-600 uppercase tracking-wide mb-2">
+                  {terms.bestCustomers}
+                </p>
+                
+                {/* Segment Name */}
+                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+                  {isMortgage 
+                    ? (analysisData?.borrower_profile?.label || 'Repeat Buyers, Realtor-Referred')
+                    : segmentName
+                  }
+                </h1>
+                
+                {/* Description */}
+                <p className="text-gray-600 mb-8 max-w-2xl">
+                  {isMortgage 
+                    ? `Avg $${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K loan size. They close faster and refer more. But ${analysisData?.preapproval_metrics?.stale_count || 0} of them are going cold.`
+                    : `${segmentDescription} They spend $${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit ${(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.`
+                  }
+                </p>
+                
+                {/* Metrics Strip - Inline style */}
+                <div className="flex flex-wrap items-baseline gap-x-8 gap-y-4 mb-8">
+                  {isMortgage ? (
+                    <>
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Going Cold</p>
+                        <p className="text-3xl font-bold text-orange-500">
+                          {analysisData?.preapproval_metrics?.stale_count || 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Commission at Risk</p>
+                        <p className="text-3xl font-bold text-rose-600">
+                          {analysisData?.preapproval_metrics?.commission_at_risk 
+                            ? `$${(analysisData.preapproval_metrics.commission_at_risk / 1000).toFixed(0)}K`
+                            : '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Avg Loan Size</p>
+                        <p className="text-3xl font-bold text-gray-900">
+                          ${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Avg Commission</p>
+                        <p className="text-3xl font-bold text-emerald-600">
+                          ${((analysisData?.preapproval_metrics?.avg_commission || 4000) / 1000).toFixed(1)}K
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Avg Lifetime Value</p>
+                        <p className="text-3xl font-bold text-gray-900">
+                          ${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Visit Frequency</p>
+                        <p className="text-3xl font-bold text-gray-900">
+                          {(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}×
+                          <span className="text-sm font-normal text-gray-400 ml-1">per year</span>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Revenue at Risk</p>
+                        <p className="text-3xl font-bold text-rose-600">
+                          ${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '0'}K
+                          <span className="text-sm font-normal text-gray-400 ml-1">from {churnData?.at_risk_count || 0}</span>
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Churn Rate</p>
+                        <p className={`text-3xl font-bold ${
+                          churnData?.at_risk_percent > 25 
+                            ? 'text-rose-600' 
+                            : churnData?.at_risk_percent > 15 
+                            ? 'text-orange-500' 
+                            : 'text-emerald-600'
+                        }`}>
+                          {churnData ? `${churnData.at_risk_percent.toFixed(0)}%` : '0%'}
+                          <span className="text-sm font-normal text-gray-400 ml-1">at risk</span>
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                {/* Export Button */}
+                <button
+                  onClick={() => {
+                    if (!currentRunId) return;
+                    window.open(`${API_URL}/api/v1/runs/${currentRunId}/export-patients`, '_blank');
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export Labeled {terms.Customers}
+                </button>
               </div>
-              
-              {/* Export Button */}
-              <button
-                onClick={() => {
-                  if (!currentRunId) return;
-                  window.open(`${API_URL}/api/v1/runs/${currentRunId}/export-patients`, '_blank');
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Export Labeled {terms.Customers}
-              </button>
             </div>
           </section>
 
