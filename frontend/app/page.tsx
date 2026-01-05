@@ -408,37 +408,115 @@ export default function HomePage() {
         {/* What you'll see */}
         <section className="mb-14">
           <h2 className="text-xl font-bold text-gray-900 text-center mb-1">What you'll see</h2>
-          <p className="text-sm text-gray-500 text-center mb-6">Your patients, organized by what they need from you</p>
+          <p className="text-sm text-gray-500 text-center mb-6">A short list of who needs attention right now</p>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="border border-rose-200 bg-rose-50 rounded-lg p-4">
-              <p className="text-xs font-medium text-rose-600 mb-1">Revenue at risk</p>
-              <h4 className="font-semibold text-gray-900 mb-1">One-and-done patients</h4>
-              <p className="text-xs text-gray-600 mb-2">Visited once, then disappeared.</p>
-              <p className="text-lg font-bold text-rose-600">$726K recoverable</p>
+          <div className="space-y-3">
+            
+            {/* 1. One-and-done - Highest priority */}
+            <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer">
+              <div className="flex">
+                <div className="w-1 bg-rose-400"></div>
+                <div className="flex-1 p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <span className="text-[11px] font-medium text-rose-400/80 uppercase tracking-wide">Act first</span>
+                      <h3 className="font-semibold text-gray-900 mt-1 mb-1">One-and-done patients</h3>
+                      <p className="text-sm text-gray-500 mb-2">Visited once, then disappeared.</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-gray-900">$726K recoverable</span>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-gray-400">62 patients</span>
+                      </div>
+                    </div>
+                    <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
+                      Send check-in
+                      <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="border border-orange-200 bg-orange-50 rounded-lg p-4">
-              <p className="text-xs font-medium text-orange-600 mb-1">Revenue at risk</p>
-              <h4 className="font-semibold text-gray-900 mb-1">Lapsed regulars</h4>
-              <p className="text-xs text-gray-600 mb-2">Had a rhythm, then went quiet.</p>
-              <p className="text-lg font-bold text-orange-600">$174K at risk</p>
+            {/* 2. Lapsed regulars */}
+            <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer">
+              <div className="flex">
+                <div className="w-1 bg-orange-400"></div>
+                <div className="flex-1 p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <span className="text-[11px] font-medium text-orange-400/80 uppercase tracking-wide">At risk</span>
+                      <h3 className="font-semibold text-gray-900 mt-1 mb-1">Lapsed regulars</h3>
+                      <p className="text-sm text-gray-500 mb-2">Had a rhythm, then went quiet.</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-gray-900">$174K at risk</span>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-gray-400">20 patients</span>
+                      </div>
+                    </div>
+                    <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
+                      Reopen conversation
+                      <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="border border-emerald-200 bg-emerald-50 rounded-lg p-4">
-              <p className="text-xs font-medium text-emerald-600 mb-1">Protect these</p>
-              <h4 className="font-semibold text-gray-900 mb-1">High-frequency patients</h4>
-              <p className="text-xs text-gray-600 mb-2">Your VIPs. They don't complain — they just leave.</p>
-              <p className="text-lg font-bold text-emerald-600">$17,919 avg LTV</p>
+            {/* 3. High-frequency patients */}
+            <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer">
+              <div className="flex">
+                <div className="w-1 bg-emerald-400"></div>
+                <div className="flex-1 p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <span className="text-[11px] font-medium text-emerald-400/80 uppercase tracking-wide">Protect</span>
+                      <h3 className="font-semibold text-gray-900 mt-1 mb-1">High-frequency patients</h3>
+                      <p className="text-sm text-gray-500 mb-2">Your VIPs. They don't complain — they just leave.</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-gray-900">$17,919 avg LTV</span>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-gray-400">37 patients</span>
+                      </div>
+                    </div>
+                    <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
+                      Add VIP touchpoint
+                      <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="border border-blue-200 bg-blue-50 rounded-lg p-4">
-              <p className="text-xs font-medium text-blue-600 mb-1">Growth engine</p>
-              <h4 className="font-semibold text-gray-900 mb-1">Referral champions</h4>
-              <p className="text-xs text-gray-600 mb-2">They send friends who show up.</p>
-              <p className="text-lg font-bold text-blue-600">85% convert</p>
+            {/* 4. Referral champions */}
+            <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer">
+              <div className="flex">
+                <div className="w-1 bg-blue-400"></div>
+                <div className="flex-1 p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <span className="text-[11px] font-medium text-blue-400/80 uppercase tracking-wide">Growth</span>
+                      <h3 className="font-semibold text-gray-900 mt-1 mb-1">Referral champions</h3>
+                      <p className="text-sm text-gray-500 mb-2">They send friends who actually show up.</p>
+                      <div className="flex items-center gap-2 text-sm">
+                        <span className="font-semibold text-gray-900">85% conversion</span>
+                        <span className="text-gray-300">·</span>
+                        <span className="text-gray-400">55 patients</span>
+                      </div>
+                    </div>
+                    <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
+                      Launch referral program
+                      <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
+
           </div>
+
+          <p className="text-center text-xs text-gray-400 mt-6">
+            Click a row to see patients and next steps
+          </p>
         </section>
 
         {/* Final CTA */}
