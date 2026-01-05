@@ -182,7 +182,7 @@ export default function HomePage() {
             See who needs attention before they're gone.
           </h2>
           <p className="text-base text-gray-600 max-w-xl mx-auto">
-            Connect your patient data and we'll show you which patients are slipping — by procedure, by segment, by ZIP — how much revenue is at risk, and what tends to work to bring them back.
+            Connect your patient data and we'll show you who's slipping, what revenue is at risk, and what usually brings them back.
           </p>
         </section>
 
@@ -209,7 +209,7 @@ export default function HomePage() {
                   />
 
                   <h3 className="text-lg font-semibold text-gray-900 mb-1">Drop your patient file</h3>
-                  <p className="text-sm text-gray-500 mb-5">CSV or Excel · Max 10MB</p>
+                  <p className="text-sm text-gray-500 mb-5">CSV or Excel · Takes ~2 minutes</p>
 
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                     <button
@@ -218,7 +218,7 @@ export default function HomePage() {
                       disabled={loading}
                       className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 disabled:opacity-50"
                     >
-                      Select file
+                      Upload patient file
                     </button>
                     <button
                       type="button"
@@ -226,7 +226,7 @@ export default function HomePage() {
                       disabled={loading}
                       className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 hover:underline disabled:opacity-50"
                     >
-                      Use sample data
+                      View example output
                     </button>
                   </div>
                 </div>
@@ -237,7 +237,7 @@ export default function HomePage() {
                     <div className="w-full border-t border-gray-200"></div>
                   </div>
                   <div className="relative flex justify-center">
-                    <span className="bg-gray-50 px-3 text-xs text-gray-400 uppercase tracking-wide">Need help exporting?</span>
+                    <span className="bg-gray-50 px-3 text-xs text-gray-400 uppercase tracking-wide">Not sure how to export?</span>
                   </div>
                 </div>
 
@@ -320,7 +320,7 @@ export default function HomePage() {
 
                 <p className="mt-5 text-center text-xs text-gray-400">
                   <Shield className="inline h-3 w-3 mr-1" />
-                  We hash patient IDs. No names or contact info stored.
+                  We only use hashed IDs. No names or contact details are stored.
                 </p>
               </>
             ) : (
@@ -378,42 +378,16 @@ export default function HomePage() {
         </section>
 
         {/* Why not your EMR */}
-        <section className="mb-14">
-          <h2 className="text-xl font-bold text-gray-900 text-center mb-8">
-            Your EMR stores data. We tell you what to do with it.
-          </h2>
+        <section className="mb-14 text-center">
+          <p className="text-gray-500 mb-1">Your EMR tells you what happened.</p>
+          <p className="text-gray-900 font-medium mb-6">Audience Mirror tells you what to do next.</p>
           
-          <div className="space-y-4 max-w-lg mx-auto">
-            <div className="flex items-start gap-4">
-              <span className="text-sm text-gray-400 w-24 shrink-0 pt-0.5">EMR</span>
-              <span className="text-sm text-gray-400">Total patients seen this month</span>
-            </div>
-            <div className="flex items-start gap-4">
-              <span className="text-sm font-medium text-indigo-600 w-24 shrink-0 pt-0.5">Mirror</span>
-              <span className="text-sm text-gray-900">Which VIPs are overdue — and how much is at stake</span>
-            </div>
-            
-            <div className="border-t border-gray-100 my-2"></div>
-            
-            <div className="flex items-start gap-4">
-              <span className="text-sm text-gray-400 w-24 shrink-0 pt-0.5">EMR</span>
-              <span className="text-sm text-gray-400">Revenue by service type</span>
-            </div>
-            <div className="flex items-start gap-4">
-              <span className="text-sm font-medium text-indigo-600 w-24 shrink-0 pt-0.5">Mirror</span>
-              <span className="text-sm text-gray-900">Prioritized list of who to reach out to first</span>
-            </div>
-            
-            <div className="border-t border-gray-100 my-2"></div>
-            
-            <div className="flex items-start gap-4">
-              <span className="text-sm text-gray-400 w-24 shrink-0 pt-0.5">EMR</span>
-              <span className="text-sm text-gray-400">Appointment history</span>
-            </div>
-            <div className="flex items-start gap-4">
-              <span className="text-sm font-medium text-indigo-600 w-24 shrink-0 pt-0.5">Mirror</span>
-              <span className="text-sm text-gray-900">"Do these 3 things this month"</span>
-            </div>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-600">
+            <span>Who needs attention right now</span>
+            <span className="hidden sm:inline text-gray-300">·</span>
+            <span>How much revenue is at risk</span>
+            <span className="hidden sm:inline text-gray-300">·</span>
+            <span>What actions tend to bring it back</span>
           </div>
         </section>
 
@@ -537,7 +511,7 @@ export default function HomePage() {
             See which patients are slipping
           </h2>
           <p className="text-sm text-indigo-100 mb-6">
-            Upload your patient data and get your revenue game plan in minutes.
+            Upload your patient data and see who needs attention in minutes.
           </p>
           <button 
             onClick={() => router.push('/patient-insights')}
