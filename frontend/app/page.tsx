@@ -377,18 +377,13 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Why not your EMR */}
-        <section className="mb-14 text-center">
-          <p className="text-gray-500 mb-1">Your EMR tells you what happened.</p>
-          <p className="text-gray-900 font-medium mb-6">Audience Mirror tells you what to do next.</p>
-          
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-sm text-gray-600">
-            <span>Who needs attention right now</span>
-            <span className="hidden sm:inline text-gray-300">·</span>
-            <span>How much revenue is at risk</span>
-            <span className="hidden sm:inline text-gray-300">·</span>
-            <span>What actions tend to bring it back</span>
-          </div>
+        {/* Thesis line */}
+        <section className="mb-14 py-8">
+          <p className="text-center text-lg text-gray-500">
+            Your EMR tells you what happened.
+            <br />
+            <span className="text-gray-900 font-medium">Audience Mirror tells you what to do next.</span>
+          </p>
         </section>
 
         {/* What you'll see */}
