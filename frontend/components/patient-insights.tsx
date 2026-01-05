@@ -1166,318 +1166,207 @@ ${clinicName} Team`
           </section>
 
           {/* ================================================================ */}
-          {/* MEDSPA: KEY TRENDS SECTION                                     */}
-          {/* Soft gray background to transition from purple hero            */}
+          {/* MEDSPA: DECISION QUEUE SECTION                                */}
+          {/* Clean, calm aesthetic matching landing page                   */}
           {/* ================================================================ */}
           {!isMortgage && (
-            <section className="relative -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-10 bg-gradient-to-b from-slate-50 to-white">
-              <div className="max-w-4xl mx-auto">
+            <section className="relative -mx-4 md:-mx-6 lg:-mx-8 px-4 md:px-6 lg:px-8 py-10 bg-white">
+              <div className="max-w-2xl mx-auto">
                 {/* Section Header */}
                 <div className="text-center mb-6">
-                  <h2 className="text-lg font-semibold text-[#111827] mb-2">
-                    Here's what the data tells you
+                  <h2 className="text-xl font-bold text-gray-900 mb-1">
+                    What the data tells you
                   </h2>
-                  <p className="text-sm text-[#6B7280]">
-                    {patientCount} patients in this segment · {analysisData?.available_procedures?.[0] || 'All procedures'}
+                  <p className="text-sm text-gray-500">
+                    A short list of who needs attention right now
                   </p>
                 </div>
 
-                {/* Summary Strip */}
-                <div className="bg-white/60 rounded-lg px-6 py-4 mb-8 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm border border-gray-200/60">
-                  <div>
-                    <span className="text-[#9CA3AF]">Revenue at risk:</span>{' '}
-                    <span className="text-red-600 font-semibold">
+                {/* KPI Strip */}
+                <div className="bg-gray-50 rounded-xl px-5 py-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-center gap-4 sm:gap-8 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">Revenue at risk:</span>
+                    <span className="font-semibold text-gray-900">
                       ${((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) + 
                          (analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0)).toLocaleString()}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-[#9CA3AF]">Patients slipping:</span>{' '}
-                    <span className="text-[#111827] font-medium">
+                  <span className="hidden sm:inline text-gray-300">·</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">Patients slipping:</span>
+                    <span className="font-semibold text-gray-700">
                       {(analysisData?.patient_segments?.one_and_done?.count || 0) + 
                        (analysisData?.patient_segments?.lapsed_regulars?.count || 0)}
                     </span>
                   </div>
-                  <div>
-                    <span className="text-[#9CA3AF]">VIP revenue:</span>{' '}
-                    <span className="text-emerald-600 font-semibold">
+                  <span className="hidden sm:inline text-gray-300">·</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-500">VIP revenue:</span>
+                    <span className="font-semibold text-gray-700">
                       ${((analysisData?.patient_segments?.high_frequency?.count || 0) * 
                          (analysisData?.patient_segments?.high_frequency?.avg_ltv || 0)).toLocaleString()}
                     </span>
                   </div>
                 </div>
-
                 {/* ============================================
-                    RISK BLOCK - "Revenue you can recover"
+                    DECISION QUEUE - Patient Segments
+                    Replaces the old red/green block cards
                     ============================================ */}
-                <div className="bg-red-50/50 rounded-2xl p-6 mb-6 border border-red-100">
-                  {/* Block Header */}
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center">
-                      <AlertCircle className="h-4 w-4 text-red-500" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-[#111827]">Revenue you can recover</h3>
-                      <p className="text-xs text-red-600">These patients are slipping — small moves here pay off quickly</p>
+                <div className="space-y-3">
+                  
+                  {/* 1. One-and-done patients */}
+                  <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all">
+                    <div className="flex">
+                      <div className="w-1 bg-rose-400"></div>
+                      <div className="flex-1 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <span className="text-[11px] font-semibold text-rose-500 uppercase tracking-wide">Act first</span>
+                            <h3 className="font-semibold text-gray-900 mt-1 mb-1">One-and-done patients</h3>
+                            <p className="text-sm text-gray-500 mb-2">Visited once, then disappeared.</p>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-semibold text-gray-900">${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable</span>
+                              <span className="text-gray-300">·</span>
+                              <span className="text-gray-400">{analysisData?.patient_segments?.one_and_done?.count || 0} patients</span>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              openActionModal(
+                                'one-and-done',
+                                'One-and-done patients',
+                                analysisData?.patient_segments?.one_and_done?.count || 0,
+                                [],
+                                'win-back',
+                                'Send win-back text'
+                              );
+                            }}
+                            className="flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-indigo-600 transition-colors whitespace-nowrap"
+                          >
+                            Send check-in
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="space-y-4 mt-5">
-                    {/* One-and-done patients card */}
-                    <div className="bg-white rounded-xl p-5 shadow-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-semibold text-[#111827]">One-and-done patients</h4>
-                          <span className="text-xs text-[#6B7280]">
-                            {analysisData?.patient_segments?.one_and_done?.count || 0} patients
-                          </span>
-                        </div>
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700 font-medium">
-                          ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable
-                        </span>
-                      </div>
-                      
-                      <p className="text-sm text-[#374151] leading-relaxed mb-4">
-                        They didn't leave upset — they left undecided. {analysisData?.patient_segments?.one_and_done?.count || 0} patients, 
-                        one visit, then silence. You've got about 60 days before that fades into "something I tried once."
-                      </p>
-
-                      {/* Progressive disclosure */}
-                      <div className="border-t border-gray-100 pt-3">
-                        <button 
-                          onClick={() => setExpandedInsight(expandedInsight === 'one-done' ? null : 'one-done')}
-                          className="text-xs text-[#6B7280] hover:text-[#111827] flex items-center gap-1"
-                        >
-                          <span>Why this works</span>
-                          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedInsight === 'one-done' ? 'rotate-180' : ''}`} />
-                        </button>
-                        
-                        {expandedInsight === 'one-done' && (
-                          <div className="mt-3 text-xs text-[#6B7280] bg-gray-50 rounded-lg p-3">
-                            <p className="mb-2">
-                              <strong className="text-[#374151]">The window:</strong> After 60 days, re-engagement rates drop by half. Most practices wait too long.
-                            </p>
-                            <p>
-                              <strong className="text-[#374151]">What works:</strong> A personal check-in (not a promo) converts 12-18% of one-and-done patients into repeat visitors.
-                            </p>
+                  {/* 2. Lapsed regulars */}
+                  <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all">
+                    <div className="flex">
+                      <div className="w-1 bg-orange-400"></div>
+                      <div className="flex-1 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <span className="text-[11px] font-semibold text-orange-500 uppercase tracking-wide">At risk</span>
+                            <h3 className="font-semibold text-gray-900 mt-1 mb-1">Lapsed regulars</h3>
+                            <p className="text-sm text-gray-500 mb-2">Had a rhythm, then went quiet.</p>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-semibold text-gray-900">${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk</span>
+                              <span className="text-gray-300">·</span>
+                              <span className="text-gray-400">{analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients</span>
+                            </div>
                           </div>
-                        )}
-                      </div>
-
-                      {/* CTA */}
-                      <button
-                        onClick={() => {
-                          openActionModal(
-                            'one-and-done',
-                            'One-and-done patients',
-                            analysisData?.patient_segments?.one_and_done?.count || 0,
-                            [],
-                            'win-back',
-                            'Send win-back text'
-                          );
-                        }}
-                        className="w-full mt-4 px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-                      >
-                        Recover lost patients
-                      </button>
-                    </div>
-
-                    {/* Lapsed regulars card */}
-                    <div className="bg-white rounded-xl p-5 shadow-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-semibold text-[#111827]">Lapsed regulars</h4>
-                          <span className="text-xs text-[#6B7280]">
-                            {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients
-                          </span>
+                          <button 
+                            onClick={() => {
+                              openActionModal(
+                                'lapsed-regulars',
+                                'Lapsed regulars',
+                                analysisData?.patient_segments?.lapsed_regulars?.count || 0,
+                                [],
+                                'personal-outreach',
+                                'Start personal outreach'
+                              );
+                            }}
+                            className="flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-indigo-600 transition-colors whitespace-nowrap"
+                          >
+                            Reopen conversation
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
                         </div>
-                        <span className="text-xs px-2.5 py-1 rounded-full bg-red-100 text-red-700 font-medium">
-                          ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk
-                        </span>
                       </div>
-                      
-                      <p className="text-sm text-[#374151] leading-relaxed mb-4">
-                        {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients had a rhythm — {analysisData?.patient_segments?.lapsed_regulars?.avg_prev_visits || 3} visits 
-                        on average — then went quiet. Usually life, not dissatisfaction. A familiar voice reopens that door.
-                      </p>
-
-                      {/* Progressive disclosure */}
-                      <div className="border-t border-gray-100 pt-3">
-                        <button 
-                          onClick={() => setExpandedInsight(expandedInsight === 'lapsed' ? null : 'lapsed')}
-                          className="text-xs text-[#6B7280] hover:text-[#111827] flex items-center gap-1"
-                        >
-                          <span>Why this works</span>
-                          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedInsight === 'lapsed' ? 'rotate-180' : ''}`} />
-                        </button>
-                        
-                        {expandedInsight === 'lapsed' && (
-                          <div className="mt-3 text-xs text-[#6B7280] bg-gray-50 rounded-lg p-3">
-                            <p className="mb-2">
-                              <strong className="text-[#374151]">The insight:</strong> Lapsed regulars already trusted you. They're not comparing you to competitors — they just got busy.
-                            </p>
-                            <p>
-                              <strong className="text-[#374151]">What works:</strong> A personal message from the provider (not the front desk) recovers 25-35% within 2 weeks.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* CTA */}
-                      <button
-                        onClick={() => {
-                          openActionModal(
-                            'lapsed-regulars',
-                            'Lapsed regulars',
-                            analysisData?.patient_segments?.lapsed_regulars?.count || 0,
-                            [],
-                            'personal-outreach',
-                            'Start personal outreach'
-                          );
-                        }}
-                        className="w-full mt-4 px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
-                      >
-                        Start personal outreach
-                      </button>
                     </div>
                   </div>
+
+                  {/* 3. High-frequency patients */}
+                  <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all">
+                    <div className="flex">
+                      <div className="w-1 bg-emerald-400"></div>
+                      <div className="flex-1 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <span className="text-[11px] font-semibold text-emerald-500 uppercase tracking-wide">Protect</span>
+                            <h3 className="font-semibold text-gray-900 mt-1 mb-1">High-frequency patients</h3>
+                            <p className="text-sm text-gray-500 mb-2">Your VIPs. They don't complain — they just leave.</p>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-semibold text-gray-900">${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV</span>
+                              <span className="text-gray-300">·</span>
+                              <span className="text-gray-400">{analysisData?.patient_segments?.high_frequency?.count || 0} patients</span>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              openActionModal(
+                                'high-frequency',
+                                'High-frequency patients',
+                                analysisData?.patient_segments?.high_frequency?.count || 0,
+                                [],
+                                'vip-reward',
+                                'Send VIP reward'
+                              );
+                            }}
+                            className="flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-indigo-600 transition-colors whitespace-nowrap"
+                          >
+                            Add VIP touchpoint
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. Referral champions */}
+                  <div className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all">
+                    <div className="flex">
+                      <div className="w-1 bg-blue-400"></div>
+                      <div className="flex-1 p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <span className="text-[11px] font-semibold text-blue-500 uppercase tracking-wide">Growth</span>
+                            <h3 className="font-semibold text-gray-900 mt-1 mb-1">Referral champions</h3>
+                            <p className="text-sm text-gray-500 mb-2">They send friends who actually show up.</p>
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-semibold text-gray-900">{analysisData?.patient_segments?.referral_champions?.conversion_rate || 85}% conversion</span>
+                              <span className="text-gray-300">·</span>
+                              <span className="text-gray-400">{analysisData?.patient_segments?.referral_champions?.count || 0} patients</span>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              openActionModal(
+                                'referrers',
+                                'Referral champions',
+                                analysisData?.patient_segments?.referral_champions?.count || 0,
+                                [],
+                                'referral-program',
+                                'Launch referral program'
+                              );
+                            }}
+                            className="flex items-center gap-1 text-sm font-medium text-gray-400 hover:text-indigo-600 transition-colors whitespace-nowrap"
+                          >
+                            Launch referral program
+                            <ArrowRight className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
 
-                {/* ============================================
-                    STRENGTH BLOCK - "What's working well"
-                    ============================================ */}
-                <div className="bg-emerald-50/50 rounded-2xl p-6 border border-emerald-100">
-                  {/* Block Header */}
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
-                      <Check className="h-4 w-4 text-emerald-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-[#111827]">What's working well</h3>
-                      <p className="text-xs text-emerald-600">These segments are pulling their weight — a bit of care keeps them steady</p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4 mt-5">
-                    {/* High-frequency patients card */}
-                    <div className="bg-white rounded-xl p-5 shadow-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-semibold text-[#111827]">High-frequency patients</h4>
-                          <span className="text-xs text-[#6B7280]">
-                            {analysisData?.patient_segments?.high_frequency?.count || 0} patients
-                          </span>
-                        </div>
-                        <span className="text-xs text-[#6B7280]">
-                          ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV · {analysisData?.patient_segments?.high_frequency?.ltv_multiplier || 2.4}× average
-                        </span>
-                      </div>
-                      
-                      <p className="text-sm text-[#374151] leading-relaxed mb-4">
-                        These {analysisData?.patient_segments?.high_frequency?.count || 0} patients aren't thinking about alternatives — ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} each, 
-                        built on trust. Trust on autopilot becomes routine. A small gesture reminds them they're not just another appointment.
-                      </p>
-
-                      {/* Progressive disclosure */}
-                      <div className="border-t border-gray-100 pt-3">
-                        <button 
-                          onClick={() => setExpandedInsight(expandedInsight === 'high-freq' ? null : 'high-freq')}
-                          className="text-xs text-[#6B7280] hover:text-[#111827] flex items-center gap-1"
-                        >
-                          <span>Why this works</span>
-                          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedInsight === 'high-freq' ? 'rotate-180' : ''}`} />
-                        </button>
-                        
-                        {expandedInsight === 'high-freq' && (
-                          <div className="mt-3 text-xs text-[#6B7280] bg-gray-50 rounded-lg p-3">
-                            <p className="mb-2">
-                              <strong className="text-[#374151]">The risk:</strong> High-value patients rarely leave for competitors. They leave because they stopped feeling special.
-                            </p>
-                            <p>
-                              <strong className="text-[#374151]">What works:</strong> Early access to new treatments, birthday notes, or a simple "we saved your favorite time slot" — small signals that say "we see you."
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* CTA */}
-                      <button
-                        onClick={() => {
-                          openActionModal(
-                            'high-frequency',
-                            'High-frequency patients',
-                            analysisData?.patient_segments?.high_frequency?.count || 0,
-                            [],
-                            'vip-reward',
-                            'Send VIP reward'
-                          );
-                        }}
-                        className="w-full mt-4 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
-                      >
-                        Protect your best patients
-                      </button>
-                    </div>
-
-                    {/* Referral champions card */}
-                    <div className="bg-white rounded-xl p-5 shadow-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-semibold text-[#111827]">Referral champions</h4>
-                          <span className="text-xs text-[#6B7280]">
-                            {analysisData?.patient_segments?.referral_champions?.count || 0} patients
-                          </span>
-                        </div>
-                        <span className="text-xs text-[#6B7280]">
-                          {analysisData?.patient_segments?.referral_champions?.avg_referrals || 2} avg referrals · {analysisData?.patient_segments?.referral_champions?.conversion_rate || 70}% convert
-                        </span>
-                      </div>
-                      
-                      <p className="text-sm text-[#374151] leading-relaxed mb-4">
-                        {analysisData?.patient_segments?.referral_champions?.count || 0} patients send friends who actually show up — {analysisData?.patient_segments?.referral_champions?.conversion_rate || 70}% conversion. 
-                        That's trust at scale. When it's noticed, it multiplies.
-                      </p>
-
-                      {/* Progressive disclosure */}
-                      <div className="border-t border-gray-100 pt-3">
-                        <button 
-                          onClick={() => setExpandedInsight(expandedInsight === 'referrals' ? null : 'referrals')}
-                          className="text-xs text-[#6B7280] hover:text-[#111827] flex items-center gap-1"
-                        >
-                          <span>Why this works</span>
-                          <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${expandedInsight === 'referrals' ? 'rotate-180' : ''}`} />
-                        </button>
-                        
-                        {expandedInsight === 'referrals' && (
-                          <div className="mt-3 text-xs text-[#6B7280] bg-gray-50 rounded-lg p-3">
-                            <p className="mb-2">
-                              <strong className="text-[#374151]">The insight:</strong> These patients are already marketing for you — without being asked. Their referrals convert because they come with built-in trust.
-                            </p>
-                            <p>
-                              <strong className="text-[#374151]">What works:</strong> Acknowledge the referral (a thank-you note, a small credit). Don't incentivize — recognize.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* CTA */}
-                      <button
-                        onClick={() => {
-                          openActionModal(
-                            'referrers',
-                            'Referral champions',
-                            analysisData?.patient_segments?.referral_champions?.count || 0,
-                            [],
-                            'referral-program',
-                            'Launch referral program'
-                          );
-                        }}
-                        className="w-full mt-4 px-4 py-2.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
-                      >
-                        Turn referrals into bookings
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <p className="text-center text-xs text-gray-400 mt-6">
+                  Click a row to see patients and next steps
+                </p>
               </div>
             </section>
           )}
