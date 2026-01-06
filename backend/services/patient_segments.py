@@ -3,9 +3,94 @@ Patient Segmentation Logic for Audience Mirror
 Calculates real metrics for each patient segment from CSV data
 """
 
+def extract_patient_list(df, max_patients=100):
+    """
+    Extract patient details from a dataframe for the modal.
+    """
+    patients = []
+    
+    # Get unique patients
+    if 'patient_id' in df.columns:
+        unique_df = df.drop_duplicates(subset='patient_id').head(max_patients)
+    else:
+        unique_df = df.head(max_patients)
+    
+    for _, row in unique_df.iterrows():
+        patient = {
+            'patient_id': str(row.get('patient_id', row.name)),
+        }
+        
+        # Add name if available
+        if 'patient_name' in row:
+            patient['name'] = str(row['patient_name'])
+        elif 'name' in row:
+            patient['name'] = str(row['name'])
+        elif 'first_name' in row:
+            first = str(row.get('first_name', ''))
+            last = str(row.get('last_name', ''))
+            patient['name'] = f"{first} {last}".strip()
+        
+        # Add phone if available
+        if 'phone' in row:
+            patient['phone'] = str(row['phone'])
+        elif 'phone_number' in row:
+            patient['phone'] = str(row['phone_number'])
+        elif 'mobile' in row:
+            patient['phone'] = str(row['mobile'])
+        
+        # Add email if available
+        if 'email' in row:
+            patient['email'] = str(row['email'])
+        elif 'email_address' in row:
+            patient['email'] = str(row['email_address'])
+        
+        # Add instagram if available
+        if 'instagram' in row:
+            patient['instagram'] = str(row['instagram'])
+        elif 'instagram_handle' in row:
+            patient['instagram'] = str(row['instagram_handle'])
+        
+        # Add last visit info
+        if 'days_since_last_visit' in row:
+            days = int(row['days_since_last_visit'])
+            if days < 30:
+                patient['lastVisit'] = f"{days} days ago"
+            elif days < 60:
+                patient['lastVisit'] = "1 month ago"
+            elif days < 90:
+                patient['lastVisit'] = "2 months ago"
+            elif days < 180:
+                patient['lastVisit'] = f"{days // 30} months ago"
+            else:
+                patient['lastVisit'] = f"{days // 30} months ago"
+        elif 'last_visit_date' in row:
+            patient['lastVisit'] = str(row['last_visit_date'])
+        
+        # Add revenue/spent
+        if 'revenue' in row:
+            patient['spent'] = f"${int(row['revenue']):,}"
+        elif 'total_revenue' in row:
+            patient['spent'] = f"${int(row['total_revenue']):,}"
+        elif 'amount' in row:
+            patient['spent'] = f"${int(row['amount']):,}"
+        
+        # Add treatment if available
+        if 'service' in row:
+            patient['treatment'] = str(row['service'])
+        elif 'treatment' in row:
+            patient['treatment'] = str(row['treatment'])
+        elif 'procedure' in row:
+            patient['treatment'] = str(row['procedure'])
+        
+        patients.append(patient)
+    
+    return patients
+
+
 def calculate_patient_segments(patients_df, top_patients, revenue_col='revenue'):
     """
     Calculate metrics for 4 key patient segments from actual data.
+    Now includes patient lists for each segment.
     """
     
     total_patients = len(patients_df)
@@ -43,7 +128,8 @@ def calculate_patient_segments(patients_df, top_patients, revenue_col='revenue')
         'avg_ltv': int(round(high_freq_ltv)),
         'ltv_multiplier': round(float(ltv_multiplier), 1),
         'retention_rate': int(round(retention_rate)),
-        'pct_of_total': int(round(high_freq_count / total_patients * 100)) if total_patients > 0 else 0
+        'pct_of_total': int(round(high_freq_count / total_patients * 100)) if total_patients > 0 else 0,
+        'patients': extract_patient_list(high_freq) if high_freq_count > 0 else []
     }
     
     # 2. REFERRAL CHAMPIONS
@@ -67,7 +153,9 @@ def calculate_patient_segments(patients_df, top_patients, revenue_col='revenue')
             estimated_referrals = 0.0
             conversion_rate = 0
     else:
+        # No referral data - estimate based on top patients
         referral_count = int(round(total_patients * 0.15))
+        referral_patients = patients_df.nlargest(referral_count, revenue_col).copy()
         referral_ltv = float(avg_revenue_all * 1.2)
         estimated_referrals = 1.8
         conversion_rate = 65
@@ -77,7 +165,8 @@ def calculate_patient_segments(patients_df, top_patients, revenue_col='revenue')
         'avg_ltv': int(round(referral_ltv)),
         'avg_referrals': float(estimated_referrals),
         'conversion_rate': int(conversion_rate),
-        'pct_of_total': int(round(referral_count / total_patients * 100)) if total_patients > 0 else 0
+        'pct_of_total': int(round(referral_count / total_patients * 100)) if total_patients > 0 else 0,
+        'patients': extract_patient_list(referral_patients) if referral_count > 0 else []
     }
     
     # 3. ONE-AND-DONE
@@ -110,6 +199,7 @@ def calculate_patient_segments(patients_df, top_patients, revenue_col='revenue')
         win_back_rate = "12-18%"
     else:
         one_done_count = int(round(total_patients * 0.25))
+        one_and_done = patients_df.nsmallest(one_done_count, revenue_col).copy()
         one_done_avg_spend = float(avg_revenue_all * 0.7)
         potential_recovery = float(one_done_count * one_done_avg_spend * 2.5)
         win_back_rate = "12-18%"
@@ -119,7 +209,8 @@ def calculate_patient_segments(patients_df, top_patients, revenue_col='revenue')
         'avg_spend': int(round(one_done_avg_spend)),
         'potential_recovery': int(round(potential_recovery)),
         'win_back_rate': win_back_rate,
-        'pct_of_total': int(round(one_done_count / total_patients * 100)) if total_patients > 0 else 0
+        'pct_of_total': int(round(one_done_count / total_patients * 100)) if total_patients > 0 else 0,
+        'patients': extract_patient_list(one_and_done) if one_done_count > 0 else []
     }
     
     # 4. LAPSED REGULARS
@@ -141,11 +232,13 @@ def calculate_patient_segments(patients_df, top_patients, revenue_col='revenue')
     elif 'visit_number' in patients_df.columns:
         repeat_visitors = patients_df[patients_df['visit_number'] > 1]
         lapsed_count = int(round(len(repeat_visitors) * 0.20))
+        lapsed = repeat_visitors.head(lapsed_count).copy()
         avg_prev_visits = float(repeat_visitors['visit_number'].mean()) if len(repeat_visitors) > 0 else 2.5
         lapsed_ltv = float(repeat_visitors[revenue_col].mean()) if len(repeat_visitors) > 0 else avg_revenue_all
         revenue_at_risk = float(lapsed_count * lapsed_ltv)
     else:
         lapsed_count = int(round(total_patients * 0.08))
+        lapsed = patients_df.sample(n=min(lapsed_count, len(patients_df))).copy()
         avg_prev_visits = 3.0
         lapsed_ltv = float(avg_revenue_all * 1.3)
         revenue_at_risk = float(lapsed_count * lapsed_ltv)
@@ -155,7 +248,8 @@ def calculate_patient_segments(patients_df, top_patients, revenue_col='revenue')
         'avg_prev_visits': round(float(avg_prev_visits), 1),
         'avg_ltv': int(round(lapsed_ltv)),
         'revenue_at_risk': int(round(revenue_at_risk)),
-        'pct_of_total': int(round(lapsed_count / total_patients * 100)) if total_patients > 0 else 0
+        'pct_of_total': int(round(lapsed_count / total_patients * 100)) if total_patients > 0 else 0,
+        'patients': extract_patient_list(lapsed) if lapsed_count > 0 else []
     }
     
     return segments

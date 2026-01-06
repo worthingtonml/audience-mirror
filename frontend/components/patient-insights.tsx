@@ -1137,7 +1137,7 @@ ${clinicName} Team`
                         'one-and-done',
                         'One-and-done patients',
                         analysisData?.patient_segments?.one_and_done?.count || 0,
-                        [],
+                        analysisData?.patient_segments?.one_and_done?.patients || [],  // ← NEW
                         'win-back',
                         'Send win-back text'
                       );
@@ -1174,7 +1174,7 @@ ${clinicName} Team`
                         'lapsed-regulars',
                         'Lapsed regulars',
                         analysisData?.patient_segments?.lapsed_regulars?.count || 0,
-                        [],
+                        analysisData?.patient_segments?.lapsed_regulars?.patients || [],
                         'personal-outreach',
                         'Start personal outreach'
                       );
@@ -1211,7 +1211,7 @@ ${clinicName} Team`
                         'high-frequency',
                         'High-frequency patients',
                         analysisData?.patient_segments?.high_frequency?.count || 0,
-                        [],
+                        analysisData?.patient_segments?.high_frequency?.patients || [],
                         'vip-reward',
                         'Send VIP reward'
                       );
@@ -1248,7 +1248,7 @@ ${clinicName} Team`
                         'referrers',
                         'Referral champions',
                         analysisData?.patient_segments?.referral_champions?.count || 0,
-                        [],
+                        analysisData?.patient_segments?.referral_champions?.patients || [],
                         'referral-program',
                         'Launch referral program'
                       );
