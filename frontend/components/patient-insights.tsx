@@ -2263,48 +2263,100 @@ ${clinicName} Team`
                 What this plan could deliver
               </h2>
               <span className="text-[11px] text-[#9CA3AF]">
-                Estimates based on similar practices
+                Segment-specific ROI projections
               </span>
             </div>
 
-            <div className="bg-gradient-to-br from-[#020617] via-[#111827] to-[#020617] text-white rounded-2xl p-8 md:p-10 shadow-lg">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-10">
-                <div>
-                  <div className="text-2xl md:text-3xl font-semibold mb-1">
-                    ${(recommendedBudget / 1000).toFixed(1)}K
+            <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200">
+              {(() => {
+                // Calculate segment-specific ROI projections
+                const oneAndDone = analysisData?.patient_segments?.one_and_done;
+                const lapsedRegulars = analysisData?.patient_segments?.lapsed_regulars;
+                const highFrequency = analysisData?.patient_segments?.high_frequency;
+                const referralChampions = analysisData?.patient_segments?.referral_champions;
+
+                // Assumptions based on industry benchmarks
+                const winBackRate = 0.15; // 15% win-back rate for one-and-done
+                const retentionSaveRate = 0.60; // 60% of at-risk can be saved with outreach
+                const referralActivationRate = 0.30; // 30% of champions will refer if asked
+                const avgReferralValue = 450; // Average value of a referred patient
+
+                // Calculate projected impacts
+                const oneAndDoneRecovery = Math.round((oneAndDone?.count || 0) * winBackRate * (oneAndDone?.avg_spend || 0));
+                const lapsedProtected = Math.round((lapsedRegulars?.count || 0) * retentionSaveRate * (lapsedRegulars?.avg_ltv || 0));
+                const referralRevenue = Math.round((referralChampions?.count || 0) * referralActivationRate * avgReferralValue);
+                const totalPotential = oneAndDoneRecovery + lapsedProtected + referralRevenue;
+
+                const projections = [
+                  {
+                    action: `Win back ${Math.round((oneAndDone?.count || 0) * winBackRate)} of ${oneAndDone?.count || 0} one-and-done patients`,
+                    assumption: '15% win-back rate',
+                    impact: oneAndDoneRecovery,
+                    type: 'recovered',
+                    color: 'text-rose-600',
+                    bgColor: 'bg-rose-50',
+                  },
+                  {
+                    action: `Retain ${Math.round((lapsedRegulars?.count || 0) * retentionSaveRate)} of ${lapsedRegulars?.count || 0} lapsed regulars`,
+                    assumption: '60% save rate with outreach',
+                    impact: lapsedProtected,
+                    type: 'protected',
+                    color: 'text-orange-600',
+                    bgColor: 'bg-orange-50',
+                  },
+                  {
+                    action: `Activate ${Math.round((referralChampions?.count || 0) * referralActivationRate)} referrals from ${referralChampions?.count || 0} champions`,
+                    assumption: '30% activation rate',
+                    impact: referralRevenue,
+                    type: 'new revenue',
+                    color: 'text-blue-600',
+                    bgColor: 'bg-blue-50',
+                  },
+                ];
+
+                return (
+                  <div className="space-y-4">
+                    {/* Projection rows */}
+                    <div className="space-y-3">
+                      {projections.map((proj, index) => (
+                        <div key={index} className={`${proj.bgColor} rounded-xl p-4 flex items-center justify-between`}>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{proj.action}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">Based on {proj.assumption}</p>
+                          </div>
+                          <div className="text-right ml-4">
+                            <p className={`text-lg font-bold ${proj.color}`}>
+                              +${proj.impact.toLocaleString()}
+                            </p>
+                            <p className="text-xs text-gray-500">{proj.type}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Total */}
+                    <div className="border-t-2 border-gray-200 pt-4 mt-4">
+                      <div className="bg-gray-900 rounded-xl p-5 flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-gray-300">Total potential if you execute all three</p>
+                          <p className="text-xs text-gray-500 mt-1">These are projections based on industry benchmarks, not guarantees</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-white">
+                            ${totalPotential.toLocaleString()}
+                          </p>
+                          <p className="text-xs text-emerald-400">annual impact</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Disclaimer */}
+                    <p className="text-xs text-gray-400 text-center mt-4">
+                      Projections improve as we learn from your actual campaign results
+                    </p>
                   </div>
-                  <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold">
-                    Monthly investment
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xl md:text-3xl font-semibold text-[#A5B4FC] mb-1">
-                    ${(totalRevenue / 1000).toFixed(0)}K
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold">
-                    Projected revenue
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xl md:text-3xl font-semibold mb-1">
-                    {totalBookings}
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold">
-                    New patients / month
-                  </div>
-                </div>
-                <div>
-                  <div className="text-2xl md:text-3xl font-semibold text-[#A5B4FC] mb-1">
-                    {roas}×
-                  </div>
-                  <div className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold">
-                    Expected return
-                  </div>
-                </div>
-              </div>
-              <p className="mt-6 text-xs md:text-sm text-[#E5E7EB]/80 max-w-2xl">
-                These numbers help you size your budget. They're directional, not guarantees.
-              </p>
+                );
+              })()}
             </div>
           </section>
           )}
