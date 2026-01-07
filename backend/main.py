@@ -1373,6 +1373,7 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
         "profile_characteristics": dominant_profile_data.get("profile_characteristics", {}) if dominant_profile_data else {},
         "behavior_patterns": dominant_profile_data.get("behavior_patterns", {}) if dominant_profile_data else {},
         "patient_segments": dominant_profile_data.get("patient_segments", {}) if dominant_profile_data else {},
+        "service_analysis": dominant_profile_data.get("service_analysis", {}) if dominant_profile_data else {},
         "geographic_summary": dominant_profile_data.get("geographic_summary", {}) if dominant_profile_data else {},
         "profile_summary": dominant_profile_data.get("profile_summary", "") if dominant_profile_data else "",
         "strategic_insights": analysis_run.strategic_insights if analysis_run.strategic_insights else [], 
