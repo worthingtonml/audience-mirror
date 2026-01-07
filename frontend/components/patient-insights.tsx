@@ -1255,7 +1255,7 @@ ${clinicName} Team`
                           }
                         );
                       }}
-                      className="group bg-white border-2 border-purple-200 bg-purple-50/30 rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                      className="group bg-white border border-gray-200 bg-purple-50/30 rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer"
                     >
                       <div className="flex">
                         <div className="w-1 bg-purple-400"></div>
