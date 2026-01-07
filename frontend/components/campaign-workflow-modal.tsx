@@ -203,7 +203,7 @@ const phoneScripts: Record<string, { opener: string; keyPoints: string[]; closer
       closer: "We really value you as a patient. Is there anything I can do to help get you back on schedule?"
     }
   ],
-  'cross-sell': [
+  'cross-sell-visit': [
     {
       opener: "Hey {name}, this is [Your Name] from [Clinic]. Quick thought while you're here...",
       keyPoints: [
