@@ -1011,108 +1011,51 @@ ${clinicName} Team`
         style={{ maxWidth: 1400 }}
       >
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
-          {/* HERO BAND - Full width subtle background */}
-          <section className="bg-slate-50 border-b border-gray-200 -mx-6 md:-mx-10 px-6 md:px-10">
-            <div className="max-w-5xl mx-auto py-10">
-              <div className="max-w-3xl">
-                {/* Label with tooltip */}
-                <div className="flex items-center gap-1.5 mb-3">
-                  <p className="text-xs font-semibold text-indigo-600 uppercase tracking-wide">
-                    Who to find more of
-                  </p>
-                  <div className="group relative">
-                    <svg className="w-3.5 h-3.5 text-gray-400 hover:text-gray-600 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" strokeWidth="2"/>
-                      <path strokeLinecap="round" strokeWidth="2" d="M12 16v-4m0-4h.01"/>
-                    </svg>
-                    <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg z-10">
-                      <p className="font-medium mb-1">How we identify your best patients</p>
-                      <p className="text-gray-300">Ranked by a composite score: spend (25%), visit frequency (25%), recency (25%), and treatment diversity (25%).</p>
-                    </div>
-                  </div>
-                </div>
-                
-                {/* Segment Name */}
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  {isMortgage 
-                    ? (analysisData?.borrower_profile?.label || 'Repeat Buyers, Realtor-Referred')
-                    : segmentName
-                  }
-                </h1>
-                
-                {/* Description */}
-                <p className="text-gray-600 mb-8">
-                  {isMortgage 
-                    ? `Avg $${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K loan size. They close faster and refer more. But ${analysisData?.preapproval_metrics?.stale_count || 0} of them are going cold.`
-                    : `${segmentDescription} They spend $${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()} on average and visit ${(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× per year.`
-                  }
-                </p>
-              </div>
-              
-              {/* Metrics Row */}
-              <div className="flex flex-wrap items-end gap-8 md:gap-12">
-                {isMortgage ? (
-                  <>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Going Cold</p>
-                      <p className="text-2xl font-bold text-orange-500">{analysisData?.preapproval_metrics?.stale_count || 0}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Commission at Risk</p>
-                      <p className="text-2xl font-bold text-rose-600">
-                        {analysisData?.preapproval_metrics?.commission_at_risk 
-                          ? `$${(analysisData.preapproval_metrics.commission_at_risk / 1000).toFixed(0)}K`
-                          : '—'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg Loan</p>
-                      <p className="text-2xl font-bold text-gray-900">${((analysisData?.preapproval_metrics?.avg_loan_amount || 380000) / 1000).toFixed(0)}K</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg Commission</p>
-                      <p className="text-2xl font-bold text-emerald-600">${((analysisData?.preapproval_metrics?.avg_commission || 4000) / 1000).toFixed(1)}K</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg LTV</p>
-                      <p className="text-2xl font-bold text-gray-900">${(analysisData?.behavior_patterns?.avg_lifetime_value || 3600).toLocaleString()}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Visit Frequency</p>
-                      <p className="text-2xl font-bold text-gray-900">{(analysisData?.behavior_patterns?.avg_visits_per_year || 2.8).toFixed(1)}× <span className="text-base font-normal text-gray-400">/ year</span></p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Revenue at Risk</p>
-                      <p className="text-2xl font-bold text-rose-600">${churnData ? ((totalRevenue * churnData.at_risk_percent / 100) / 1000).toFixed(0) : '0'}K</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Churn Rate</p>
-                      <p className={`text-2xl font-bold ${
-                        churnData?.at_risk_percent > 25 ? 'text-rose-600' : churnData?.at_risk_percent > 15 ? 'text-orange-500' : 'text-emerald-600'
-                      }`}>{churnData ? `${churnData.at_risk_percent.toFixed(0)}%` : '0%'}</p>
-                    </div>
-                  </>
-                )}
-                <div>
-                  <button
-                    onClick={() => {
-                      if (!currentRunId) return;
-                      window.open(`${API_URL}/api/v1/runs/${currentRunId}/export-patients`, '_blank');
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Export
-                  </button>
-                </div>
-              </div>
-            </div>
-          </section>
+          {/* PATIENT HEALTH CHECK HERO */}
+<section className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-200">
+  <div className="text-xs font-semibold uppercase tracking-wider text-indigo-600 mb-1">
+    Patient Health Check
+  </div>
+  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+    {patientCount} patients analyzed
+  </h2>
+  <p className="text-gray-500 text-sm mb-6">
+    ${(totalRevenue / 1000).toFixed(0)}K total revenue · Uploaded {new Date().toLocaleDateString()}
+  </p>
+  
+  <div className="flex flex-wrap items-center gap-6 md:gap-10 mb-6">
+    <div>
+      <div className="text-xs text-gray-400 uppercase tracking-wide">At Risk</div>
+      <div className="text-2xl font-bold text-red-600">{analysisData?.patient_segments?.one_and_done?.count + analysisData?.patient_segments?.lapsed_regulars?.count || 0}</div>
+      <div className="text-xs text-gray-500">patients</div>
+    </div>
+    <div>
+      <div className="text-xs text-gray-400 uppercase tracking-wide">Revenue at Risk</div>
+      <div className="text-2xl font-bold text-red-600">${((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) / 1000).toFixed(0)}K</div>
+    </div>
+    <div>
+      <div className="text-xs text-gray-400 uppercase tracking-wide">VIPs</div>
+      <div className="text-2xl font-bold text-emerald-600">{analysisData?.patient_segments?.high_frequency?.count || 0}</div>
+      <div className="text-xs text-gray-500">patients</div>
+    </div>
+    <div>
+      <div className="text-xs text-gray-400 uppercase tracking-wide">Referrers</div>
+      <div className="text-2xl font-bold text-blue-600">{analysisData?.patient_segments?.referral_champions?.count || 0}</div>
+      <div className="text-xs text-gray-500">patients</div>
+    </div>
+  </div>
+  
+  {/* Top services line */}
+  <div className="pt-4 border-t border-gray-100">
+    <div className="flex items-center gap-2 text-sm">
+      <span className="text-gray-500">Top services:</span>
+      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Botox</span>
+      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Filler</span>
+      <span className="text-gray-300 mx-1">·</span>
+      <span className="text-amber-600 font-medium">No skincare uptake</span>
+    </div>
+  </div>
+</section>
 
           {/* ================================================================ */}
           {/* MEDSPA: DECISION QUEUE SECTION                                */}
