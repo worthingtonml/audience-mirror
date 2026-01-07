@@ -414,6 +414,53 @@ const segmentConfigs: Record<string, {
       }
     ],
     alternativeChannels: []
+  },
+  'cross-sell': {
+    color: 'purple',
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-100',
+    textColor: 'text-purple-900',
+    label: 'Revenue',
+    brief: "These patients already trust you with one service. Introducing complementary services is easier than acquiring new patients — they just need awareness and a reason to try.",
+    steps: [
+      {
+        day: 'Day 1',
+        channel: 'Email with intro offer',
+        icon: Mail,
+        iconBg: 'bg-purple-100',
+        iconColor: 'text-purple-600',
+        badge: 'Educational',
+        badgeColor: 'bg-purple-100 text-purple-700',
+        why: 'Introduce the service with education first, then a first-time offer.',
+        templateKey: 'cross-sell-day1',
+        type: 'email'
+      },
+      {
+        day: 'Day 5',
+        channel: 'Text with offer',
+        icon: MessageSquare,
+        iconBg: 'bg-indigo-100',
+        iconColor: 'text-indigo-600',
+        badge: 'Limited time',
+        badgeColor: 'bg-amber-100 text-amber-700',
+        why: 'Follow up with urgency. A deadline drives action.',
+        templateKey: 'cross-sell-day5',
+        type: 'sms'
+      },
+      {
+        day: 'Next visit',
+        channel: 'In-person mention',
+        icon: Phone,
+        iconBg: 'bg-emerald-100',
+        iconColor: 'text-emerald-600',
+        badge: 'High conversion',
+        badgeColor: 'bg-emerald-100 text-emerald-700',
+        why: 'Staff mentions the offer at checkout. Converts 3x better than digital alone.',
+        templateKey: 'cross-sell-visit',
+        type: 'phone'
+      }
+    ],
+    alternativeChannels: []
   }
 };
 
