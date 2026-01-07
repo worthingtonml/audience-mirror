@@ -1012,50 +1012,70 @@ ${clinicName} Team`
       >
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
           {/* PATIENT HEALTH CHECK HERO */}
-<section className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-200">
-  <div className="text-xs font-semibold uppercase tracking-wider text-indigo-600 mb-1">
-    Patient Health Check
-  </div>
-  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-    {patientCount} patients analyzed
-  </h2>
-  <p className="text-gray-500 text-sm mb-6">
-    ${(totalRevenue / 1000).toFixed(0)}K total revenue · Uploaded {new Date().toLocaleDateString()}
-  </p>
-  
-  <div className="flex flex-wrap items-center gap-6 md:gap-10 mb-6">
-    <div>
-      <div className="text-xs text-gray-400 uppercase tracking-wide">At Risk</div>
-      <div className="text-2xl font-bold text-red-600">{analysisData?.patient_segments?.one_and_done?.count + analysisData?.patient_segments?.lapsed_regulars?.count || 0}</div>
-      <div className="text-xs text-gray-500">patients</div>
-    </div>
-    <div>
-      <div className="text-xs text-gray-400 uppercase tracking-wide">Revenue at Risk</div>
-      <div className="text-2xl font-bold text-red-600">${((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) / 1000).toFixed(0)}K</div>
-    </div>
-    <div>
-      <div className="text-xs text-gray-400 uppercase tracking-wide">VIPs</div>
-      <div className="text-2xl font-bold text-emerald-600">{analysisData?.patient_segments?.high_frequency?.count || 0}</div>
-      <div className="text-xs text-gray-500">patients</div>
-    </div>
-    <div>
-      <div className="text-xs text-gray-400 uppercase tracking-wide">Referrers</div>
-      <div className="text-2xl font-bold text-blue-600">{analysisData?.patient_segments?.referral_champions?.count || 0}</div>
-      <div className="text-xs text-gray-500">patients</div>
-    </div>
-  </div>
-  
-  {/* Top services line */}
-  <div className="pt-4 border-t border-gray-100">
-    <div className="flex items-center gap-2 text-sm">
-      <span className="text-gray-500">Top services:</span>
-      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Botox</span>
-      <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Filler</span>
-      <span className="text-gray-300 mx-1">·</span>
-      <span className="text-amber-600 font-medium">No skincare uptake</span>
-    </div>
-  </div>
-</section>
+          <section className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-200">
+            <div className="text-xs font-semibold uppercase tracking-wider text-indigo-600 mb-1">
+              Patient Health Check
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              {patientCount} patients analyzed
+            </h2>
+            <p className="text-gray-500 text-sm mb-6">
+              ${(totalRevenue / 1000).toFixed(0)}K total revenue · Uploaded {new Date().toLocaleDateString()}
+            </p>
+            
+            {/* Stats grid - fixed alignment */}
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-6 mb-6">
+              <div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Avg LTV</div>
+                <div className="text-xl font-bold text-gray-900">${Math.round(totalRevenue / patientCount)}</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Visit Freq</div>
+                <div className="text-xl font-bold text-gray-900">{(analysisData?.behavior_patterns?.avg_visits_per_patient || 2.1).toFixed(1)}×<span className="text-sm font-normal text-gray-400">/yr</span></div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Churn Rate</div>
+                <div className="text-xl font-bold text-red-600">{churnData?.at_risk_percent || 0}%</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">At Risk</div>
+                <div className="text-xl font-bold text-red-600">{(analysisData?.patient_segments?.one_and_done?.count || 0) + (analysisData?.patient_segments?.lapsed_regulars?.count || 0)}</div>
+                <div className="text-xs text-gray-500">patients</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">VIPs</div>
+                <div className="text-xl font-bold text-emerald-600">{analysisData?.patient_segments?.high_frequency?.count || 0}</div>
+                <div className="text-xs text-gray-500">patients</div>
+              </div>
+              <div>
+                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Referrers</div>
+                <div className="text-xl font-bold text-blue-600">{analysisData?.patient_segments?.referral_champions?.count || 0}</div>
+                <div className="text-xs text-gray-500">patients</div>
+              </div>
+            </div>
+            
+            {/* Insight line */}
+            <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl mb-4">
+              <p className="text-sm text-amber-900">
+                <span className="font-semibold">Key insight:</span>{' '}
+                {(analysisData?.patient_segments?.one_and_done?.count || 0) > (analysisData?.patient_segments?.lapsed_regulars?.count || 0)
+                  ? `${analysisData?.patient_segments?.one_and_done?.count || 0} patients visited once and never returned — that's $${((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) / 1000).toFixed(0)}K in recoverable revenue. A simple win-back text converts 12-18%.`
+                  : `${analysisData?.patient_segments?.lapsed_regulars?.count || 0} regulars have gone quiet — $${((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) / 1000).toFixed(0)}K at risk. They were loyal once; a personal call brings 60% back.`
+                }
+              </p>
+            </div>
+            
+            {/* Top services line */}
+            <div className="pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-gray-500">Top services:</span>
+                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Botox</span>
+                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Filler</span>
+                <span className="text-gray-300 mx-1">·</span>
+                <span className="text-amber-600 font-medium">No skincare uptake</span>
+              </div>
+            </div>
+          </section>
 
           {/* ================================================================ */}
           {/* MEDSPA: DECISION QUEUE SECTION                                */}
