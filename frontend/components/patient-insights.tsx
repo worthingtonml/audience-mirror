@@ -256,6 +256,10 @@ export default function PatientInsights() {
     patients: Array<{patient_id: string; name?: string; phone?: string} | string>;
     action: string;
     cta: string;
+    crossSellContext?: {
+      newService: string;
+      currentService: string;
+    };
   } | null>(null);
   const [dynamicCopy, setDynamicCopy] = useState<{
     email_subject: string;
@@ -778,8 +782,16 @@ ${clinicName} Team`
   };
 
   // Handle opening the action modal
-  const openActionModal = async (segment: string, title: string, count: number, patients: Array<{patient_id: string; name?: string; phone?: string} | string>, action: string, cta: string) => {
-    setActionModalData({ segment, title, count, patients, action, cta });
+  const openActionModal = async (
+    segment: string,
+    title: string,
+    count: number,
+    patients: Array<{patient_id: string; name?: string; phone?: string} | string>,
+    action: string,
+    cta: string,
+    crossSellContext?: { newService: string; currentService: string }
+  ) => {
+    setActionModalData({ segment, title, count, patients, action, cta, crossSellContext });
     setShowActionModal(true);
     setDynamicCopy(null);
     setCopyLoading(true);
@@ -1236,7 +1248,11 @@ ${clinicName} Team`
                           analysisData.service_analysis.primary_opportunity.patient_count,
                           [],
                           'bundle',
-                          analysisData.service_analysis.primary_opportunity.cta
+                          analysisData.service_analysis.primary_opportunity.cta,
+                          {
+                            newService: analysisData.service_analysis.primary_opportunity.category || 'skincare',
+                            currentService: 'injectable treatments'
+                          }
                         );
                       }}
                       className="group bg-white border-2 border-purple-200 bg-purple-50/30 rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer"
