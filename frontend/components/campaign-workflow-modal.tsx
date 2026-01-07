@@ -86,6 +86,12 @@ const smsTemplates: Record<string, string[]> = {
     "You did it {name}! {friend_name} just scheduled their first visit. $50 is on the way to your account!",
     "🎉 {friend_name} booked! You just earned $50. Thanks for spreading the word!",
     "Cha-ching! {friend_name} is now booked. $50 credit headed your way. You're the best, {name}!"
+  ],
+  'cross-sell-day5': [
+    "Hey {name}! Quick reminder — your 20% off {new_service} intro expires this week. Want me to add it to your next visit? Reply YES!",
+    "Hi {name}! Last chance to try {new_service} at 20% off. Pairs perfectly with your {current_service}. Interested?",
+    "{name}, your {new_service} intro offer ends soon! Most of our {current_service} clients love it. Want to try?",
+    "Hey {name}! Your exclusive {new_service} offer is about to expire. Reply YES and I'll book you a quick add-on!"
   ]
 };
 
@@ -145,6 +151,20 @@ const emailTemplates: Record<string, { subject: string; body: string }[]> = {
       subject: "Share the glow, earn rewards",
       body: "Hi {name},\n\nWe love that you're spreading the word about [Your Clinic]!\n\nHere's your own referral link to share:\n[REFERRAL_LINK]\n\n$50 credit for every friend who books. No limit on how much you can earn!\n\nThank you for being amazing.\n\n[Your Clinic Name]"
     }
+  ],
+  'cross-sell-day1': [
+    {
+      subject: "Something new we think you'll love, {name}",
+      body: "Hi {name},\n\nYou've been trusting us with your {current_service}, and we wanted to share something we think you'd love.\n\nMany of our patients have been adding {new_service} to their routine — it complements your treatments beautifully and extends your results.\n\nAs a thank you for being a loyal patient, we'd like to offer you 20% off your first {new_service} session.\n\nCurious? Just reply to this email and we'll tell you more.\n\nWarmly,\n[Your Clinic Name]"
+    },
+    {
+      subject: "Enhance your results with {new_service}",
+      body: "Hi {name},\n\nWe've loved seeing your progress!\n\nDid you know that adding {new_service} can help extend and enhance your {current_service} results? It's one of our best-kept secrets.\n\nWe'd love for you to try it — here's 20% off your first session.\n\nInterested? Let us know!\n\nBest,\n[Your Clinic Name]"
+    },
+    {
+      subject: "A perfect pairing for your {current_service}",
+      body: "Hi {name},\n\nQuick thought: have you considered adding {new_service} to your routine?\n\nOur patients who combine it with {current_service} see even better, longer-lasting results. It's become one of our most popular add-ons.\n\nEnjoy 20% off your first session.\n\nReply if you'd like to learn more!\n\nWarmly,\n[Your Clinic Name]"
+    }
   ]
 };
 
@@ -181,6 +201,18 @@ const phoneScripts: Record<string, { opener: string; keyPoints: string[]; closer
         "If competitor → ask what they liked, take notes"
       ],
       closer: "We really value you as a patient. Is there anything I can do to help get you back on schedule?"
+    }
+  ],
+  'cross-sell': [
+    {
+      opener: "Hey {name}, this is [Your Name] from [Clinic]. Quick thought while you're here...",
+      keyPoints: [
+        "Mention {new_service} naturally",
+        "Connect it to their {current_service} goals",
+        "Offer the 20% intro if interested",
+        "No pressure — plant the seed"
+      ],
+      closer: "No pressure at all — just wanted you to know it's an option whenever you're curious!"
     }
   ]
 };
