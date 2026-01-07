@@ -47,6 +47,7 @@ from services.scoring import (
 from services.churn_scoring import calculate_churn_risk, get_churn_summary, analyze_patient_churn
 from services.verticals import detect_vertical, get_vertical, get_prompt_context
 from services.patient_segments import calculate_patient_segments
+from services.service_analysis import analyze_services
 from services.validate import validate_algorithm_accuracy
 from database import get_db, Dataset, AnalysisRun, PatientOutreach, create_tables
 
@@ -1803,6 +1804,9 @@ def identify_dominant_profile(
     # Calculate patient segments
     patient_segments = calculate_patient_segments(patients_df, top_patients, revenue_col)
     print(f"[PROFILE] Patient segments: {patient_segments}")
+    # Calculate service analysis for bundle/cross-sell opportunities
+    service_analysis = analyze_services(patients_df)
+    print(f"[PROFILE] Service analysis: {service_analysis.get('primary_opportunity', 'None')}")
     
     return {
         "segment_patient_count": len(top_patients),
@@ -1843,7 +1847,8 @@ def identify_dominant_profile(
         },
         "profile_summary": summary,
         "cohort_descriptor": cohort_descriptor,
-        "patient_segments": patient_segments
+        "patient_segments": patient_segments,
+        "service_analysis": service_analysis
     }
 def generate_strategic_insights(
     patients_df: pd.DataFrame,

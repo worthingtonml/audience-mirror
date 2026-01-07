@@ -1226,6 +1226,55 @@ ${clinicName} Team`
                     </div>
                   </div>
 
+                  {/* 5. Cross-sell / Bundle opportunity */}
+                  {analysisData?.service_analysis?.primary_opportunity && (
+                    <div
+                      onClick={() => {
+                        openActionModal(
+                          'cross-sell',
+                          analysisData.service_analysis.primary_opportunity.title,
+                          analysisData.service_analysis.primary_opportunity.patient_count,
+                          [],
+                          'bundle',
+                          analysisData.service_analysis.primary_opportunity.cta
+                        );
+                      }}
+                      className="group bg-white border-2 border-purple-200 bg-purple-50/30 rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                    >
+                      <div className="flex">
+                        <div className="w-1 bg-purple-400"></div>
+                        <div className="flex-1 p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <span className="text-[11px] font-semibold text-purple-600 uppercase tracking-wide">
+                                {analysisData.service_analysis.primary_opportunity.type === 'bundle' ? 'Bundle opportunity' : 'Upsell opportunity'}
+                              </span>
+                              <h3 className="font-semibold text-gray-900 mt-1 mb-1">
+                                {analysisData.service_analysis.primary_opportunity.title}
+                              </h3>
+                              <p className="text-sm text-gray-500 mb-2">
+                                {analysisData.service_analysis.primary_opportunity.description}
+                              </p>
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="font-semibold text-gray-900">
+                                  ${analysisData.service_analysis.primary_opportunity.potential_revenue?.toLocaleString()} potential
+                                </span>
+                                <span className="text-gray-300">·</span>
+                                <span className="text-gray-400">
+                                  {analysisData.service_analysis.primary_opportunity.patient_count} patients
+                                </span>
+                              </div>
+                            </div>
+                            <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-purple-600 transition-colors whitespace-nowrap">
+                              {analysisData.service_analysis.primary_opportunity.cta}
+                              <ArrowRight className="w-4 h-4" />
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
                 <p className="text-center text-xs text-gray-400 mt-6">
