@@ -1252,7 +1252,7 @@ ${clinicName} Team`
                           'cross-sell',
                           analysisData.service_analysis.primary_opportunity.title,
                           analysisData.service_analysis.primary_opportunity.patient_count,
-                          [],
+                          analysisData.service_analysis.primary_opportunity.patients || [],
                           'bundle',
                           analysisData.service_analysis.primary_opportunity.cta,
                           {
