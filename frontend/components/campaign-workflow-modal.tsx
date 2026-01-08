@@ -36,6 +36,10 @@ interface CampaignWorkflowModalProps {
     segment: string;
     action: string;
     cta: string;
+    crossSellContext?: {
+      newService: string;
+      currentService: string;
+    };
   };
   analysisData?: {
     patient_segments?: {
@@ -496,6 +500,13 @@ const segmentConfigs: Record<string, {
   }
 };
 
+const replacePlaceholders = (text: string, context?: { newService: string; currentService: string }) => {
+  if (!context) return text;
+  return text
+    .replace(/{new_service}/g, context.newService)
+    .replace(/{current_service}/g, context.currentService);
+};
+
 export function CampaignWorkflowModal({
   actionModalData,
   onClose,
@@ -748,7 +759,7 @@ export function CampaignWorkflowModal({
                                     <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Message</p>
                                     <button className="text-xs text-indigo-600 hover:text-indigo-700 font-medium">Edit</button>
                                   </div>
-                                  <p className="text-sm text-gray-700 leading-relaxed">{currentSms}</p>
+                                  <p className="text-sm text-gray-700 leading-relaxed">{replacePlaceholders(currentSms, actionModalData.crossSellContext)}</p>
                                   {renderFeedbackButtons(templateKey, smsOptions.length)}
                                 </div>
                                 {renderPatientSelection(stepId, 'phone')}
@@ -785,9 +796,9 @@ export function CampaignWorkflowModal({
                                   </div>
                                   <div className="mb-3 pb-3 border-b border-gray-200">
                                     <p className="text-[10px] text-gray-400 uppercase mb-1">Subject</p>
-                                    <p className="text-sm font-medium text-gray-900">{currentEmail.subject}</p>
+                                    <p className="text-sm font-medium text-gray-900">{replacePlaceholders(currentEmail.subject, actionModalData.crossSellContext)}</p>
                                   </div>
-                                  <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{currentEmail.body}</p>
+                                  <p className="text-sm text-gray-700 whitespace-pre-line leading-relaxed">{replacePlaceholders(currentEmail.body, actionModalData.crossSellContext)}</p>
                                   {renderFeedbackButtons(templateKey, emailOptions.length)}
                                 </div>
                                 {renderPatientSelection(stepId, 'email')}
@@ -819,18 +830,18 @@ export function CampaignWorkflowModal({
                               <>
                                 <div className="bg-emerald-50 rounded-lg p-4 mb-4">
                                   <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-2">Opening</p>
-                                  <p className="text-sm text-emerald-900 mb-4">"{currentPhone.opener}"</p>
+                                  <p className="text-sm text-emerald-900 mb-4">"{replacePlaceholders(currentPhone.opener, actionModalData.crossSellContext)}"</p>
                                   <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-2">Respond based on what you hear</p>
                                   <ul className="space-y-1.5 mb-4">
                                     {currentPhone.keyPoints.map((point, i) => (
                                       <li key={i} className="text-sm text-emerald-800 flex items-start gap-2">
                                         <span className="text-emerald-400 mt-1">•</span>
-                                        {point}
+                                        {replacePlaceholders(point, actionModalData.crossSellContext)}
                                       </li>
                                     ))}
                                   </ul>
                                   <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-2">Close with</p>
-                                  <p className="text-sm text-emerald-900">"{currentPhone.closer}"</p>
+                                  <p className="text-sm text-emerald-900">"{replacePlaceholders(currentPhone.closer, actionModalData.crossSellContext)}"</p>
                                   {renderFeedbackButtons(templateKey, phoneOptions.length)}
                                 </div>
                                 <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-3">Call list</p>
@@ -956,18 +967,18 @@ export function CampaignWorkflowModal({
                               <div className="pt-4">
                                 <div className="bg-emerald-50 rounded-lg p-4 mb-4">
                                   <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-2">Opening</p>
-                                  <p className="text-sm text-emerald-900 mb-4">"{currentPhone.opener}"</p>
+                                  <p className="text-sm text-emerald-900 mb-4">"{replacePlaceholders(currentPhone.opener, actionModalData.crossSellContext)}"</p>
                                   <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-2">Key points</p>
                                   <ul className="space-y-1.5 mb-4">
                                     {currentPhone.keyPoints.map((point, i) => (
                                       <li key={i} className="text-sm text-emerald-800 flex items-start gap-2">
                                         <span className="text-emerald-400 mt-1">•</span>
-                                        {point}
+                                        {replacePlaceholders(point, actionModalData.crossSellContext)}
                                       </li>
                                     ))}
                                   </ul>
                                   <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide mb-2">Close with</p>
-                                  <p className="text-sm text-emerald-900">"{currentPhone.closer}"</p>
+                                  <p className="text-sm text-emerald-900">"{replacePlaceholders(currentPhone.closer, actionModalData.crossSellContext)}"</p>
                                   {renderFeedbackButtons(templateKey, phoneOptions.length)}
                                 </div>
                                 <div className="flex gap-2">

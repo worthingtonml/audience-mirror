@@ -1067,8 +1067,14 @@ ${clinicName} Team`
             {/* Top services */}
             <div className="flex items-center gap-2 text-sm">
               <span className="text-gray-500">Top services:</span>
-              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Botox</span>
-              <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Filler</span>
+              {analysisData?.service_analysis?.top_services?.slice(0, 2).map((service: string, idx: number) => (
+                <span key={idx} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">{service}</span>
+              )) || (
+              <>
+                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Botox</span>
+                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Filler</span>
+              </>
+            )}
               <span className="text-gray-300 mx-1">·</span>
               <span className="text-orange-600 font-medium">No skincare uptake</span>
             </div>
