@@ -157,13 +157,26 @@ def analyze_services(df, treatment_col='treatment', revenue_col='revenue', patie
                 
                 if len(eligible_patients) >= 10:
                     potential_revenue = round(len(eligible_patients) * benchmark['upsell_value'] * 0.2)
-                    
+
+                    # Extract patient details for eligible patients
+                    patient_list = []
+                    for pid in list(eligible_patients)[:100]:  # Limit to 100
+                        patient_row = df[df[patient_id_col] == pid].iloc[0] if patient_id_col and len(df[df[patient_id_col] == pid]) > 0 else None
+                        if patient_row is not None:
+                            patient_list.append({
+                                'patient_id': str(pid),
+                                'name': str(patient_row.get('name', patient_row.get('first_name', ''))) if 'name' in patient_row or 'first_name' in patient_row else str(pid),
+                                'phone': str(patient_row.get('phone', '')) if 'phone' in patient_row else '',
+                                'email': str(patient_row.get('email', '')) if 'email' in patient_row else '',
+                            })
+
                     result['upsell_opportunity'] = {
                         'type': 'upsell',
                         'title': f"Introduce {category} to injectable patients",
                         'description': f"{current_pct}% of your patients buy {category}, but industry average is {benchmark['expected_pct']}% when offered alongside injectables.",
                         'potential_revenue': potential_revenue,
                         'patient_count': len(eligible_patients),
+                        'patients': patient_list,
                         'cta': f'Launch {category} intro',
                         'category': category,
                         'current_pct': current_pct,
