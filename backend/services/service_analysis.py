@@ -160,7 +160,7 @@ def analyze_services(df, treatment_col='treatment', revenue_col='revenue', patie
 
                     # Extract patient details for eligible patients
                     patient_list = []
-                    for pid in list(eligible_patients)[:100]:  # Limit to 100
+                    for pid in list(eligible_patients)[:500]:  # Limit to 500
                         patient_row = df[df[patient_id_col] == pid].iloc[0] if patient_id_col and len(df[df[patient_id_col] == pid]) > 0 else None
                         if patient_row is not None:
                             patient_list.append({
