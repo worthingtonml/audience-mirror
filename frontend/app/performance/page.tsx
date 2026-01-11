@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import Sidebar from '@/components/sidebar';
 import { BarChart3, TrendingUp, Users, DollarSign, RefreshCw } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://audience-mirror-api.onrender.com';
@@ -88,11 +87,8 @@ export default function PerformancePage() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-
-      <main className="flex-1 p-8">
-        <div className="max-w-4xl mx-auto">
+    <div className="p-8">
+      <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -217,8 +213,7 @@ export default function PerformancePage() {
               </p>
             </>
           )}
-        </div>
-      </main>
+      </div>
     </div>
   );
 }
