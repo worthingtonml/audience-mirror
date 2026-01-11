@@ -3253,7 +3253,9 @@ async def mark_patients_contacted(
     """Mark patients as contacted for outreach tracking with context."""
     import uuid
     from datetime import datetime
-    
+
+    print(f"[DEBUG] mark_contacted: run_id={run_id}, segment={segment}, patient_count={len(patient_ids)}")
+
     days_stale = [int(d) for d in days_stale_list.split(",") if d.strip()] if days_stale_list else []
     loan_amounts = [float(a) for a in loan_amount_list.split(",") if a.strip()] if loan_amount_list else []
     
