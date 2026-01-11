@@ -146,3 +146,19 @@ def get_db():
 # ---- Create tables ----
 def create_tables():
     Base.metadata.create_all(bind=engine)
+
+    # Auto-add missing columns
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    existing_columns = [col['name'] for col in inspector.get_columns('patient_outreach')]
+
+    with engine.connect() as conn:
+        if 'segment' not in existing_columns:
+            conn.execute(text('ALTER TABLE patient_outreach ADD COLUMN segment VARCHAR'))
+            conn.commit()
+            print("[DB] Added segment column to patient_outreach")
+        if 'campaign_name' not in existing_columns:
+            conn.execute(text('ALTER TABLE patient_outreach ADD COLUMN campaign_name VARCHAR'))
+            conn.commit()
+            print("[DB] Added campaign_name column to patient_outreach")
