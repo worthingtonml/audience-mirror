@@ -3336,7 +3336,160 @@ async def get_recovery_analytics(db: Session = Depends(get_db)):
             for r in results
         ]
     }
-    
+
+@app.post("/api/v1/runs/{run_id}/detect-returns")
+async def detect_patient_returns(
+    run_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Compare current upload against previously contacted patients.
+    Auto-detect who came back based on new visit dates.
+    """
+    import pandas as pd
+    from datetime import datetime
+
+    # Get the current run and its dataset
+    analysis_run = db.query(AnalysisRun).filter(AnalysisRun.id == run_id).first()
+    if not analysis_run:
+        raise HTTPException(status_code=404, detail="Run not found")
+
+    dataset = db.query(Dataset).filter(Dataset.id == analysis_run.dataset_id).first()
+    if not dataset or not dataset.patients_path:
+        return {"error": "No patient data found"}
+
+    # Load current patient data
+    df = pd.read_csv(dataset.patients_path)
+
+    # Find date column
+    date_cols = ['last_visit', 'visit_date', 'date', 'appointment_date', 'last_appointment']
+    date_col = None
+    for col in date_cols:
+        if col in df.columns:
+            date_col = col
+            break
+
+    if not date_col:
+        return {"error": "No date column found in data"}
+
+    # Get patient ID column
+    id_cols = ['patient_id', 'id', 'client_id', 'customer_id']
+    id_col = None
+    for col in id_cols:
+        if col in df.columns:
+            id_col = col
+            break
+
+    if not id_col:
+        return {"error": "No patient ID column found"}
+
+    # Parse dates
+    df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+
+    # Get all contacted patients (not yet returned)
+    contacted = db.query(PatientOutreach).filter(
+        PatientOutreach.contacted_at.isnot(None),
+        PatientOutreach.returned_at.is_(None)
+    ).all()
+
+    if not contacted:
+        return {"returns_detected": 0, "message": "No pending outreach to check"}
+
+    returns_detected = 0
+    total_revenue = 0
+
+    for outreach in contacted:
+        # Find this patient in current data
+        patient_rows = df[df[id_col].astype(str) == str(outreach.patient_id)]
+
+        if patient_rows.empty:
+            continue
+
+        # Get their latest visit
+        latest_visit = patient_rows[date_col].max()
+
+        if pd.isna(latest_visit):
+            continue
+
+        # If latest visit is after contacted_at, they returned
+        if latest_visit > outreach.contacted_at:
+            outreach.returned_at = datetime.utcnow()
+
+            # Calculate revenue from visits after contact
+            revenue_col = None
+            for col in ['revenue', 'amount', 'total', 'spend', 'value']:
+                if col in df.columns:
+                    revenue_col = col
+                    break
+
+            if revenue_col:
+                post_contact = patient_rows[patient_rows[date_col] > outreach.contacted_at]
+                revenue = float(post_contact[revenue_col].sum())
+                outreach.revenue_recovered = revenue
+                total_revenue += revenue
+
+            outreach.outcome = 'closed'
+            returns_detected += 1
+
+    db.commit()
+
+    return {
+        "returns_detected": returns_detected,
+        "total_revenue_recovered": round(total_revenue, 2),
+        "patients_checked": len(contacted)
+    }
+
+
+@app.get("/api/v1/performance/summary")
+async def get_performance_summary(db: Session = Depends(get_db)):
+    """
+    Get overall campaign performance across all segments.
+    """
+    from sqlalchemy import func
+
+    # Get counts by segment
+    segment_stats = db.query(
+        PatientOutreach.segment,
+        func.count(PatientOutreach.id).label('targeted'),
+        func.sum(func.cast(PatientOutreach.returned_at.isnot(None), Integer)).label('returned'),
+        func.sum(PatientOutreach.revenue_recovered).label('revenue')
+    ).filter(
+        PatientOutreach.contacted_at.isnot(None),
+        PatientOutreach.segment.isnot(None)
+    ).group_by(PatientOutreach.segment).all()
+
+    campaigns = []
+    total_targeted = 0
+    total_returned = 0
+    total_revenue = 0
+
+    for stat in segment_stats:
+        targeted = stat.targeted or 0
+        returned = stat.returned or 0
+        revenue = float(stat.revenue or 0)
+
+        campaigns.append({
+            "segment": stat.segment,
+            "targeted": targeted,
+            "returned": returned,
+            "rate": round(returned / targeted * 100, 1) if targeted > 0 else 0,
+            "revenue": revenue
+        })
+
+        total_targeted += targeted
+        total_returned += returned
+        total_revenue += revenue
+
+    return {
+        "campaigns": campaigns,
+        "totals": {
+            "targeted": total_targeted,
+            "returned": total_returned,
+            "rate": round(total_returned / total_targeted * 100, 1) if total_targeted > 0 else 0,
+            "revenue": round(total_revenue, 2)
+        }
+    }
+
 @app.post("/api/v1/runs/{run_id}/outreach/mark-returned")
 async def mark_patients_returned(
     run_id: str,
