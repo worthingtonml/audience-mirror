@@ -3247,6 +3247,7 @@ async def mark_patients_contacted(
     patient_ids: list[str] = Form(...),
     days_stale_list: str = Form(""),
     loan_amount_list: str = Form(""),
+    segment: str = Form(""),
     db: Session = Depends(get_db)
 ):
     """Mark patients as contacted for outreach tracking with context."""
@@ -3271,6 +3272,7 @@ async def mark_patients_contacted(
                 id=str(uuid.uuid4()),
                 run_id=run_id,
                 patient_id=pid,
+                segment=segment if segment else None,
                 contacted_at=datetime.utcnow(),
                 days_stale_when_contacted=days_stale[i] if i < len(days_stale) else None,
                 loan_amount=loan_amounts[i] if i < len(loan_amounts) else None,

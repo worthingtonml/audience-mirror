@@ -67,6 +67,8 @@ class PatientOutreach(Base):
     id = Column(String, primary_key=True)
     run_id = Column(String, nullable=False)
     patient_id = Column(String, nullable=False)
+    segment = Column(String, nullable=True)  # one-and-done, lapsed, vip, referrers, cross-sell
+    campaign_name = Column(String, nullable=True)  # User-friendly name like 'Win-back Jan 2026'
     contacted_at = Column(DateTime, nullable=True)
     returned_at = Column(DateTime, nullable=True)
     revenue_recovered = Column(Float, nullable=True)
