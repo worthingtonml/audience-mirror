@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { LayoutDashboard, TrendingUp, Sparkles, Settings } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Sparkles, Settings, BarChart3 } from "lucide-react";
 
 const navigation = [
   { name: "Home", href: "/", icon: LayoutDashboard },
   { name: "Patient Retention", href: "/patient-insights", icon: TrendingUp },
+  { name: "Performance", href: "/performance", icon: BarChart3 },
   { name: "Find New Patients", href: "/campaign-generator", icon: Sparkles },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
