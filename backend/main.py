@@ -3447,7 +3447,7 @@ async def get_performance_summary(db: Session = Depends(get_db)):
     """
     Get overall campaign performance across all segments.
     """
-    from sqlalchemy import func
+    from sqlalchemy import func, Integer
 
     # Get counts by segment
     segment_stats = db.query(
