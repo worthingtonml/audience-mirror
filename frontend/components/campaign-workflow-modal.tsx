@@ -49,6 +49,7 @@ interface CampaignWorkflowModalProps {
       referral_champions?: { count?: number };
     };
   };
+  runId?: string | null;
   onClose: () => void;
   onExportCSV: (patients: Array<Patient | string>, segmentName: string) => void;
 }
@@ -509,6 +510,7 @@ const replacePlaceholders = (text: string, context?: { newService: string; curre
 
 export function CampaignWorkflowModal({
   actionModalData,
+  runId,
   onClose,
   onExportCSV,
 }: CampaignWorkflowModalProps) {
@@ -524,11 +526,32 @@ export function CampaignWorkflowModal({
   const [showSendList, setShowSendList] = useState<number | null>(null);
 
   const config = segmentConfigs[actionModalData.segment] || segmentConfigs['one-and-done'];
-  
+
   const patients: Patient[] = actionModalData.patients.map(p => {
     if (typeof p === 'object') return p;
     return { patient_id: p };
   });
+
+  const markPatientsContacted = async (segment: string) => {
+    if (!runId || selectedPatients.length === 0) return;
+
+    try {
+      const formData = new FormData();
+      selectedPatients.forEach(id => formData.append('patient_ids', id));
+      formData.append('segment', segment);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://audience-mirror-api.onrender.com'}/api/v1/runs/${runId}/outreach/mark-contacted`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (response.ok) {
+        alert(`Marked ${selectedPatients.length} patients as contacted!`);
+      }
+    } catch (error) {
+      console.error('Failed to mark contacted:', error);
+    }
+  };
 
   const handleFeedback = (key: string, type: 'good' | 'bad') => {
     setFeedbackGiven({...feedbackGiven, [key]: type});
@@ -764,13 +787,16 @@ export function CampaignWorkflowModal({
                                 </div>
                                 {renderPatientSelection(stepId, 'phone')}
                                 <div className="flex gap-2">
-                                  <button 
-                                    onClick={() => setShowSendList(showSendList === stepId ? null : stepId)}
+                                  <button
+                                    onClick={() => {
+                                      markPatientsContacted(actionModalData.segment);
+                                      setShowSendList(showSendList === stepId ? null : stepId);
+                                    }}
                                     className="flex-1 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
                                   >
                                     <Send className="w-4 h-4" />
-                                    {showSendList === stepId 
-                                      ? `Send to ${selectedPatients.length} patients` 
+                                    {showSendList === stepId
+                                      ? `Send to ${selectedPatients.length} patients`
                                       : `Send to ${patients.length} patients`}
                                   </button>
                                   <button 
@@ -803,13 +829,16 @@ export function CampaignWorkflowModal({
                                 </div>
                                 {renderPatientSelection(stepId, 'email')}
                                 <div className="flex gap-2">
-                                  <button 
-                                    onClick={() => setShowSendList(showSendList === stepId ? null : stepId)}
+                                  <button
+                                    onClick={() => {
+                                      markPatientsContacted(actionModalData.segment);
+                                      setShowSendList(showSendList === stepId ? null : stepId);
+                                    }}
                                     className="flex-1 px-4 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-lg hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2"
                                   >
                                     <Send className="w-4 h-4" />
-                                    {showSendList === stepId 
-                                      ? `Send to ${selectedPatients.length} patients` 
+                                    {showSendList === stepId
+                                      ? `Send to ${selectedPatients.length} patients`
                                       : `Send to ${patients.length} patients`}
                                   </button>
                                   <button 

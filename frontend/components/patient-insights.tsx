@@ -2322,6 +2322,7 @@ ${clinicName} Team`
       <CampaignWorkflowModal
         actionModalData={actionModalData}
         analysisData={analysisData}
+        runId={currentRunId}
         onClose={() => setShowActionModal(false)}
         onExportCSV={handleExportCSV}
       />
