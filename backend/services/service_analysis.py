@@ -65,49 +65,149 @@ def analyze_services(df, treatment_col='treatment', revenue_col='revenue', patie
     result['service_revenue'] = dict(service_revenue)
     result['service_patient_count'] = service_patient_count
     
+    # Helper function to extract patient info
+    def extract_patient_info(patient_ids, df, patient_id_col, limit=500):
+        patients = []
+        for pid in list(patient_ids)[:limit]:
+            rows = df[df[patient_id_col] == pid] if patient_id_col else pd.DataFrame()
+            if len(rows) > 0:
+                row = rows.iloc[0]
+                patients.append({
+                    'patient_id': str(pid),
+                    'name': str(row.get('name', row.get('patient_name', row.get('first_name', '')))),
+                    'phone': str(row.get('phone', row.get('mobile', ''))),
+                    'email': str(row.get('email', '')),
+                })
+        return patients
+
     # Calculate co-occurrence matrix
     significant_services = [s for s, count in service_patient_count.items() if count >= 5]
-    
+
     co_occurrence = {}
     for i, service_a in enumerate(significant_services):
         patients_a = service_patients[service_a]
         for service_b in significant_services[i+1:]:
             patients_b = service_patients[service_b]
-            
+
             overlap = len(patients_a & patients_b)
             if overlap > 0:
-                smaller_count = min(len(patients_a), len(patients_b))
-                overlap_pct = round(overlap / smaller_count * 100)
-                
-                if overlap_pct >= 20:
+                # Calculate overlap in both directions
+                pct_a_also_b = round(overlap / len(patients_a) * 100)  # % of A patients who also get B
+                pct_b_also_a = round(overlap / len(patients_b) * 100)  # % of B patients who also get A
+
+                # Calculate untapped potential
+                a_only_count = len(patients_a - patients_b)
+                b_only_count = len(patients_b - patients_a)
+
+                # Only include if at least one direction has 20%+ overlap
+                if max(pct_a_also_b, pct_b_also_a) >= 20:
+                    # Calculate average revenue per service
+                    rev_a = service_revenue.get(service_a, 0) / max(len(patients_a), 1)
+                    rev_b = service_revenue.get(service_b, 0) / max(len(patients_b), 1)
+                    avg_bundle_value = rev_a + rev_b
+
+                    # Revenue score: prioritize high-value bundles with good overlap
+                    revenue_score = overlap * avg_bundle_value
+
                     pair_key = f"{service_a}|{service_b}"
                     co_occurrence[pair_key] = {
                         'service_a': service_a,
                         'service_b': service_b,
                         'overlap_count': overlap,
-                        'overlap_pct': overlap_pct,
+                        'pct_a_also_b': pct_a_also_b,
+                        'pct_b_also_a': pct_b_also_a,
                         'patients_a': len(patients_a),
-                        'patients_b': len(patients_b)
+                        'patients_b': len(patients_b),
+                        'a_only_count': a_only_count,
+                        'b_only_count': b_only_count,
+                        'total_opportunity': a_only_count + b_only_count,
+                        'avg_bundle_value': round(avg_bundle_value),
+                        'revenue_score': round(revenue_score),
+                        # Keep old field for backward compatibility
+                        'overlap_pct': max(pct_a_also_b, pct_b_also_a)
                     }
-    
+
     result['co_occurrence'] = co_occurrence
-    
+
     # Find best bundle opportunity
     if co_occurrence:
-        best_bundle = max(co_occurrence.values(), key=lambda x: (x['overlap_pct'], x['overlap_count']))
-        if best_bundle['overlap_pct'] >= 50:
-            avg_revenue_per_patient = df[revenue_col].mean() if revenue_col else 200
-            potential_increase = round(best_bundle['overlap_count'] * avg_revenue_per_patient * 0.15)
-            
+        # Pick by revenue potential, not just overlap percentage
+        best_bundle = max(co_occurrence.values(), key=lambda x: x['revenue_score'])
+
+        # Check if this is a viable opportunity
+        has_bundle_opportunity = (
+            best_bundle['overlap_count'] >= 10 and
+            max(best_bundle['pct_a_also_b'], best_bundle['pct_b_also_a']) >= 40
+        )
+
+        has_crosssell_opportunity = (
+            best_bundle['total_opportunity'] >= 20  # At least 20 patients to target
+        )
+
+        if has_bundle_opportunity or has_crosssell_opportunity:
+            service_a = best_bundle['service_a']
+            service_b = best_bundle['service_b']
+
+            # Get patient lists
+            both_patients = service_patients[service_a] & service_patients[service_b]
+            a_only = service_patients[service_a] - service_patients[service_b]
+            b_only = service_patients[service_b] - service_patients[service_a]
+
+            bundle_patients = extract_patient_info(both_patients, df, patient_id_col)
+            crosssell_a_to_b = extract_patient_info(a_only, df, patient_id_col)
+            crosssell_b_to_a = extract_patient_info(b_only, df, patient_id_col)
+
+            # Calculate revenue potential for each segment
+            rev_a_per_patient = service_revenue.get(service_a, 0) / max(best_bundle['patients_a'], 1)
+            rev_b_per_patient = service_revenue.get(service_b, 0) / max(best_bundle['patients_b'], 1)
+
+            bundle_potential = round(best_bundle['overlap_count'] * best_bundle['avg_bundle_value'] * 0.15)
+            crosssell_a_potential = round(best_bundle['a_only_count'] * rev_b_per_patient * 0.15)
+            crosssell_b_potential = round(best_bundle['b_only_count'] * rev_a_per_patient * 0.15)
+
+            # Determine the primary insight direction (higher overlap percentage)
+            if best_bundle['pct_a_also_b'] >= best_bundle['pct_b_also_a']:
+                insight = f"{best_bundle['pct_a_also_b']}% of {service_a} patients also get {service_b}"
+            else:
+                insight = f"{best_bundle['pct_b_also_a']}% of {service_b} patients also get {service_a}"
+
             result['bundle_opportunity'] = {
                 'type': 'bundle',
-                'title': f"{best_bundle['service_a']} + {best_bundle['service_b']} patients",
-                'description': f"{best_bundle['overlap_pct']}% of your {best_bundle['service_a']} patients also get {best_bundle['service_b']}, but most book separately. A package deal increases avg ticket by 15-20%.",
-                'potential_revenue': potential_increase,
+                'title': f"{service_a} + {service_b} Package",
+                'insight': insight,
+                'avg_bundle_value': best_bundle['avg_bundle_value'],
+                'services': [service_a, service_b],
+
+                # Patients who get BOTH - target for package pricing
+                'bundle_patients': {
+                    'count': best_bundle['overlap_count'],
+                    'patients': bundle_patients,
+                    'action': 'Offer package discount',
+                    'potential': bundle_potential,
+                },
+
+                # Patients who get A only - target to add B
+                'crosssell_a_to_b': {
+                    'count': best_bundle['a_only_count'],
+                    'patients': crosssell_a_to_b,
+                    'action': f"Introduce {service_b}",
+                    'potential': crosssell_a_potential,
+                },
+
+                # Patients who get B only - target to add A
+                'crosssell_b_to_a': {
+                    'count': best_bundle['b_only_count'],
+                    'patients': crosssell_b_to_a,
+                    'action': f"Introduce {service_a}",
+                    'potential': crosssell_b_potential,
+                },
+
+                # Backward compatibility fields
                 'patient_count': best_bundle['overlap_count'],
+                'potential_revenue': bundle_potential + crosssell_a_potential + crosssell_b_potential,
                 'cta': 'Create bundle offer',
-                'services': [best_bundle['service_a'], best_bundle['service_b']],
-                'overlap_pct': best_bundle['overlap_pct']
+                'overlap_pct': best_bundle['overlap_pct'],
+                'description': f"{insight}. Target {best_bundle['overlap_count']} patients for packages, plus {best_bundle['total_opportunity']} for cross-sell.",
             }
     
     # Calculate category penetration

@@ -13,11 +13,14 @@ import {
   Download,
   Star,
   Users,
+  Package,
+  PlusCircle,
 } from 'lucide-react';
 import { useState, useEffect, useRef} from 'react';
 import { useRouter } from 'next/navigation';
 import { SMSSendModal } from './sms-send-modal';
 import { CampaignWorkflowModal } from './campaign-workflow-modal';
+import { InsightBanner, InsightBannerCollapsed, Insight } from './InsightBanner';
 import { DISC_TYPES } from '@/lib/industryConfig';
 
 
@@ -247,7 +250,11 @@ export default function PatientInsights() {
   const [selectedReferrers, setSelectedReferrers] = useState<Set<string>>(new Set());
   const [selectedOneDone, setSelectedOneDone] = useState<Set<string>>(new Set());
   const [selectedLapsed, setSelectedLapsed] = useState<Set<string>>(new Set());
-  
+
+  // Insight banner state
+  const [insightBannerDismissed, setInsightBannerDismissed] = useState(false);
+  const [currentInsight, setCurrentInsight] = useState<Insight | null>(null);
+
   // Retention action modal state
   const [showActionModal, setShowActionModal] = useState(false);
   const [showSMSModal, setShowSMSModal] = useState(false);
@@ -524,6 +531,78 @@ export default function PatientInsights() {
     pollResults();
   }, [currentRunId]);
 
+  // Generate insights when analysis data changes
+  useEffect(() => {
+    if (!analysisData || isMortgage) return;
+
+    const STORAGE_KEY = 'insight-banner-dismissed';
+    const LAST_INSIGHT_KEY = 'last-insight-type';
+
+    // Generate insight based on data
+    const generateInsight = (): Insight | null => {
+      // Check for success (recovered revenue)
+      if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered > 0) {
+        return {
+          id: 'success',
+          type: 'success',
+          eyebrow: "This month's results",
+          headline: `$${Math.round(outreachSummary.revenue_recovered).toLocaleString()} recovered`,
+          subtext: `${outreachSummary.returned_count} patients returned after outreach`,
+          buttonText: 'View details',
+        };
+      }
+
+      // Check for benchmark data
+      const totalPatients = analysisData.patient_count || 0;
+      const highFreqCount = analysisData.patient_segments?.high_frequency?.count || 0;
+      if (totalPatients > 0 && highFreqCount > 0) {
+        const retentionRate = Math.round((highFreqCount / totalPatients) * 100);
+        if (retentionRate >= 15) {
+          return {
+            id: 'benchmark',
+            type: 'benchmark',
+            eyebrow: 'Based on similar practices',
+            headline: 'Your retention is above average',
+            subtext: `${retentionRate}% vs. 12% industry median`,
+            buttonText: 'Learn more',
+            stat: `${retentionRate}%`,
+            statLabel: '12-month retention',
+          };
+        }
+      }
+
+      // Check for cross-sell opportunity
+      if (analysisData.service_analysis?.primary_opportunity) {
+        const opp = analysisData.service_analysis.primary_opportunity;
+        return {
+          id: 'cross-sell',
+          type: 'trend',
+          eyebrow: 'Opportunity identified',
+          headline: opp.title,
+          subtext: `${opp.patient_count} patients · $${opp.potential_revenue?.toLocaleString()} potential`,
+          buttonText: 'View patients',
+        };
+      }
+
+      return null;
+    };
+
+    const insight = generateInsight();
+    if (insight) {
+      setCurrentInsight(insight);
+
+      // Check if this insight type was previously dismissed
+      const lastSeenType = localStorage.getItem(LAST_INSIGHT_KEY);
+      if (insight.type !== lastSeenType) {
+        setInsightBannerDismissed(false);
+        localStorage.setItem(LAST_INSIGHT_KEY, insight.type);
+      } else {
+        const dismissed = localStorage.getItem(STORAGE_KEY) === 'true';
+        setInsightBannerDismissed(dismissed);
+      }
+    }
+  }, [analysisData, outreachSummary, isMortgage]);
+
   const toggleZip = (zip: string) => {
     setSelectedZips((prev) => ({ ...prev, [zip]: !prev[zip] }));
   };
@@ -590,6 +669,41 @@ export default function PatientInsights() {
     router.push(
       `/campaign-generator?segmentId=${currentRunId}&zip=${selected.join(',')}&procedure=${procedureParam}&vertical=${vertical}`
     );
+  };
+
+  // Insight banner handlers
+  const handleInsightDismiss = () => {
+    setInsightBannerDismissed(true);
+    localStorage.setItem('insight-banner-dismissed', 'true');
+  };
+
+  const handleInsightExpand = () => {
+    setInsightBannerDismissed(false);
+    localStorage.setItem('insight-banner-dismissed', 'false');
+  };
+
+  const handleInsightAction = () => {
+    if (!currentInsight) return;
+
+    // Handle different insight actions based on type
+    if (currentInsight.id === 'cross-sell' && analysisData?.service_analysis?.primary_opportunity) {
+      openActionModal(
+        'cross-sell',
+        analysisData.service_analysis.primary_opportunity.title,
+        analysisData.service_analysis.primary_opportunity.patient_count,
+        analysisData.service_analysis.primary_opportunity.patients || [],
+        'bundle',
+        analysisData.service_analysis.primary_opportunity.cta,
+        {
+          newService: analysisData.service_analysis.primary_opportunity.category || 'skincare',
+          currentService: 'injectable treatments'
+        }
+      );
+    } else if (currentInsight.id === 'success') {
+      // Scroll to outreach summary or performance page
+      router.push('/performance');
+    }
+    // Add other action handlers as needed
   };
 
   // ================================================================
@@ -1083,6 +1197,26 @@ ${clinicName} Team`
           </section>
 
           {/* ================================================================ */}
+          {/* INSIGHT BANNER                                                */}
+          {/* ================================================================ */}
+          {!isMortgage && currentInsight && (
+            <div className="mb-4">
+              {!insightBannerDismissed ? (
+                <InsightBanner
+                  insight={currentInsight}
+                  onDismiss={handleInsightDismiss}
+                  onAction={handleInsightAction}
+                />
+              ) : (
+                <InsightBannerCollapsed
+                  count={1}
+                  onExpand={handleInsightExpand}
+                />
+              )}
+            </div>
+          )}
+
+          {/* ================================================================ */}
           {/* MEDSPA: DECISION QUEUE SECTION                                */}
           {/* Clean, calm aesthetic matching landing page                   */}
           {/* ================================================================ */}
@@ -1276,60 +1410,249 @@ ${clinicName} Team`
 
                   {/* 5. Cross-sell / Bundle opportunity */}
                   {analysisData?.service_analysis?.primary_opportunity && (
-                    <div
-                      onClick={() => {
-                        openActionModal(
-                          'cross-sell',
-                          analysisData.service_analysis.primary_opportunity.title,
-                          analysisData.service_analysis.primary_opportunity.patient_count,
-                          analysisData.service_analysis.primary_opportunity.patients || [],
-                          'bundle',
-                          analysisData.service_analysis.primary_opportunity.cta,
-                          {
-                            newService: analysisData.service_analysis.primary_opportunity.category || 'skincare',
-                            currentService: 'injectable treatments'
-                          }
-                        );
-                      }}
-                      className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
-                    >
-                      <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                        <Target className="w-5 h-5 text-gray-500" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-900">
-                            {analysisData.service_analysis.primary_opportunity.title}
-                          </span>
-                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                            {analysisData.service_analysis.primary_opportunity.type === 'bundle' ? 'Bundle' : 'Upsell'}
-                          </span>
+                    <>
+                      {/* New three-segment bundle display */}
+                      {analysisData.service_analysis.primary_opportunity.bundle_patients ? (
+                        <div className="space-y-3">
+                          {/* Header with insight */}
+                          <div className="px-2">
+                            <h4 className="font-medium text-gray-900 text-sm">{analysisData.service_analysis.primary_opportunity.title}</h4>
+                            <p className="text-xs text-gray-500 mt-0.5">{analysisData.service_analysis.primary_opportunity.insight}</p>
+                          </div>
+
+                          {/* 1. Bundle patients (buy both) */}
+                          {analysisData.service_analysis.primary_opportunity.bundle_patients.count > 0 && (
+                            <div
+                              onClick={() => {
+                                openActionModal(
+                                  'cross-sell',
+                                  analysisData.service_analysis.primary_opportunity.bundle_patients.action,
+                                  analysisData.service_analysis.primary_opportunity.bundle_patients.count,
+                                  analysisData.service_analysis.primary_opportunity.bundle_patients.patients || [],
+                                  'bundle',
+                                  analysisData.service_analysis.primary_opportunity.bundle_patients.action,
+                                  {
+                                    newService: analysisData.service_analysis.primary_opportunity.services?.[1] || '',
+                                    currentService: analysisData.service_analysis.primary_opportunity.services?.[0] || ''
+                                  }
+                                );
+                              }}
+                              className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
+                            >
+                              <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                <Package className="w-4 h-4 text-gray-500" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-gray-900 text-sm">Package deal</span>
+                                  <span className="px-2 py-0.5 bg-violet-100 text-violet-700 text-xs font-medium rounded-full">
+                                    Bundle
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                  {analysisData.service_analysis.primary_opportunity.bundle_patients.count} patients · ${analysisData.service_analysis.primary_opportunity.bundle_patients.potential?.toLocaleString()} potential
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openActionModal(
+                                    'cross-sell',
+                                    analysisData.service_analysis.primary_opportunity.bundle_patients.action,
+                                    analysisData.service_analysis.primary_opportunity.bundle_patients.count,
+                                    analysisData.service_analysis.primary_opportunity.bundle_patients.patients || [],
+                                    'bundle',
+                                    analysisData.service_analysis.primary_opportunity.bundle_patients.action,
+                                    {
+                                      newService: analysisData.service_analysis.primary_opportunity.services?.[1] || '',
+                                      currentService: analysisData.service_analysis.primary_opportunity.services?.[0] || ''
+                                    }
+                                  );
+                                }}
+                                className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                              >
+                                Offer discount
+                              </button>
+                            </div>
+                          )}
+
+                          {/* 2. Cross-sell A to B */}
+                          {analysisData.service_analysis.primary_opportunity.crosssell_a_to_b?.count > 0 && (
+                            <div
+                              onClick={() => {
+                                openActionModal(
+                                  'cross-sell',
+                                  analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.action,
+                                  analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.count,
+                                  analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.patients || [],
+                                  'bundle',
+                                  analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.action,
+                                  {
+                                    newService: analysisData.service_analysis.primary_opportunity.services?.[1] || '',
+                                    currentService: analysisData.service_analysis.primary_opportunity.services?.[0] || ''
+                                  }
+                                );
+                              }}
+                              className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
+                            >
+                              <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                <PlusCircle className="w-4 h-4 text-gray-500" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-gray-900 text-sm">{analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.action}</span>
+                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                    Cross-sell
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                  {analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.count} patients · ${analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.potential?.toLocaleString()} potential
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openActionModal(
+                                    'cross-sell',
+                                    analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.action,
+                                    analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.count,
+                                    analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.patients || [],
+                                    'bundle',
+                                    analysisData.service_analysis.primary_opportunity.crosssell_a_to_b.action,
+                                    {
+                                      newService: analysisData.service_analysis.primary_opportunity.services?.[1] || '',
+                                      currentService: analysisData.service_analysis.primary_opportunity.services?.[0] || ''
+                                    }
+                                  );
+                                }}
+                                className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                              >
+                                Launch
+                              </button>
+                            </div>
+                          )}
+
+                          {/* 3. Cross-sell B to A */}
+                          {analysisData.service_analysis.primary_opportunity.crosssell_b_to_a?.count > 0 && (
+                            <div
+                              onClick={() => {
+                                openActionModal(
+                                  'cross-sell',
+                                  analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.action,
+                                  analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.count,
+                                  analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.patients || [],
+                                  'bundle',
+                                  analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.action,
+                                  {
+                                    newService: analysisData.service_analysis.primary_opportunity.services?.[0] || '',
+                                    currentService: analysisData.service_analysis.primary_opportunity.services?.[1] || ''
+                                  }
+                                );
+                              }}
+                              className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
+                            >
+                              <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                <PlusCircle className="w-4 h-4 text-gray-500" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="font-medium text-gray-900 text-sm">{analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.action}</span>
+                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                    Cross-sell
+                                  </span>
+                                </div>
+                                <p className="text-sm text-gray-500">
+                                  {analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.count} patients · ${analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.potential?.toLocaleString()} potential
+                                </p>
+                              </div>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openActionModal(
+                                    'cross-sell',
+                                    analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.action,
+                                    analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.count,
+                                    analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.patients || [],
+                                    'bundle',
+                                    analysisData.service_analysis.primary_opportunity.crosssell_b_to_a.action,
+                                    {
+                                      newService: analysisData.service_analysis.primary_opportunity.services?.[0] || '',
+                                      currentService: analysisData.service_analysis.primary_opportunity.services?.[1] || ''
+                                    }
+                                  );
+                                }}
+                                className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                              >
+                                Launch
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Total potential */}
+                          {analysisData.service_analysis.primary_opportunity.potential_revenue && (
+                            <p className="text-xs text-gray-400 text-center">
+                              Total potential: ${analysisData.service_analysis.primary_opportunity.potential_revenue.toLocaleString()}
+                            </p>
+                          )}
                         </div>
-                        <p className="text-sm text-gray-500">
-                          {analysisData.service_analysis.primary_opportunity.patient_count} patients · ${analysisData.service_analysis.primary_opportunity.potential_revenue?.toLocaleString()} potential
-                        </p>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openActionModal(
-                            'cross-sell',
-                            analysisData.service_analysis.primary_opportunity.title,
-                            analysisData.service_analysis.primary_opportunity.patient_count,
-                            analysisData.service_analysis.primary_opportunity.patients || [],
-                            'bundle',
-                            analysisData.service_analysis.primary_opportunity.cta,
-                            {
-                              newService: analysisData.service_analysis.primary_opportunity.category || 'skincare',
-                              currentService: 'injectable treatments'
-                            }
-                          );
-                        }}
-                        className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
-                      >
-                        {analysisData.service_analysis.primary_opportunity.cta.split(' ').slice(0, 2).join(' ')}
-                      </button>
-                    </div>
+                      ) : (
+                        /* Legacy single-card display for backward compatibility */
+                        <div
+                          onClick={() => {
+                            openActionModal(
+                              'cross-sell',
+                              analysisData.service_analysis.primary_opportunity.title,
+                              analysisData.service_analysis.primary_opportunity.patient_count,
+                              analysisData.service_analysis.primary_opportunity.patients || [],
+                              'bundle',
+                              analysisData.service_analysis.primary_opportunity.cta,
+                              {
+                                newService: analysisData.service_analysis.primary_opportunity.category || 'skincare',
+                                currentService: 'injectable treatments'
+                              }
+                            );
+                          }}
+                          className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <Target className="w-5 h-5 text-gray-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-gray-900">
+                                {analysisData.service_analysis.primary_opportunity.title}
+                              </span>
+                              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                                {analysisData.service_analysis.primary_opportunity.type === 'bundle' ? 'Bundle' : 'Upsell'}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-500">
+                              {analysisData.service_analysis.primary_opportunity.patient_count} patients · ${analysisData.service_analysis.primary_opportunity.potential_revenue?.toLocaleString()} potential
+                            </p>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openActionModal(
+                                'cross-sell',
+                                analysisData.service_analysis.primary_opportunity.title,
+                                analysisData.service_analysis.primary_opportunity.patient_count,
+                                analysisData.service_analysis.primary_opportunity.patients || [],
+                                'bundle',
+                                analysisData.service_analysis.primary_opportunity.cta,
+                                {
+                                  newService: analysisData.service_analysis.primary_opportunity.category || 'skincare',
+                                  currentService: 'injectable treatments'
+                                }
+                              );
+                            }}
+                            className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                          >
+                            {analysisData.service_analysis.primary_opportunity.cta?.split(' ').slice(0, 2).join(' ') || 'Launch'}
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
 
                 </div>

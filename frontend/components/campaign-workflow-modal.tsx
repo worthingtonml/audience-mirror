@@ -115,6 +115,18 @@ const smsTemplates: Record<string, string[]> = {
     "Hi {name}! Last thought on {new_service}: if budget is a factor, we have an intro offer that might help. Want details?",
     "{name}, just checking if you had any questions about {new_service}. Happy to chat whenever — totally understand if the timing isn't right.",
     "Hey {name}! If you've been thinking about {new_service}, I'm here to answer any questions. No rush at all."
+  ],
+  'bundle-package': [
+    "Hi {name}, as one of our valued guests who loves both {current_service} and {new_service}, we're offering you an exclusive package: Save 15% when you book them together. Reply YES to claim your spot!",
+    "Hey {name}! You've been getting great results with {current_service} + {new_service}. We created a package deal just for guests like you — 15% off when booked together. Interested?",
+    "{name}, quick offer: Since you love both {current_service} and {new_service}, we're giving you early access to our combo package. Book both, save 15%. Want details?",
+    "Hi {name}! Special offer for you: Bundle your {current_service} + {new_service} appointments and save 15%. Makes scheduling easier too! Reply YES to learn more."
+  ],
+  'bundle-crosssell': [
+    "Hi {name}, your {current_service} results would pair perfectly with {new_service}. Many of our guests combine them for even better results. Want to learn more? Reply YES!",
+    "Hey {name}! Quick thought — I think you'd love {new_service} alongside your {current_service}. It extends results by up to 30%. Curious?",
+    "{name}, have you considered adding {new_service} to your routine? It complements {current_service} beautifully. Happy to explain how!",
+    "Hi {name}! Many of our {current_service} patients add {new_service} and love the results. Would you like to learn how they work together?"
   ]
 };
 
@@ -187,6 +199,34 @@ const emailTemplates: Record<string, { subject: string; body: string }[]> = {
     {
       subject: "A perfect pairing for your {current_service}",
       body: "Hi {name},\n\nI was reviewing your file and had a thought I wanted to share.\n\nGiven the great results you've been getting with {current_service}, you might love {new_service}. The two complement each other beautifully — most patients who try the combination don't go back.\n\nNo pressure — just an idea. If you're curious, we have an intro offer that makes it easy to try.\n\nLet me know if you'd like to learn more!\n\n[Clinic]"
+    }
+  ],
+  'bundle-package': [
+    {
+      subject: "Exclusive offer: {current_service} + {new_service} Package",
+      body: "Hi {name},\n\nWe noticed you're a fan of both {current_service} and {new_service} — great choices!\n\nWe've created an exclusive package just for guests like you:\n\n✨ {current_service} + {new_service} Package\n💰 Save 15% when you book them together\n📅 Book both in one visit or space them out\n\nThis offer is available for the next 2 weeks.\n\nAs one of our valued patients, you get first access before we announce it to everyone else.\n\n[Book Now]\n\nSee you soon!\n[Your Name]\n[Clinic]"
+    },
+    {
+      subject: "We created something special for you, {name}",
+      body: "Hi {name},\n\nBecause you love both {current_service} and {new_service}, I wanted to personally let you know about a new package we're offering.\n\n🎁 Bundle & Save:\n• {current_service} + {new_service}\n• 15% off total price\n• Priority scheduling for package guests\n• Flexible booking options\n\nWe designed this specifically for patients like you who get the best results from combining these treatments.\n\nInterested? Just reply and I'll get you scheduled.\n\nThank you for trusting us with your care.\n\n[Your Name]"
+    },
+    {
+      subject: "Save 15% on your favorite treatments",
+      body: "Hi {name},\n\nQuick offer for you: Since you already love {current_service} and {new_service}, we're giving you exclusive access to bundle them at 15% off.\n\nWhy bundle?\n• Save time with coordinated appointments\n• Save money with package pricing\n• Better results when treatments are timed together\n\nYou're one of our favorite patients, so you get first dibs before this opens to everyone.\n\n[Claim Your Package]\n\nQuestions? Just reply!\n\n[Clinic]"
+    }
+  ],
+  'bundle-crosssell': [
+    {
+      subject: "Enhance your {current_service} results, {name}",
+      body: "Hi {name},\n\nYou've been getting great results with {current_service} — have you considered adding {new_service}?\n\nMany of our guests find that combining these treatments:\n• Extends results by up to 30%\n• Creates a more natural, balanced look\n• Saves time with combined appointments\n\nAs a thank you for being a loyal guest, we'd like to offer you a complimentary consultation to discuss if {new_service} is right for you.\n\nNo pressure at all — just wanted to share what we've seen work beautifully for other patients.\n\n[Schedule Consultation]\n\nQuestions? Just reply to this email.\n\nWarmly,\n[Your Name]\n[Clinic]"
+    },
+    {
+      subject: "The perfect complement to your {current_service}",
+      body: "Hi {name},\n\nI was reviewing your treatment history and had a thought I wanted to share.\n\nYou've been doing {current_service} with excellent results. Based on what I've seen with other patients, {new_service} would pair beautifully with what you're already doing.\n\nHere's why:\n• They work synergistically to enhance each other\n• Most patients see 20-30% better results with the combination\n• It's our most popular treatment pairing\n\nI'd love to explain more if you're curious. We also have a special intro offer for existing patients trying {new_service} for the first time.\n\nNo obligation — just thought you'd want to know!\n\n[Learn More]\n\n[Your Name]"
+    },
+    {
+      subject: "Something you might love, {name}",
+      body: "Hi {name},\n\nQuick thought: have you tried {new_service} yet?\n\nGiven how well {current_service} has been working for you, I think you'd be thrilled with the results of adding {new_service}. They complement each other perfectly.\n\nWhat to expect:\n• Enhanced, longer-lasting results\n• More comprehensive treatment approach\n• Many patients say it's the missing piece they didn't know they needed\n\nWant to learn more? Reply to this email or give us a call. Happy to answer any questions.\n\nAnd if the timing isn't right, no worries — just wanted to plant the seed!\n\nTake care,\n[Your Name]\n[Clinic]"
     }
   ]
 };
@@ -547,7 +587,35 @@ export function CampaignWorkflowModal({
   );
   const [showSendList, setShowSendList] = useState<number | null>(null);
 
-  const config = segmentConfigs[actionModalData.segment] || segmentConfigs['one-and-done'];
+  // Determine template key based on action text for bundle segments
+  const getBundleTemplateKey = (action: string): string => {
+    if (action.toLowerCase().includes('package') || action.toLowerCase().includes('discount')) {
+      return 'bundle-package';
+    }
+    if (action.toLowerCase().includes('introduce')) {
+      return 'bundle-crosssell';
+    }
+    return 'cross-sell-day1'; // fallback
+  };
+
+  // Get config and potentially override template keys for bundle segments
+  let config = segmentConfigs[actionModalData.segment] || segmentConfigs['one-and-done'];
+
+  // If this is a cross-sell segment, check if it's a bundle action
+  if (actionModalData.segment === 'cross-sell' && actionModalData.action) {
+    const bundleTemplateKey = getBundleTemplateKey(actionModalData.action);
+
+    // Create a modified config with bundle-specific template keys
+    if (bundleTemplateKey.startsWith('bundle-')) {
+      config = {
+        ...config,
+        steps: config.steps.map(step => ({
+          ...step,
+          templateKey: bundleTemplateKey
+        }))
+      };
+    }
+  }
 
   const patients: Patient[] = actionModalData.patients.map(p => {
     if (typeof p === 'object') return p;
