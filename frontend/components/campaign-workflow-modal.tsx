@@ -57,118 +57,136 @@ interface CampaignWorkflowModalProps {
 // Template variations for each segment/step
 const smsTemplates: Record<string, string[]> = {
   'one-and-done-day1': [
-    "Hey {name}, it's [Your Clinic]! We noticed it's been a while and just wanted to check in — everything okay? We'd love to see you again.",
-    "Hi {name}! Just thinking of you over here at [Your Clinic]. It's been a bit — hope all is well! We'd love to catch up whenever you're ready.",
-    "Hey {name}! 👋 It's [Your Clinic]. We miss your face! Everything going okay? Let us know if there's anything we can do for you.",
-    "Hi {name}, [Your Clinic] here! We noticed you haven't been in for a while — just wanted to make sure everything's alright. We're here when you need us!"
+    "Hi {name}, it's [Clinic]. I was reviewing your file and wanted to check in — how did everything go after your visit? Any questions I can help with?",
+    "Hey {name}! It's [Clinic]. Just wanted to see how you're feeling after your treatment. Everything healing up okay?",
+    "Hi {name}, [Clinic] here. I noticed you came in a while back and wanted to make sure we took good care of you. How's everything going?",
+    "Hey {name}! Quick check-in from [Clinic] — did your treatment meet your expectations? We'd love to hear how it went."
   ],
   'one-and-done-day10': [
-    "Hi {name}! Just wanted to let you know your 20% off expires this week. Want me to hold a spot for you? Reply YES and I'll send options.",
-    "Hey {name}! Quick heads up — your special offer ends soon. Should I save you a spot before it's gone? Just say the word!",
-    "Hi {name}! Last chance to grab your 20% off. Want me to book something for you this week? Reply and I'll make it easy.",
-    "{name}, your 20% off is about to expire! Reply YES if you want me to squeeze you in before it's gone."
+    "Hi {name}, it's [Clinic] again. No pressure at all — just wondering if there's anything holding you back from coming in? Happy to answer any questions.",
+    "Hey {name}! Just following up. If timing or budget is tricky right now, totally understand. We're here whenever works for you.",
+    "{name}, I know life gets busy. If you've been meaning to come back but haven't had time, I'd be happy to find a slot that works with your schedule.",
+    "Hi {name}! If something about your first visit didn't feel right, I'd genuinely love to know. Your feedback helps us get better."
   ],
   'lapsed-day3': [
-    "Hey {name}, tried to reach you earlier — we miss having you! Reply if you'd like to book your next visit.",
-    "Hi {name}! Left you a voicemail — just wanted to check in and see how you're doing. We'd love to see you again!",
-    "{name}, it's [Your Clinic]. We tried calling — hope everything's okay! Let us know when you want to come back in.",
-    "Hey {name}! We called but missed you. No pressure — just wanted to say hi and that we're here when you're ready."
+    "Hey {name}, it's [Clinic]. We miss seeing you! No pressure — just wanted to check in and see how you're doing.",
+    "Hi {name}! I noticed it's been a bit since your last visit. Everything okay? We're here whenever you're ready.",
+    "{name}, it's [Clinic]. Life gets busy — totally get it. Just wanted you to know we're thinking of you and here when the timing works.",
+    "Hey {name}! Just a friendly hello from [Clinic]. We've missed your visits but understand schedules change. Hope you're doing well!"
+  ],
+  'lapsed-day7': [
+    "Hi {name}, following up from my voicemail. We'd love to help you get back on track whenever you're ready — no rush at all.",
+    "{name}, I know things come up. If cost or timing has been tricky, let me know — we might be able to work something out.",
+    "Hey {name}! Just wanted to say we value you and would love to see you again. If anything made you hesitant, I'm all ears.",
+    "Hi {name}, checking in one more time. Whether it's been busy life or something else, we're here when the time is right."
   ],
   'high-freq-birthday': [
-    "Happy birthday {name}! 🎂 We're so grateful to have you. A little surprise is waiting for you at your next visit!",
-    "It's your special day, {name}! 🎉 Happy birthday from all of us at [Your Clinic]. We have a treat waiting for you!",
-    "Happy birthday {name}! 🎁 As one of our favorite people, we've got something special for you next time you're in.",
-    "{name}! 🎂 Wishing you the best birthday! Can't wait to celebrate with you at your next appointment."
+    "Happy birthday {name}! 🎂 Thank you for being such a wonderful part of our community. We have a little something waiting for you!",
+    "It's your day, {name}! 🎉 We're so grateful to have you. Stop by anytime — there's a birthday surprise with your name on it.",
+    "Happy birthday {name}! 🎁 You're one of our favorite people. Can't wait to celebrate with you at your next visit!",
+    "{name}! 🎂 Wishing you the happiest birthday. Thank you for trusting us — we appreciate you more than you know."
+  ],
+  'high-freq-checkin': [
+    "Hi {name}! Just wanted to personally thank you for being such a loyal patient. Anything I can help you with? You always get priority here.",
+    "Hey {name}! Quick note to say we appreciate you. If you ever need anything — booking, questions, early access — just text me.",
+    "{name}, I was thinking of you! As one of our VIPs, I wanted to make sure you know I'm here for anything you need. How's everything going?",
+    "Hi {name}! You're one of our most valued patients. Just checking in to see if there's anything we can do for you."
   ],
   'referral-day7': [
-    "Hey {name}! Your friends keep asking about your skin 😊 Share your link and earn $50 for each friend who books: [LINK]",
-    "Hi {name}! People are noticing your results! Know someone who'd love what we do? Share your link → $50 credit for you: [LINK]",
-    "{name}, your glow is contagious! 😄 Send friends your link and get $50 when they book: [LINK]",
-    "Hey {name}! Got friends asking about your treatments? Here's your referral link — $50 for you when they book: [LINK]"
+    "Hey {name}! I just wanted to say thank you — your friends have had such great things to say about you. We're grateful you trust us with them.",
+    "Hi {name}! People keep coming in and mentioning your name. 😊 Thank you for spreading the word — it means so much to us.",
+    "{name}, you've sent us some wonderful patients. Thank you! If you ever want to share your link, it's here: [LINK] — $50 for you each time.",
+    "Hey {name}! Your referrals have been amazing. We really appreciate you. Here's your link if you want to share: [LINK]"
   ],
   'referral-conversion': [
-    "{friend_name} just booked! $50 credit added to your account. Thank you for the referral! 🙌",
-    "You did it {name}! {friend_name} just scheduled their first visit. $50 is on the way to your account!",
-    "🎉 {friend_name} booked! You just earned $50. Thanks for spreading the word!",
-    "Cha-ching! {friend_name} is now booked. $50 credit headed your way. You're the best, {name}!"
+    "Amazing news, {name}! {friend_name} just booked. Thank you for trusting us with another friend — $50 is on its way to your account!",
+    "You're the best, {name}! {friend_name} just scheduled. We've added $50 to your account as a thank you. 🙌",
+    "🎉 {friend_name} booked! Thanks to you, {name}. $50 credit coming your way. We appreciate you!",
+    "{friend_name} is officially on the books! Thanks for the referral, {name}. $50 added to your account."
+  ],
+  'cross-sell-day1': [
+    "Hi {name}! I was looking at your file and thought you might be interested in {new_service}. It pairs really well with your {current_service}. Want to learn more?",
+    "Hey {name}! Quick thought — many of our {current_service} patients love adding {new_service}. It can help extend your results. Curious?",
+    "{name}, I noticed you've been doing {current_service} — have you ever considered {new_service}? A lot of patients find it complements their routine beautifully.",
+    "Hi {name}! Just an idea: {new_service} works great with {current_service}. Happy to explain how if you're interested!"
   ],
   'cross-sell-day5': [
-    "Hey {name}! Quick reminder — your 20% off {new_service} intro expires this week. Want me to add it to your next visit? Reply YES!",
-    "Hi {name}! Last chance to try {new_service} at 20% off. Pairs perfectly with your {current_service}. Interested?",
-    "{name}, your {new_service} intro offer ends soon! Most of our {current_service} clients love it. Want to try?",
-    "Hey {name}! Your exclusive {new_service} offer is about to expire. Reply YES and I'll book you a quick add-on!"
+    "Hey {name}! Following up on {new_service} — if you're curious but not sure, we could do a quick consult to see if it's right for you. No pressure!",
+    "Hi {name}! Last thought on {new_service}: if budget is a factor, we have an intro offer that might help. Want details?",
+    "{name}, just checking if you had any questions about {new_service}. Happy to chat whenever — totally understand if the timing isn't right.",
+    "Hey {name}! If you've been thinking about {new_service}, I'm here to answer any questions. No rush at all."
   ]
 };
 
 const emailTemplates: Record<string, { subject: string; body: string }[]> = {
   'one-and-done-day4': [
     {
-      subject: "We miss you! Here's 20% off your next visit",
-      body: "Hi {name},\n\nWe noticed it's been a while since your last visit. We'd love to see you again!\n\nAs a thank you for being part of our community, enjoy 20% off your next treatment.\n\nBook now and we'll also include a complimentary consultation to discuss your goals.\n\nWarmly,\n[Your Clinic Name]"
+      subject: "How did everything go, {name}?",
+      body: "Hi {name},\n\nI was reviewing your file and realized we never followed up after your visit. I wanted to personally check in — how did everything go?\n\nIf there's anything we could have done better, I'd genuinely love to hear it. And if you've been thinking about coming back but something's been holding you back, I'm happy to help figure it out.\n\nNo pressure at all. We're here whenever the timing is right.\n\nWarmly,\n[Your Name]\n[Clinic]"
     },
     {
-      subject: "A little something for you, {name}",
-      body: "Hi {name},\n\nWe've been thinking about you! It's been a while since your last appointment, and we wanted to reach out.\n\nTo welcome you back, we're offering you 20% off any service. No strings attached — just our way of saying we appreciate you.\n\nReady to book? Just reply to this email or give us a call.\n\nHope to see you soon!\n[Your Clinic Name]"
+      subject: "Just checking in, {name}",
+      body: "Hi {name},\n\nIt's been a little while since your visit, and I wanted to reach out personally.\n\nI hope your experience was everything you hoped for. If it wasn't — or if something felt off — please let me know. Your feedback helps us get better.\n\nWhenever you're ready to come back, we'd love to see you. And if timing or budget is tricky, I'm happy to work with you.\n\nTake care,\n[Your Name]"
     },
     {
-      subject: "Your exclusive return offer inside",
-      body: "Hi {name},\n\nWe miss having you at [Your Clinic]!\n\nAs one of our valued patients, we'd love to offer you something special: 20% off your next treatment, plus a free consultation to talk about your goals.\n\nThis offer is just for you — let us know when works best!\n\nWarmly,\n[Your Clinic Name]"
+      subject: "We'd love your feedback, {name}",
+      body: "Hi {name},\n\nI noticed it's been a while since your visit and wanted to check in.\n\nDid we meet your expectations? Was there anything about your experience that didn't feel right?\n\nYour honest feedback means a lot to us. And if you've been meaning to come back but life got in the way, totally understand — we're here when you're ready.\n\nWarmly,\n[Clinic]"
     }
   ],
   'lapsed-day7': [
     {
-      subject: "We miss you, {name}",
-      body: "Hi {name},\n\nIt's been a while since your last visit and I wanted to personally reach out.\n\nI hope everything is going well! If there's anything we could have done better, I'd love to hear about it.\n\nWhen you're ready to come back, we'd love to see you. Just reply to this email or give us a call.\n\nWarmly,\n[Your Name]"
+      subject: "We've missed you, {name}",
+      body: "Hi {name},\n\nI was looking at your history and realized it's been a while since we've seen you. I wanted to reach out personally.\n\nI know life gets busy — schedules change, priorities shift, budgets get tight. All totally normal.\n\nIf you've been thinking about getting back on track with your routine, I'd love to help. And if something about your experience made you hesitant to return, I really want to know.\n\nWe value you as a patient. No pressure — just wanted you to know we're here.\n\nWarmly,\n[Your Name]"
     },
     {
       subject: "Checking in, {name}",
-      body: "Hi {name},\n\nI noticed it's been a little while since we've seen you, and I wanted to reach out personally.\n\nWe truly value having you as part of our community. If anything has changed or if there's feedback you'd like to share, I'm all ears.\n\nWhenever you're ready, we'd love to welcome you back.\n\nTake care,\n[Your Name]"
+      body: "Hi {name},\n\nI noticed it's been a bit since your last visit and wanted to personally reach out.\n\nYou had such a great routine going, and I wanted to make sure everything was okay. If anything has changed — whether it's time, budget, or something we did — I'd love to hear about it.\n\nWhenever you're ready, we'd be happy to help you pick back up where you left off.\n\nTake care,\n[Your Name]"
     },
     {
-      subject: "It's been too long, {name}!",
-      body: "Hi {name},\n\nWe've missed you at [Your Clinic]!\n\nLife gets busy — we totally get it. But we wanted you to know we're still here and would love to see you again whenever the time is right.\n\nNo pressure, just a friendly hello. Feel free to reach out anytime.\n\nWarmly,\n[Your Clinic Name]"
+      subject: "Life gets busy — we understand",
+      body: "Hi {name},\n\nJust a quick note to say we've been thinking of you.\n\nWe know things come up — work gets crazy, priorities shift, schedules fill up. It happens to everyone.\n\nWhenever you're ready to get back on your routine, we're here. No judgment, no pressure. Just happy to help when the timing works for you.\n\nHope you're doing well!\n\n[Clinic]"
     }
   ],
   'high-freq-vip': [
     {
-      subject: "You're one of our VIPs, {name}",
-      body: "Hi {name},\n\nI wanted to personally reach out because you're one of our most valued patients.\n\nAs a thank you for your loyalty, I'd like to offer you first access to [new treatment/booking slots/event] before we open it to everyone else.\n\nJust reply to this email if you'd like me to hold a spot for you.\n\nThank you for trusting us with your care.\n\nWarmly,\n[Your Name]"
+      subject: "A personal thank you, {name}",
+      body: "Hi {name},\n\nI just wanted to take a moment to say thank you.\n\nYou've been one of our most loyal patients, and we genuinely appreciate the trust you've placed in us. It means everything.\n\nAs a small token of gratitude, I wanted to give you first access to [new treatment/booking slots/special event] before we open it to everyone else.\n\nIf you're interested, just reply and I'll make sure you're taken care of.\n\nWith gratitude,\n[Your Name]"
     },
     {
-      subject: "Something special for you, {name}",
-      body: "Hi {name},\n\nI just wanted to take a moment to say thank you. You've been such a wonderful part of our community.\n\nBecause you're one of our top patients, I wanted to give you early access to [new treatment/special event/exclusive booking times].\n\nLet me know if you'd like to reserve your spot!\n\nWith gratitude,\n[Your Name]"
+      subject: "VIP access for you, {name}",
+      body: "Hi {name},\n\nBecause you're one of our top patients, I wanted to personally reach out with something special.\n\nWe're offering early access to [new offering] to a small group of our most valued patients before the general announcement. I immediately thought of you.\n\nNo pressure — just wanted you to have the first opportunity if you're interested.\n\nThank you for being such an important part of our community.\n\n[Your Name]"
     },
     {
-      subject: "VIP access for you",
-      body: "Hi {name},\n\nQuick note to say thank you for being such a loyal patient!\n\nAs one of our VIPs, you get first dibs on [new offering/appointment slots/special event]. Just reply if you want in.\n\nWe appreciate you!\n\n[Your Name]"
+      subject: "You're one of our favorites, {name}",
+      body: "Hi {name},\n\nQuick personal note: you're one of our most valued patients and I wanted to make sure you know that.\n\nIf you ever need anything — priority scheduling, questions answered, early access to new treatments — just reach out directly to me. You get the VIP treatment here.\n\nThank you for your loyalty. We're grateful.\n\n[Your Name]"
     }
   ],
   'referral-day1': [
     {
-      subject: "You've earned rewards, {name}!",
-      body: "Hi {name},\n\nYou've sent us some amazing patients — thank you!\n\nI wanted to make it even easier for you. Here's your personal referral link:\n[REFERRAL_LINK]\n\nFor every friend who books, you'll get $50 credit toward your next treatment.\n\nThank you for spreading the word!\n\nWarmly,\n[Your Name]"
+      subject: "Thank you for spreading the word, {name}",
+      body: "Hi {name},\n\nI wanted to personally thank you for referring your friends and family to us. It means so much.\n\nWhen someone trusts us with the people they care about, it's the highest compliment we can receive.\n\nIf you ever want to share your personal referral link, here it is:\n[REFERRAL_LINK]\n\nFor every friend who books, you'll receive $50 toward your next treatment. But honestly, just knowing you trust us is reward enough.\n\nThank you again.\n\nWarmly,\n[Your Name]"
     },
     {
-      subject: "Your friends are going to love this",
-      body: "Hi {name},\n\nPeople keep asking about your results, right? Now you can share the love AND earn rewards!\n\nHere's your personal referral link:\n[REFERRAL_LINK]\n\nEvery time a friend books, you get $50 off your next visit. Easy!\n\nThanks for being such a great advocate.\n\n[Your Name]"
+      subject: "Your referrals mean the world to us",
+      body: "Hi {name},\n\nI was looking at our records and noticed how many wonderful patients have come to us through you. I wanted to say thank you.\n\nYour trust and recommendations are the reason we're able to do what we love. We're genuinely grateful.\n\nIf there's ever anything we can do better — for you or for the friends you send our way — please let me know. Your feedback matters.\n\nThank you for being such an amazing advocate.\n\n[Your Name]"
     },
     {
-      subject: "Share the glow, earn rewards",
-      body: "Hi {name},\n\nWe love that you're spreading the word about [Your Clinic]!\n\nHere's your own referral link to share:\n[REFERRAL_LINK]\n\n$50 credit for every friend who books. No limit on how much you can earn!\n\nThank you for being amazing.\n\n[Your Clinic Name]"
+      subject: "We're grateful for you, {name}",
+      body: "Hi {name},\n\nQuick note to say thank you.\n\nYou've sent us some incredible patients, and we don't take that for granted. Every referral is a reflection of your trust in us.\n\nYour personal link is here if you'd like to share it: [REFERRAL_LINK]\n($50 credit for you whenever someone books)\n\nBut more than anything, we just wanted you to know how much we appreciate you.\n\n[Clinic]"
     }
   ],
   'cross-sell-day1': [
     {
-      subject: "Something new we think you'll love, {name}",
-      body: "Hi {name},\n\nYou've been trusting us with your {current_service}, and we wanted to share something we think you'd love.\n\nMany of our patients have been adding {new_service} to their routine — it complements your treatments beautifully and extends your results.\n\nAs a thank you for being a loyal patient, we'd like to offer you 20% off your first {new_service} session.\n\nCurious? Just reply to this email and we'll tell you more.\n\nWarmly,\n[Your Clinic Name]"
+      subject: "Something that might complement your routine, {name}",
+      body: "Hi {name},\n\nI was thinking about your treatments and wanted to share something you might find interesting.\n\nMany of our patients who do {current_service} have been adding {new_service} to their routine. The two work really well together — {new_service} helps extend and enhance the results you're already getting.\n\nNo pressure at all — just thought it might be worth mentioning since you've had such great results so far.\n\nIf you're curious, I'm happy to explain more or set up a quick consult.\n\nWarmly,\n[Your Name]"
     },
     {
-      subject: "Enhance your results with {new_service}",
-      body: "Hi {name},\n\nWe've loved seeing your progress!\n\nDid you know that adding {new_service} can help extend and enhance your {current_service} results? It's one of our best-kept secrets.\n\nWe'd love for you to try it — here's 20% off your first session.\n\nInterested? Let us know!\n\nBest,\n[Your Clinic Name]"
+      subject: "Have you considered {new_service}?",
+      body: "Hi {name},\n\nQuick thought: have you ever considered adding {new_service} to your routine?\n\nI've noticed that patients who pair it with {current_service} often see longer-lasting, more enhanced results. It's become one of our most popular combinations.\n\nIf you're interested, I'd be happy to tell you more. And if the timing or budget isn't right, no worries at all.\n\nJust wanted to plant the seed!\n\n[Your Name]"
     },
     {
       subject: "A perfect pairing for your {current_service}",
-      body: "Hi {name},\n\nQuick thought: have you considered adding {new_service} to your routine?\n\nOur patients who combine it with {current_service} see even better, longer-lasting results. It's become one of our most popular add-ons.\n\nEnjoy 20% off your first session.\n\nReply if you'd like to learn more!\n\nWarmly,\n[Your Clinic Name]"
+      body: "Hi {name},\n\nI was reviewing your file and had a thought I wanted to share.\n\nGiven the great results you've been getting with {current_service}, you might love {new_service}. The two complement each other beautifully — most patients who try the combination don't go back.\n\nNo pressure — just an idea. If you're curious, we have an intro offer that makes it easy to try.\n\nLet me know if you'd like to learn more!\n\n[Clinic]"
     }
   ]
 };
@@ -176,48 +194,52 @@ const emailTemplates: Record<string, { subject: string; body: string }[]> = {
 const phoneScripts: Record<string, { opener: string; keyPoints: string[]; closer: string }[]> = {
   'one-and-done': [
     {
-      opener: "Hey {name}, this is [Your Name] from [Clinic]. I noticed it's been a while since your last visit and just wanted to check in — everything okay?",
+      opener: "Hi {name}, this is [Your Name] from [Clinic]. I was looking at your file and realized we never followed up after your visit — I wanted to personally check in. How did everything go?",
       keyPoints: [
-        "Listen first — don't pitch",
-        "If bad experience → apologize sincerely",
-        "If life got busy → empathize, offer to book",
-        "If switched providers → thank them, note it"
+        "Listen first — ask how their experience was",
+        "If bad experience → apologize sincerely, ask what happened",
+        "If life got busy → empathize, offer flexible scheduling",
+        "If cost concern → acknowledge, mention payment options",
+        "If switched providers → thank them, ask for feedback"
       ],
-      closer: "We'd love to see you again whenever you're ready. Can I help you find a time that works?"
+      closer: "Thank you for chatting with me. We'd genuinely love to see you again whenever the time is right. Is there anything else I can help with?"
     }
   ],
   'lapsed-regulars': [
     {
-      opener: "Hey {name}, this is [Your Name] from [Clinic]. We noticed it's been a while and I just wanted to personally reach out — is everything okay?",
+      opener: "Hi {name}, this is [Your Name] from [Clinic]. I was thinking about you and noticed it's been a while — I just wanted to check in and see how you're doing.",
       keyPoints: [
-        "Listen first — don't pitch",
-        "If bad experience → apologize and offer to make it right",
-        "If life got busy → empathize and offer to book",
-        "If switched providers → thank them and note it"
+        "Acknowledge the relationship — mention their history",
+        "Normalize gaps — 'life gets busy, schedules change'",
+        "If bad experience → apologize, ask to make it right",
+        "If budget tight → discuss spacing out treatments",
+        "If switched providers → thank them, ask what they liked"
       ],
-      closer: "We'd love to see you again whenever you're ready. Can I help you find a time that works?"
+      closer: "We really value you and would love to see you again whenever the timing is right. Take care!"
     },
     {
       opener: "Hi {name}, it's [Your Name] at [Clinic]. I was thinking about you and wanted to reach out personally — how have you been?",
       keyPoints: [
-        "Make it personal — mention their history",
-        "Ask open-ended questions",
+        "Make it personal — reference their past visits",
+        "Ask open-ended questions, let them talk",
         "If hesitant → ask what would make them comfortable",
-        "If competitor → ask what they liked, take notes"
+        "If competitor → ask what they liked, take notes",
+        "No pressure — accept 'not right now' gracefully"
       ],
-      closer: "We really value you as a patient. Is there anything I can do to help get you back on schedule?"
+      closer: "Thanks for talking with me. We're here whenever you're ready — no rush at all."
     }
   ],
   'cross-sell-visit': [
     {
-      opener: "Hey {name}, this is [Your Name] from [Clinic]. Quick thought while you're here...",
+      opener: "Hey {name}, while you're here — I noticed you've been doing {current_service} with great results. Have you ever thought about adding {new_service}?",
       keyPoints: [
-        "Mention {new_service} naturally",
-        "Connect it to their {current_service} goals",
-        "Offer the 20% intro if interested",
-        "No pressure — plant the seed"
+        "Keep it natural and brief — not a hard pitch",
+        "Connect {new_service} to their existing goals",
+        "If interested → explain benefits, mention intro offer",
+        "If hesitant → offer info to take home, no pressure",
+        "If not interested → 'No problem! Just wanted to mention it.'"
       ],
-      closer: "No pressure at all — just wanted you to know it's an option whenever you're curious!"
+      closer: "No pressure at all — just wanted to plant the seed. Let me know if you ever get curious!"
     }
   ]
 };

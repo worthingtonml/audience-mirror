@@ -11,6 +11,8 @@ import {
   ChevronDown,
   Info,
   Download,
+  Star,
+  Users,
 } from 'lucide-react';
 import { useState, useEffect, useRef} from 'react';
 import { useRouter } from 'next/navigation';
@@ -1087,54 +1089,61 @@ ${clinicName} Team`
           {!isMortgage && (
             <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-10">
               <div className="max-w-2xl mx-auto">
-                
+
                 {/* Section header */}
                 <div className="mb-5">
-                  <h2 className="text-lg font-semibold text-gray-900">What to do now</h2>
-                  <p className="text-sm text-gray-500">Actions across all {patientCount || 100} patients, prioritized by impact</p>
+                  <h2 className="font-semibold text-gray-900">What to do now</h2>
+                  <p className="text-sm text-gray-500">Prioritized by impact</p>
                 </div>
 
                 <div className="space-y-3">
                   
                   {/* 1. One-and-done patients */}
-                  <div 
+                  <div
                     onClick={() => {
                       openActionModal(
                         'one-and-done',
                         'One-and-done patients',
                         analysisData?.patient_segments?.one_and_done?.count || 0,
-                        analysisData?.patient_segments?.one_and_done?.patients || [],  // ← NEW
+                        analysisData?.patient_segments?.one_and_done?.patients || [],
                         'win-back',
                         'Send win-back text'
                       );
                     }}
-                    className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer"
+                    className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
                   >
-                    <div className="flex">
-                      <div className="w-1 bg-rose-400"></div>
-                      <div className="flex-1 p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <span className="text-[11px] font-semibold text-rose-500 uppercase tracking-wide">Act first</span>
-                            <h3 className="font-semibold text-gray-900 mt-1 mb-1">One-and-done patients</h3>
-                            <p className="text-sm text-gray-500 mb-2">Visited once, then disappeared.</p>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-semibold text-gray-900">${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable</span>
-                              <span className="text-gray-300">·</span>
-                              <span className="text-gray-400">{analysisData?.patient_segments?.one_and_done?.count || 0} patients</span>
-                            </div>
-                          </div>
-                          <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
-                            Send check-in
-                            <ArrowRight className="w-4 h-4" />
-                          </span>
-                        </div>
-                      </div>
+                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <AlertCircle className="w-5 h-5 text-gray-500" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-gray-900">One-and-done patients</span>
+                        <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-medium rounded-full">Act first</span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {analysisData?.patient_segments?.one_and_done?.count || 0} patients · ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openActionModal(
+                          'one-and-done',
+                          'One-and-done patients',
+                          analysisData?.patient_segments?.one_and_done?.count || 0,
+                          analysisData?.patient_segments?.one_and_done?.patients || [],
+                          'win-back',
+                          'Send win-back text'
+                        );
+                      }}
+                      className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                    >
+                      Send check-in
+                    </button>
                   </div>
 
                   {/* 2. Lapsed regulars */}
-                  <div 
+                  <div
                     onClick={() => {
                       openActionModal(
                         'lapsed-regulars',
@@ -1145,33 +1154,40 @@ ${clinicName} Team`
                         'Start personal outreach'
                       );
                     }}
-                    className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer"
+                    className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
                   >
-                    <div className="flex">
-                      <div className="w-1 bg-orange-400"></div>
-                      <div className="flex-1 p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <span className="text-[11px] font-semibold text-orange-500 uppercase tracking-wide">At risk</span>
-                            <h3 className="font-semibold text-gray-900 mt-1 mb-1">Lapsed regulars</h3>
-                            <p className="text-sm text-gray-500 mb-2">Had a rhythm, then went quiet.</p>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-semibold text-gray-900">${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk</span>
-                              <span className="text-gray-300">·</span>
-                              <span className="text-gray-400">{analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients</span>
-                            </div>
-                          </div>
-                          <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
-                            Reopen conversation
-                            <ArrowRight className="w-4 h-4" />
-                          </span>
-                        </div>
-                      </div>
+                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <Clock className="w-5 h-5 text-gray-500" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-gray-900">Lapsed regulars</span>
+                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">At risk</span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients · ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openActionModal(
+                          'lapsed-regulars',
+                          'Lapsed regulars',
+                          analysisData?.patient_segments?.lapsed_regulars?.count || 0,
+                          analysisData?.patient_segments?.lapsed_regulars?.patients || [],
+                          'personal-outreach',
+                          'Start personal outreach'
+                        );
+                      }}
+                      className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                    >
+                      Reopen
+                    </button>
                   </div>
 
                   {/* 3. High-frequency patients */}
-                  <div 
+                  <div
                     onClick={() => {
                       openActionModal(
                         'high-frequency',
@@ -1182,33 +1198,40 @@ ${clinicName} Team`
                         'Send VIP reward'
                       );
                     }}
-                    className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer"
+                    className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
                   >
-                    <div className="flex">
-                      <div className="w-1 bg-emerald-400"></div>
-                      <div className="flex-1 p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <span className="text-[11px] font-semibold text-emerald-500 uppercase tracking-wide">Protect</span>
-                            <h3 className="font-semibold text-gray-900 mt-1 mb-1">High-frequency patients</h3>
-                            <p className="text-sm text-gray-500 mb-2">Your VIPs. They don't complain — they just leave.</p>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-semibold text-gray-900">${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV</span>
-                              <span className="text-gray-300">·</span>
-                              <span className="text-gray-400">{analysisData?.patient_segments?.high_frequency?.count || 0} patients</span>
-                            </div>
-                          </div>
-                          <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
-                            Add VIP touchpoint
-                            <ArrowRight className="w-4 h-4" />
-                          </span>
-                        </div>
-                      </div>
+                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <Star className="w-5 h-5 text-gray-500" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-gray-900">High-frequency patients</span>
+                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">Protect</span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {analysisData?.patient_segments?.high_frequency?.count || 0} patients · ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openActionModal(
+                          'high-frequency',
+                          'High-frequency patients',
+                          analysisData?.patient_segments?.high_frequency?.count || 0,
+                          analysisData?.patient_segments?.high_frequency?.patients || [],
+                          'vip-reward',
+                          'Send VIP reward'
+                        );
+                      }}
+                      className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                    >
+                      VIP touchpoint
+                    </button>
                   </div>
 
                   {/* 4. Referral champions */}
-                  <div 
+                  <div
                     onClick={() => {
                       openActionModal(
                         'referrers',
@@ -1219,29 +1242,36 @@ ${clinicName} Team`
                         'Launch referral program'
                       );
                     }}
-                    className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md hover:bg-gray-50/50 transition-all cursor-pointer"
+                    className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
                   >
-                    <div className="flex">
-                      <div className="w-1 bg-blue-400"></div>
-                      <div className="flex-1 p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <span className="text-[11px] font-semibold text-blue-500 uppercase tracking-wide">Growth</span>
-                            <h3 className="font-semibold text-gray-900 mt-1 mb-1">Referral champions</h3>
-                            <p className="text-sm text-gray-500 mb-2">They send friends who actually show up.</p>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-semibold text-gray-900">{analysisData?.patient_segments?.referral_champions?.conversion_rate || 68}% conversion</span>
-                              <span className="text-gray-300">·</span>
-                              <span className="text-gray-400">{analysisData?.patient_segments?.referral_champions?.count || 0} patients</span>
-                            </div>
-                          </div>
-                          <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-indigo-600 transition-colors whitespace-nowrap">
-                            Launch referral program
-                            <ArrowRight className="w-4 h-4" />
-                          </span>
-                        </div>
-                      </div>
+                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <Users className="w-5 h-5 text-gray-500" />
                     </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium text-gray-900">Referral champions</span>
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Growth</span>
+                      </div>
+                      <p className="text-sm text-gray-500">
+                        {analysisData?.patient_segments?.referral_champions?.count || 0} patients · {analysisData?.patient_segments?.referral_champions?.conversion_rate || 68}% conversion
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openActionModal(
+                          'referrers',
+                          'Referral champions',
+                          analysisData?.patient_segments?.referral_champions?.count || 0,
+                          analysisData?.patient_segments?.referral_champions?.patients || [],
+                          'referral-program',
+                          'Launch referral program'
+                        );
+                      }}
+                      className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                    >
+                      Activate
+                    </button>
                   </div>
 
                   {/* 5. Cross-sell / Bundle opportunity */}
@@ -1261,39 +1291,44 @@ ${clinicName} Team`
                           }
                         );
                       }}
-                      className="group bg-white border border-gray-200 bg-purple-50/30 rounded-lg overflow-hidden hover:shadow-md transition-all cursor-pointer"
+                      className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
                     >
-                      <div className="flex">
-                        <div className="w-1 bg-purple-400"></div>
-                        <div className="flex-1 p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <span className="text-[11px] font-semibold text-purple-600 uppercase tracking-wide">
-                                {analysisData.service_analysis.primary_opportunity.type === 'bundle' ? 'Bundle opportunity' : 'Upsell opportunity'}
-                              </span>
-                              <h3 className="font-semibold text-gray-900 mt-1 mb-1">
-                                {analysisData.service_analysis.primary_opportunity.title}
-                              </h3>
-                              <p className="text-sm text-gray-500 mb-2">
-                                {analysisData.service_analysis.primary_opportunity.description}
-                              </p>
-                              <div className="flex items-center gap-2 text-sm">
-                                <span className="font-semibold text-gray-900">
-                                  ${analysisData.service_analysis.primary_opportunity.potential_revenue?.toLocaleString()} potential
-                                </span>
-                                <span className="text-gray-300">·</span>
-                                <span className="text-gray-400">
-                                  {analysisData.service_analysis.primary_opportunity.patient_count} patients
-                                </span>
-                              </div>
-                            </div>
-                            <span className="flex items-center gap-1 text-sm font-medium text-gray-400 group-hover:text-purple-600 transition-colors whitespace-nowrap">
-                              {analysisData.service_analysis.primary_opportunity.cta}
-                              <ArrowRight className="w-4 h-4" />
-                            </span>
-                          </div>
-                        </div>
+                      <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                        <Target className="w-5 h-5 text-gray-500" />
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-gray-900">
+                            {analysisData.service_analysis.primary_opportunity.title}
+                          </span>
+                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                            {analysisData.service_analysis.primary_opportunity.type === 'bundle' ? 'Bundle' : 'Upsell'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-500">
+                          {analysisData.service_analysis.primary_opportunity.patient_count} patients · ${analysisData.service_analysis.primary_opportunity.potential_revenue?.toLocaleString()} potential
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openActionModal(
+                            'cross-sell',
+                            analysisData.service_analysis.primary_opportunity.title,
+                            analysisData.service_analysis.primary_opportunity.patient_count,
+                            analysisData.service_analysis.primary_opportunity.patients || [],
+                            'bundle',
+                            analysisData.service_analysis.primary_opportunity.cta,
+                            {
+                              newService: analysisData.service_analysis.primary_opportunity.category || 'skincare',
+                              currentService: 'injectable treatments'
+                            }
+                          );
+                        }}
+                        className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                      >
+                        {analysisData.service_analysis.primary_opportunity.cta.split(' ').slice(0, 2).join(' ')}
+                      </button>
                     </div>
                   )}
 
