@@ -1,61 +1,70 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { X, TrendingUp, BarChart3, Zap, Calendar, AlertTriangle, Lightbulb } from 'lucide-react';
 import { bannerTypes, Insight } from './bannerTypes';
 
 interface InsightBannerProps {
   insight: Insight;
-  onDismiss: () => void;
+  onDismiss?: () => void;
   onAction?: () => void;
+  className?: string;
 }
 
-export function InsightBanner({ insight, onDismiss, onAction }: InsightBannerProps) {
-  const colors = bannerTypes[insight.type];
+const ICON_MAP = {
+  campaign_success: TrendingUp,
+  benchmark: BarChart3,
+  market_signal: Zap,
+  timing: Calendar,
+  urgent: AlertTriangle,
+  growth: Lightbulb,
+};
+
+export function InsightBanner({ insight, onDismiss, onAction, className = '' }: InsightBannerProps) {
+  const config = bannerTypes[insight.type];
+  const Icon = ICON_MAP[insight.type];
 
   return (
-    <div className={`${colors.bg} text-white rounded-2xl p-5 shadow-lg relative`}>
-      {/* Dismiss button */}
-      <button
-        onClick={onDismiss}
-        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-        aria-label="Dismiss"
-      >
-        <X className="w-4 h-4" />
-      </button>
+    <div className={`${config.bgColor} border ${config.borderColor} rounded-xl p-4 relative ${className}`}>
+      {onDismiss && (
+        <button
+          onClick={onDismiss}
+          className={`absolute top-3 right-3 ${config.subtextColor} hover:${config.headlineColor} transition-colors`}
+          aria-label="Dismiss"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
 
-      <div className="flex items-center justify-between pr-10">
-        {/* Left: Text content */}
-        <div className="flex-1">
-          <p className={`text-sm font-medium ${colors.eyebrowColor} mb-1`}>
-            {insight.eyebrow}
-          </p>
-          <h3 className="text-2xl font-extrabold mb-1">
-            {insight.headline}
-          </h3>
-          <p className={`text-sm ${colors.subtextColor}`}>
-            {insight.subtext}
-          </p>
+      <div className="flex items-center justify-between pr-6">
+        <div className="flex items-center gap-3 flex-1">
+          <div className={`w-10 h-10 ${config.iconBg} rounded-full flex items-center justify-center flex-shrink-0`}>
+            <Icon className={`w-5 h-5 ${config.iconColor}`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-xs font-semibold uppercase tracking-wider ${config.labelColor} mb-0.5`}>
+              {config.label}
+            </p>
+            <p className={`font-semibold ${config.headlineColor}`}>{insight.headline}</p>
+            <p className={`text-sm ${config.subtextColor}`}>{insight.subtext}</p>
+          </div>
         </div>
 
-        {/* Right: Optional stat or button */}
-        <div className="flex items-center gap-4">
-          {insight.stat && insight.statLabel && (
-            <div className="text-right mr-4">
-              <div className="text-4xl font-extrabold">
-                {insight.stat}
-              </div>
-              <div className={`text-xs ${colors.subtextColor} mt-1`}>
-                {insight.statLabel}
-              </div>
+        <div className="flex items-center gap-4 flex-shrink-0">
+          {insight.metric && (
+            <div className="text-right">
+              <p className={`text-2xl font-bold ${config.iconColor}`}>{insight.metric}</p>
+              {insight.metricLabel && <p className={`text-xs ${config.subtextColor}`}>{insight.metricLabel}</p>}
             </div>
           )}
 
-          <button
-            onClick={onAction}
-            className={`px-4 py-2 ${colors.buttonBg} ${colors.buttonText} text-sm font-semibold rounded-lg ${colors.buttonHover} transition-colors flex-shrink-0`}
-          >
-            {insight.buttonText}
-          </button>
+          {onAction && insight.buttonText && (
+            <button
+              onClick={onAction}
+              className={`px-4 py-2 ${config.buttonBg} ${config.buttonHover} text-white text-sm font-medium rounded-lg transition-colors`}
+            >
+              {insight.buttonText}
+            </button>
+          )}
         </div>
       </div>
     </div>

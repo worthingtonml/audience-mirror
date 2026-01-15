@@ -20,7 +20,7 @@ import { useState, useEffect, useRef} from 'react';
 import { useRouter } from 'next/navigation';
 import { SMSSendModal } from './sms-send-modal';
 import { CampaignWorkflowModal } from './campaign-workflow-modal';
-import { InsightBanner, InsightBannerCollapsed, Insight } from './InsightBanner';
+import { InsightBanner, Insight } from './InsightBanner';
 import { DISC_TYPES } from '@/lib/industryConfig';
 
 
@@ -544,8 +544,7 @@ export default function PatientInsights() {
       if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered > 0) {
         return {
           id: 'success',
-          type: 'success',
-          eyebrow: "This month's results",
+          type: 'campaign_success',
           headline: `$${Math.round(outreachSummary.revenue_recovered).toLocaleString()} recovered`,
           subtext: `${outreachSummary.returned_count} patients returned after outreach`,
           buttonText: 'View details',
@@ -561,12 +560,11 @@ export default function PatientInsights() {
           return {
             id: 'benchmark',
             type: 'benchmark',
-            eyebrow: 'Based on similar practices',
             headline: 'Your retention is above average',
             subtext: `${retentionRate}% vs. 12% industry median`,
             buttonText: 'Learn more',
-            stat: `${retentionRate}%`,
-            statLabel: '12-month retention',
+            metric: `${retentionRate}%`,
+            metricLabel: '12-month retention',
           };
         }
       }
@@ -576,8 +574,7 @@ export default function PatientInsights() {
         const opp = analysisData.service_analysis.primary_opportunity;
         return {
           id: 'cross-sell',
-          type: 'trend',
-          eyebrow: 'Opportunity identified',
+          type: 'growth',
           headline: opp.title,
           subtext: `${opp.patient_count} patients · $${opp.potential_revenue?.toLocaleString()} potential`,
           buttonText: 'View patients',
@@ -675,11 +672,6 @@ export default function PatientInsights() {
   const handleInsightDismiss = () => {
     setInsightBannerDismissed(true);
     localStorage.setItem('insight-banner-dismissed', 'true');
-  };
-
-  const handleInsightExpand = () => {
-    setInsightBannerDismissed(false);
-    localStorage.setItem('insight-banner-dismissed', 'false');
   };
 
   const handleInsightAction = () => {
@@ -1197,26 +1189,6 @@ ${clinicName} Team`
           </section>
 
           {/* ================================================================ */}
-          {/* INSIGHT BANNER                                                */}
-          {/* ================================================================ */}
-          {!isMortgage && currentInsight && (
-            <div className="mb-4">
-              {!insightBannerDismissed ? (
-                <InsightBanner
-                  insight={currentInsight}
-                  onDismiss={handleInsightDismiss}
-                  onAction={handleInsightAction}
-                />
-              ) : (
-                <InsightBannerCollapsed
-                  count={1}
-                  onExpand={handleInsightExpand}
-                />
-              )}
-            </div>
-          )}
-
-          {/* ================================================================ */}
           {/* MEDSPA: DECISION QUEUE SECTION                                */}
           {/* Clean, calm aesthetic matching landing page                   */}
           {/* ================================================================ */}
@@ -1229,6 +1201,17 @@ ${clinicName} Team`
                   <h2 className="font-semibold text-gray-900">What to do now</h2>
                   <p className="text-sm text-gray-500">Prioritized by impact</p>
                 </div>
+
+                {/* Insight Banner */}
+                {currentInsight && !insightBannerDismissed && (
+                  <div className="mb-4">
+                    <InsightBanner
+                      insight={currentInsight}
+                      onDismiss={handleInsightDismiss}
+                      onAction={handleInsightAction}
+                    />
+                  </div>
+                )}
 
                 <div className="space-y-3">
                   
