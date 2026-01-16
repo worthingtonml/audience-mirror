@@ -1214,58 +1214,88 @@ ${clinicName} Team`
       >
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
           {/* PATIENT HEALTH CHECK HERO */}
-          <section className="bg-white rounded-2xl p-6 md:p-8 shadow-sm border border-gray-200">
-            
-            {/* Header row */}
-            <div className="flex items-start justify-between mb-2">
-              <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-indigo-600 mb-1">Patient Health Check</div>
-                <h2 className="text-2xl font-bold text-gray-900">{patientCount} patients analyzed</h2>
+          <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            {/* Gradient accent bar */}
+            <div className="h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500" />
+
+            {/* Inner padding */}
+            <div className="p-8">
+              {/* Header */}
+              <div className="flex items-start justify-between mb-6">
+                <div>
+                  <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">
+                    Patient Health Check
+                  </p>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {patientCount} patients analyzed
+                  </h2>
+                </div>
+                <button
+                  onClick={() => {/* export handler */}}
+                  className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Download className="w-4 h-4" />
+                  Export
+                </button>
               </div>
-              <button 
-                onClick={() => {/* export handler */}}
-                className="px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2"
-              >
-                <Download className="w-4 h-4" />
-                Export
-              </button>
-            </div>
-            
-            {/* Metrics row - inline, clean */}
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600 mb-6">
-              <span><span className="font-medium text-gray-900">${(totalRevenue / 1000).toFixed(0)}K</span> revenue</span>
-              <span className="text-gray-300">·</span>
-              <span><span className="font-medium text-gray-900">${Math.round(totalRevenue / patientCount)}</span> avg LTV</span>
-              <span className="text-gray-300">·</span>
-              <span><span className="font-medium text-gray-900">{(analysisData?.behavior_patterns?.avg_visits_per_patient || 2.1).toFixed(1)}×</span> visits/yr</span>
-              <span className="text-gray-300">·</span>
-              <span><span className="font-medium text-red-600">{churnData?.at_risk_percent || 0}%</span> churn</span>
-            </div>
-            
-            {/* Key Insight */}
-            <div className="border-l-4 border-indigo-500 bg-gray-50 rounded-r-lg p-4 mb-6">
-              <p className="text-sm text-gray-700 leading-relaxed">
-                <span className="font-semibold text-gray-900">The picture:</span>{' '}
-                Your {analysisData?.patient_segments?.high_frequency?.count || 0} VIPs prove patients <em>can</em> become loyal — they visit 4×+ and spend 3× more. 
-                But {churnData?.at_risk_percent || 0}% churn means most leave after 2 visits, before they're profitable at ${Math.round(totalRevenue / patientCount)} LTV. 
-                Good news: {analysisData?.patient_segments?.referral_champions?.count || 0} patients already refer friends. 
+
+              {/* Stats row */}
+              <div className="flex items-center gap-6 pb-6 mb-6 border-b border-gray-100">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-gray-900">${(totalRevenue / 1000).toFixed(0)}K</span>
+                  <span className="text-gray-400 text-sm">revenue</span>
+                </div>
+                <div className="w-px h-6 bg-gray-200" />
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-gray-900">${Math.round(totalRevenue / patientCount)}</span>
+                  <span className="text-gray-400 text-sm">avg LTV</span>
+                </div>
+                <div className="w-px h-6 bg-gray-200" />
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-gray-900">{(analysisData?.behavior_patterns?.avg_visits_per_patient || 2.1).toFixed(1)}×</span>
+                  <span className="text-gray-400 text-sm">visits/yr</span>
+                </div>
+                <div className="w-px h-6 bg-gray-200" />
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-rose-500">{churnData?.at_risk_percent || 0}%</span>
+                  <span className="text-gray-400 text-sm">churn</span>
+                </div>
+              </div>
+
+              {/* Narrative (no blue left border) */}
+              <p className="text-gray-600 leading-relaxed mb-5">
+                <span className="text-gray-900 font-semibold">The picture:</span>{' '}
+                Your {analysisData?.patient_segments?.high_frequency?.count || 0} VIPs prove patients <em>can</em> become loyal — they visit 4×+ and spend 3× more.
+                But {churnData?.at_risk_percent || 0}% churn means most leave after 2 visits, before they're profitable at ${Math.round(totalRevenue / patientCount)} LTV.
+                Good news: {analysisData?.patient_segments?.referral_champions?.count || 0} patients already refer friends.
                 Fix retention and that word-of-mouth compounds instead of leaking. The actions below are sorted by impact.
               </p>
-            </div>
-            
-            {/* Top services */}
-            <div className="flex items-center gap-2 text-sm">
-              <span className="text-gray-500">Top services:</span>
-              {analysisData?.service_analysis?.top_services?.slice(0, 2).map((service: string, idx: number) => (
-                <span key={idx} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">{service}</span>
-              )) || (
-              <>
-                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Botox</span>
-                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-xs font-medium">Filler</span>
-              </>
-            )}
-              <span className="text-gray-300 mx-1">·</span>
-              <span className="text-orange-600 font-medium">No skincare uptake</span>
+
+              {/* Services with separate Opportunity label */}
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                {/* Top Services - Green (strengths) */}
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 text-sm">Top services:</span>
+                  {analysisData?.service_analysis?.top_services?.slice(0, 2).map((service: string, idx: number) => (
+                    <span key={idx} className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">
+                      {service}
+                    </span>
+                  )) || (
+                    <>
+                      <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">Botox</span>
+                      <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">Filler</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Opportunity - Amber (room to grow) */}
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-400 text-sm">Opportunity:</span>
+                  <span className="px-3 py-1 bg-amber-50 text-amber-600 text-sm font-medium rounded-full border border-amber-200">
+                    No skincare uptake
+                  </span>
+                </div>
+              </div>
             </div>
           </section>
 
