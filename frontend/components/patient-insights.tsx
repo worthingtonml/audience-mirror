@@ -20,7 +20,7 @@ import { useState, useEffect, useRef} from 'react';
 import { useRouter } from 'next/navigation';
 import { SMSSendModal } from './sms-send-modal';
 import { CampaignWorkflowModal } from './campaign-workflow-modal';
-import { InsightBanner, Insight } from './InsightBanner';
+import { useInsight } from './insights/InsightProvider';
 import { DISC_TYPES } from '@/lib/industryConfig';
 
 
@@ -197,6 +197,7 @@ function generateStrengthCopy(analysisData: any, isRealEstate: boolean = false):
 
 export default function PatientInsights() {
   const router = useRouter();
+  const { showInsight } = useInsight();
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [smsCampaigns, setSmsCampaigns] = useState<any[]>([]);
@@ -250,10 +251,6 @@ export default function PatientInsights() {
   const [selectedReferrers, setSelectedReferrers] = useState<Set<string>>(new Set());
   const [selectedOneDone, setSelectedOneDone] = useState<Set<string>>(new Set());
   const [selectedLapsed, setSelectedLapsed] = useState<Set<string>>(new Set());
-
-  // Insight banner state
-  const [insightBannerDismissed, setInsightBannerDismissed] = useState(false);
-  const [currentInsight, setCurrentInsight] = useState<Insight | null>(null);
 
   // Retention action modal state
   const [showActionModal, setShowActionModal] = useState(false);
@@ -535,70 +532,62 @@ export default function PatientInsights() {
   useEffect(() => {
     if (!analysisData || isMortgage) return;
 
-    const STORAGE_KEY = 'insight-banner-dismissed';
-    const LAST_INSIGHT_KEY = 'last-insight-type';
-
-    // Generate insight based on data
-    const generateInsight = (): Insight | null => {
-      // Check for success (recovered revenue)
-      if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered > 0) {
-        return {
-          id: 'success',
-          type: 'campaign_success',
-          headline: `$${Math.round(outreachSummary.revenue_recovered).toLocaleString()} recovered`,
-          subtext: `${outreachSummary.returned_count} patients returned after outreach`,
-          buttonText: 'View details',
-        };
-      }
-
-      // Check for benchmark data
+    // Generate and show insights using new system
+    // Check for big wins/milestones first (high priority - Welcome Moment)
+    if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered >= 5000) {
+      showInsight({
+        id: `monthly_win_${new Date().getMonth()}_${new Date().getFullYear()}`,
+        priority: 'high',
+        type: 'big_win',
+        headline: 'Campaign Win',
+        metric: `$${Math.round(outreachSummary.revenue_recovered).toLocaleString()}`,
+        metricLabel: 'recovered',
+        subtext: `${outreachSummary.returned_count} patients came back`,
+      });
+    }
+    // Regular wins (normal priority - Command Bar)
+    else if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered > 0) {
+      showInsight({
+        id: `campaign_win_${new Date().getMonth()}_${new Date().getFullYear()}`,
+        priority: 'normal',
+        type: 'campaign_win',
+        headline: `$${Math.round(outreachSummary.revenue_recovered).toLocaleString()} recovered this month`,
+        subtext: `${outreachSummary.returned_count} patients returned after outreach`,
+        cta: 'See details',
+        onAction: () => router.push('/performance'),
+      });
+    }
+    // Benchmark insights
+    else {
       const totalPatients = analysisData.patient_count || 0;
       const highFreqCount = analysisData.patient_segments?.high_frequency?.count || 0;
       if (totalPatients > 0 && highFreqCount > 0) {
         const retentionRate = Math.round((highFreqCount / totalPatients) * 100);
         if (retentionRate >= 15) {
-          return {
-            id: 'benchmark',
+          showInsight({
+            id: `benchmark_${new Date().getMonth()}`,
+            priority: 'normal',
             type: 'benchmark',
             headline: 'Your retention is above average',
             subtext: `${retentionRate}% vs. 12% industry median`,
-            buttonText: 'Learn more',
             metric: `${retentionRate}%`,
-            metricLabel: '12-month retention',
-          };
+          });
         }
       }
-
-      // Check for cross-sell opportunity
-      if (analysisData.service_analysis?.primary_opportunity) {
+      // Cross-sell opportunity
+      else if (analysisData.service_analysis?.primary_opportunity) {
         const opp = analysisData.service_analysis.primary_opportunity;
-        return {
-          id: 'cross-sell',
-          type: 'growth',
+        showInsight({
+          id: `cross_sell_${opp.title}`,
+          priority: 'normal',
+          type: 'market_signal',
           headline: opp.title,
           subtext: `${opp.patient_count} patients · $${opp.potential_revenue?.toLocaleString()} potential`,
-          buttonText: 'View patients',
-        };
-      }
-
-      return null;
-    };
-
-    const insight = generateInsight();
-    if (insight) {
-      setCurrentInsight(insight);
-
-      // Check if this insight type was previously dismissed
-      const lastSeenType = localStorage.getItem(LAST_INSIGHT_KEY);
-      if (insight.type !== lastSeenType) {
-        setInsightBannerDismissed(false);
-        localStorage.setItem(LAST_INSIGHT_KEY, insight.type);
-      } else {
-        const dismissed = localStorage.getItem(STORAGE_KEY) === 'true';
-        setInsightBannerDismissed(dismissed);
+          cta: 'View patients',
+        });
       }
     }
-  }, [analysisData, outreachSummary, isMortgage]);
+  }, [analysisData, outreachSummary, isMortgage, showInsight, router]);
 
   const toggleZip = (zip: string) => {
     setSelectedZips((prev) => ({ ...prev, [zip]: !prev[zip] }));
@@ -666,36 +655,6 @@ export default function PatientInsights() {
     router.push(
       `/campaign-generator?segmentId=${currentRunId}&zip=${selected.join(',')}&procedure=${procedureParam}&vertical=${vertical}`
     );
-  };
-
-  // Insight banner handlers
-  const handleInsightDismiss = () => {
-    setInsightBannerDismissed(true);
-    localStorage.setItem('insight-banner-dismissed', 'true');
-  };
-
-  const handleInsightAction = () => {
-    if (!currentInsight) return;
-
-    // Handle different insight actions based on type
-    if (currentInsight.id === 'cross-sell' && analysisData?.service_analysis?.primary_opportunity) {
-      openActionModal(
-        'cross-sell',
-        analysisData.service_analysis.primary_opportunity.title,
-        analysisData.service_analysis.primary_opportunity.patient_count,
-        analysisData.service_analysis.primary_opportunity.patients || [],
-        'bundle',
-        analysisData.service_analysis.primary_opportunity.cta,
-        {
-          newService: analysisData.service_analysis.primary_opportunity.category || 'skincare',
-          currentService: 'injectable treatments'
-        }
-      );
-    } else if (currentInsight.id === 'success') {
-      // Scroll to outreach summary or performance page
-      router.push('/performance');
-    }
-    // Add other action handlers as needed
   };
 
   // ================================================================
@@ -1201,17 +1160,6 @@ ${clinicName} Team`
                   <h2 className="font-semibold text-gray-900">What to do now</h2>
                   <p className="text-sm text-gray-500">Prioritized by impact</p>
                 </div>
-
-                {/* Insight Banner */}
-                {currentInsight && !insightBannerDismissed && (
-                  <div className="mb-4">
-                    <InsightBanner
-                      insight={currentInsight}
-                      onDismiss={handleInsightDismiss}
-                      onAction={handleInsightAction}
-                    />
-                  </div>
-                )}
 
                 <div className="space-y-3">
                   
