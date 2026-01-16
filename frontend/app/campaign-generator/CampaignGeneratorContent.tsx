@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react'; 
-import { ArrowLeft, Copy, Check, Facebook, Instagram, Search, Target, Lightbulb, TrendingUp, FileText, AlertCircle, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Copy, Check, Facebook, Instagram, Search, Target, Lightbulb, TrendingUp, FileText, AlertCircle, ChevronDown, Info, Crown } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
@@ -11,6 +11,7 @@ export function CampaignGeneratorContent() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [campaignData, setCampaignData] = useState<any>(null);
+  const [vipData, setVipData] = useState<any>(null);
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'ads' | 'messages'>('ads');
   const [instagramAdCopy, setInstagramAdCopy] = useState<any>(null);
@@ -108,7 +109,19 @@ export function CampaignGeneratorContent() {
             setGoogleAdCopy(googleAd);
             console.log('[Google AI]', googleAd);
           });
-          
+
+          // Fetch VIP data from patient-intel API
+          const uploadId = localStorage.getItem('uploadId');
+          if (uploadId) {
+            fetch(`${API_URL}/api/v1/patient-intel/${uploadId}`)
+              .then(res => res.json())
+              .then(intelData => {
+                console.log('[VIP Data]', intelData);
+                setVipData(intelData);
+              })
+              .catch(err => console.error('[VIP Data Error]', err));
+          }
+
         }
         setLoading(false);
       })
@@ -299,36 +312,46 @@ export function CampaignGeneratorContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-4xl mx-auto px-6 py-12">
-        
-        {/* Header */}
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="text-sm font-medium">Back to insights</span>
-        </button>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-6xl mx-auto px-6 py-8">
 
-        <h1 className="text-2xl font-semibold text-slate-900 mb-2">Your Data-Driven Campaign</h1>
-        <p className="text-slate-600 mb-8">
-          {campaignData.overview.totalZips} neighborhoods • {campaignData.overview.procedure} • {campaignData.overview.profileType}
-        </p>
+        {/* Header */}
+        <div className="py-6 flex items-start justify-between gap-4 mb-6">
+          {/* Left side - Title */}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Find New Patients</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-gray-500 text-sm">
+                {campaignData.overview.totalZips} neighborhoods • {campaignData.overview.procedure}
+              </span>
+              <span className="text-gray-300">•</span>
+              <span className="text-gray-500 text-sm">{campaignData.overview.profileType}</span>
+            </div>
+          </div>
+
+          {/* Right side - Back button */}
+          <button
+            onClick={() => router.push('/patient-insights')}
+            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+          >
+            <ArrowLeft className="h-4 w-4 inline mr-2" />
+            Back to insights
+          </button>
+        </div>
 
         {/* Data Quality Indicator - Subtle */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <div className="text-sm font-medium text-slate-900">Campaign Personalization</div>
-              <div className="text-xs text-slate-500">
+              <div className="text-sm font-medium text-gray-900">Campaign Personalization</div>
+              <div className="text-xs text-gray-500">
                 {Object.values(campaignData.dataQuality).filter((d: any) => d.isReal).length}/
                 {Object.values(campaignData.dataQuality).length} metrics from your data
               </div>
             </div>
-            <button 
+            <button
               onClick={() => setShowDataQuality(!showDataQuality)}
-              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+              className="text-xs text-gray-600 hover:text-gray-900 font-medium"
             >
               {showDataQuality ? 'Hide details' : 'Show details'}
             </button>
@@ -405,32 +428,48 @@ export function CampaignGeneratorContent() {
         {activeTab === 'ads' && (
   <>
    {/* The Opportunity - Outcome first */}
-<div className="bg-white rounded-xl border border-slate-200 p-6 mb-6 shadow-sm">
-  <div className="flex items-start justify-between">
-    <div>
-      <div className="text-sm text-slate-500 mb-1">Projected Monthly Revenue</div>
-      <div className="text-4xl font-bold text-slate-900">$41K</div>
-      <div className="text-sm text-slate-600 mt-2">from 10 new patients</div>
-    </div>
-    <div className="text-right">
-      <div className="text-sm text-slate-500 mb-1">Ad Spend</div>
-      <div className="text-2xl font-bold text-slate-700">$4.4K</div>
-      <div className="inline-block mt-2 px-2 py-1 bg-emerald-50 text-emerald-700 text-sm font-semibold rounded">
-        9.3× return
+<div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+  {/* Gradient accent bar */}
+  <div className="h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500" />
+
+  <div className="p-8">
+    <div className="flex items-start justify-between mb-6">
+      <div>
+        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">
+          Projected Monthly Revenue
+        </p>
+        <h2 className="text-4xl font-bold text-gray-900">
+          ${(campaignData.overview.expectedRevenue / 1000).toFixed(0)}K
+        </h2>
+        <p className="text-gray-600 text-sm mt-2">
+          from {campaignData.overview.expectedPatients} new patients
+        </p>
+      </div>
+      <div className="text-right">
+        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">
+          Ad Spend
+        </p>
+        <p className="text-2xl font-bold text-gray-900">
+          ${(campaignData.overview.monthlyBudget / 1000).toFixed(1)}K
+        </p>
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 mt-2 bg-emerald-50 text-emerald-700 text-sm font-semibold rounded-full">
+          {campaignData.overview.roas}× return
+        </span>
       </div>
     </div>
-  </div>
-  
-  <p className="mt-5 pt-4 border-t border-slate-100 text-sm text-slate-600">
-    {campaignData.strategy.summary}
-  </p>
-  
-  <button
-    onClick={() => setShowKPIs(!showKPIs)}
-    className="mt-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-  >
-    {showKPIs ? 'Hide details' : 'View detailed KPIs'}
-  </button>
+
+    <div className="pt-6 border-t border-gray-100">
+      <p className="text-gray-600 text-sm">
+        {campaignData.strategy.summary}
+      </p>
+    </div>
+
+    <button
+      onClick={() => setShowKPIs(!showKPIs)}
+      className="mt-4 text-sm text-gray-600 hover:text-gray-900 font-medium"
+    >
+      {showKPIs ? 'Hide details' : 'View detailed KPIs'}
+    </button>
   
 {showKPIs && (
   <div className="mt-4 space-y-4">
@@ -475,9 +514,112 @@ export function CampaignGeneratorContent() {
     </div>
   </div>
 )}
-
-
+  </div>
 </div>
+
+    {/* VIP Section */}
+    {vipData && vipData.summary && (
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+        {/* Gradient accent bar */}
+        <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400" />
+
+        <div className="p-8">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+                  VIP Patients
+                </span>
+                <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-medium rounded-full">
+                  Top 20%
+                </span>
+
+                {/* Info button with tooltip */}
+                <div className="relative group">
+                  <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                    <Info className="w-4 h-4" strokeWidth={1.5} />
+                  </button>
+                  {/* Tooltip */}
+                  <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                    <p className="font-medium mb-1">How VIPs are calculated:</p>
+                    <ul className="text-gray-300 text-xs space-y-1">
+                      <li>• Ranked by lifetime value (total spend)</li>
+                      <li>• Top 20% of patients by revenue</li>
+                      <li>• VIPs generate {vipData.summary.revenueConcentration}% of total revenue</li>
+                      <li>• Avg VIP spends ${Math.round(vipData.summary.avgBestPatientValue).toLocaleString()} vs ${Math.round(vipData.summary.avgOverallValue).toLocaleString()} overall</li>
+                    </ul>
+                    <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
+                  </div>
+                </div>
+              </div>
+              <h3 className="text-xl font-bold text-gray-900">
+                {vipData.summary.bestPatientCount} high-value patients
+              </h3>
+            </div>
+            <button
+              onClick={() => router.push('/patient-insights')}
+              className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              View All VIPs
+            </button>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Total LTV</p>
+              <p className="text-2xl font-bold text-gray-900">
+                ${Math.round((vipData.summary.avgBestPatientValue * vipData.summary.bestPatientCount) / 1000)}K
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Avg LTV</p>
+              <p className="text-2xl font-bold text-gray-900">
+                ${Math.round(vipData.summary.avgBestPatientValue / 1000).toFixed(1)}K
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Avg Visits</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {vipData.behavior_patterns?.avg_visits_per_year ? vipData.behavior_patterns.avg_visits_per_year.toFixed(1) : '2.5'}×/yr
+              </p>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">% of Revenue</p>
+              <p className="text-2xl font-bold text-emerald-600">
+                {vipData.summary.revenueConcentration}%
+              </p>
+            </div>
+          </div>
+
+          {/* VIP Characteristics */}
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-gray-500 text-sm mb-3">What makes them VIPs:</p>
+            <div className="flex flex-wrap gap-2">
+              <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">
+                {(vipData.summary.avgBestPatientValue / vipData.summary.avgOverallValue).toFixed(1)}× more valuable
+              </span>
+              {vipData.behavior_patterns?.avg_visits_per_year && vipData.behavior_patterns.avg_visits_per_year > 2 && (
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">
+                  {vipData.behavior_patterns.avg_visits_per_year.toFixed(1)}× visits/year
+                </span>
+              )}
+              {vipData.summary.revenueConcentration >= 60 && (
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">
+                  Drive {vipData.summary.revenueConcentration}% of revenue
+                </span>
+              )}
+              {vipData.demographics?.avg_age && (
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">
+                  Ages {Math.round(vipData.demographics.avg_age - 5)}-{Math.round(vipData.demographics.avg_age + 5)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
 
     {/* Controls */}
     <div className="flex items-center justify-between mb-4">
@@ -514,7 +656,7 @@ export function CampaignGeneratorContent() {
           setCopiedIndex('export-all');
           setTimeout(() => setCopiedIndex(null), 2000);
         }}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
       >
         {copiedIndex === 'export-all' ? (
           <><Check className="h-4 w-4" />Copied!</>
@@ -525,7 +667,7 @@ export function CampaignGeneratorContent() {
 
       <button
         onClick={() => setShowOptimizationTips(!showOptimizationTips)}
-        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-colors"
       >
         <Lightbulb className="h-4 w-4" />
         {showOptimizationTips ? 'Hide tips' : 'Show tips'}
@@ -535,33 +677,33 @@ export function CampaignGeneratorContent() {
     {/* Platform Cards - Collapsed by default */}
     {campaignData.platforms.map((platform: any) => {
       const isExpanded = expandedPlatforms[platform.name] || false;
-      
+
       return (
-        <div key={platform.name} className="bg-white rounded-xl border border-slate-200 mb-4 shadow-sm overflow-hidden">
+        <div key={platform.name} className="bg-white rounded-xl border border-gray-200 mb-4 shadow-sm overflow-hidden">
           {/* Collapsed Header - Always visible */}
           <button
             onClick={() => setExpandedPlatforms(prev => ({ ...prev, [platform.name]: !isExpanded }))}
-            className="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"
+            className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
           >
             <div className="flex items-center gap-3">
               {platform.icon}
               <div className="text-left">
-                <div className="font-semibold text-slate-900">{platform.name}</div>
-                <div className="text-sm text-slate-600">{platform.strategyTitle}</div>
+                <div className="font-semibold text-gray-900">{platform.name}</div>
+                <div className="text-sm text-gray-600">{platform.strategyTitle}</div>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-right">
-                <div className="text-xl font-bold text-slate-900">{platform.allocationPct}%</div>
-                <div className="text-xs text-slate-500">${(platform.budget / 1000).toFixed(1)}K/mo</div>
+                <div className="text-xl font-bold text-gray-900">{platform.allocationPct}%</div>
+                <div className="text-xs text-gray-500">${(platform.budget / 1000).toFixed(1)}K/mo</div>
               </div>
-              <ChevronDown className={`h-5 w-5 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
             </div>
           </button>
 
           {/* Expanded Content */}
           {isExpanded && (
-            <div className="px-4 pb-4 border-t border-slate-100">
+            <div className="px-4 pb-4 border-t border-gray-100">
               {/* Strategy Description */}
               <div className={`rounded-lg p-4 my-4 ${
                 platform.name === 'Facebook Ads' ? 'bg-blue-50 border border-blue-100' :
@@ -606,10 +748,10 @@ export function CampaignGeneratorContent() {
                   : null;
 
                 return (
-                  <div key={index} className="border border-slate-200 rounded-lg p-4 mt-4">
+                  <div key={index} className="border border-gray-200 rounded-lg p-4 mt-4">
                     <div className="flex items-start justify-between mb-3">
-                      <div className="text-sm text-slate-600">{ad.demographics}</div>
-                      <div className="text-sm font-semibold text-slate-900">${ad.dailyBudget}/day</div>
+                      <div className="text-sm text-gray-600">{ad.demographics}</div>
+                      <div className="text-sm font-semibold text-gray-900">${ad.dailyBudget}/day</div>
                     </div>
 
                     {/* Optimization Tip */}
@@ -657,7 +799,7 @@ export function CampaignGeneratorContent() {
                         `Platform: ${platform.name}\nAudience: ${ad.demographics}\nHeadline: ${googleHeadlines ? googleHeadlines.join(' | ') : ad.headline}\nCopy: ${googleDescriptions ? googleDescriptions.join(' ') : (isInstagram && instagramAdCopy?.caption ? instagramAdCopy.caption : ad.copy)}\nBudget: $${ad.dailyBudget}/day`,
                         `${platform.name}-${index}`
                       )}
-                      className="flex items-center gap-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors mt-4"
+                      className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors mt-4"
                     >
                       {copiedIndex === `${platform.name}-${index}` ? (
                         <><Check className="h-4 w-4" />Copied!</>
@@ -679,7 +821,7 @@ export function CampaignGeneratorContent() {
         {activeTab === 'messages' && (
           <div className="space-y-6">
             {/* AI Email Sequence Generator */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="p-6 border-b border-slate-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -698,7 +840,7 @@ export function CampaignGeneratorContent() {
                     <select
                       value={emailSequenceType}
                       onChange={(e) => setEmailSequenceType(e.target.value)}
-                      className="text-sm border border-slate-300 rounded-lg px-3 py-2"
+                      className="text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900"
                     >
                       <option value="nurture">New Lead Nurture</option>
                       <option value="reactivation">Win-Back / Reactivation</option>
@@ -708,7 +850,7 @@ export function CampaignGeneratorContent() {
                     <button
                       onClick={() => generateEmailSequence(emailSequenceType)}
                       disabled={emailLoading}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50"
                     >
                       {emailLoading ? (
                         <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> Generating...</>
@@ -777,7 +919,7 @@ export function CampaignGeneratorContent() {
             </div>
 
             {/* AI SMS Generator */}
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
               <div className="p-6 border-b border-slate-100">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -796,7 +938,7 @@ export function CampaignGeneratorContent() {
                     <select
                       value={smsType}
                       onChange={(e) => setSmsType(e.target.value)}
-                      className="text-sm border border-slate-300 rounded-lg px-3 py-2"
+                      className="text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900"
                     >
                       <option value="reactivation">Win-Back / Reactivation</option>
                       <option value="appointment_reminder">Appointment Reminder</option>
@@ -807,7 +949,7 @@ export function CampaignGeneratorContent() {
                     <button
                       onClick={() => generateSmsMessages(smsType)}
                       disabled={smsLoading}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50"
                     >
                       {smsLoading ? (
                         <><div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" /> Generating...</>
@@ -871,7 +1013,7 @@ export function CampaignGeneratorContent() {
           <div className="mt-8 text-center">
             <button
               onClick={() => router.push('/patient-insights')}
-              className="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+              className="px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 transition-colors"
             >
               ← Back to Patient Insights
             </button>
