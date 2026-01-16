@@ -197,7 +197,7 @@ function generateStrengthCopy(analysisData: any, isRealEstate: boolean = false):
 
 export default function PatientInsights() {
   const router = useRouter();
-  const { showInsight, showWelcome } = useInsight();
+  const { showInsight } = useInsight();
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [smsCampaigns, setSmsCampaigns] = useState<any[]>([]);
@@ -580,9 +580,9 @@ export default function PatientInsights() {
       return;
     }
 
-    // 4. MILESTONE: Big revenue wins (Welcome Moment)
+    // 4. MILESTONE: Big revenue wins (Side Box, not full-screen)
     if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered >= 5000) {
-      showWelcome({
+      showInsight({
         id: `milestone_${new Date().getMonth()}_${new Date().getFullYear()}`,
         type: 'milestone',
         metric: `$${Math.round(outreachSummary.revenue_recovered).toLocaleString()}`,
@@ -622,7 +622,7 @@ export default function PatientInsights() {
         });
       }
     }
-  }, [analysisData, outreachSummary, isMortgage, showInsight, showWelcome, router]);
+  }, [analysisData, outreachSummary, isMortgage, showInsight, router]);
 
   // Dev toggle: Ctrl+Shift+I to test random insights
   useEffect(() => {
@@ -701,12 +701,8 @@ export default function PatientInsights() {
         // Pick random insight
         const randomInsight = testInsights[Math.floor(Math.random() * testInsights.length)];
 
-        // Show as welcome moment if milestone, otherwise regular insight
-        if (randomInsight.type === 'milestone') {
-          showWelcome(randomInsight);
-        } else {
-          showInsight(randomInsight);
-        }
+        // All insights use showInsight (including milestones)
+        showInsight(randomInsight);
 
         console.log('🎯 Dev insight triggered:', randomInsight.type);
       }
@@ -714,7 +710,7 @@ export default function PatientInsights() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showInsight, showWelcome]);
+  }, [showInsight]);
 
   const toggleZip = (zip: string) => {
     setSelectedZips((prev) => ({ ...prev, [zip]: !prev[zip] }));

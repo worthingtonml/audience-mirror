@@ -4,12 +4,10 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 import { Insight, KeyInsight, ActionableInsight, isKeyInsight, isActionableInsight } from './types';
 import { SideBox } from './SideBox';
 import { HorizontalBar } from './HorizontalBar';
-import { WelcomeMoment } from './WelcomeMoment';
 import { InsightCarousel } from './InsightCarousel';
 
 interface InsightContextType {
   showInsight: (insight: Insight) => void;
-  showWelcome: (insight: KeyInsight) => void;
   queueKeyInsight: (insight: KeyInsight) => void;
   dismissAll: () => void;
 }
@@ -47,7 +45,6 @@ const markShown = (id: string) => {
 export const InsightProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [activeKeyInsight, setActiveKeyInsight] = useState<KeyInsight | null>(null);
   const [activeActionable, setActiveActionable] = useState<ActionableInsight | null>(null);
-  const [welcomeInsight, setWelcomeInsight] = useState<KeyInsight | null>(null);
   const [keyInsightQueue, setKeyInsightQueue] = useState<KeyInsight[]>([]);
 
   // Show single insight
@@ -62,13 +59,6 @@ export const InsightProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   }, []);
 
-  // Show welcome moment
-  const showWelcome = useCallback((insight: KeyInsight) => {
-    if (wasRecentlyShown(insight.id)) return;
-    markShown(insight.id);
-    setWelcomeInsight(insight);
-  }, []);
-
   // Queue for carousel
   const queueKeyInsight = useCallback((insight: KeyInsight) => {
     if (wasRecentlyShown(insight.id)) return;
@@ -79,7 +69,6 @@ export const InsightProvider: React.FC<{ children: ReactNode }> = ({ children })
   const dismissAll = useCallback(() => {
     setActiveKeyInsight(null);
     setActiveActionable(null);
-    setWelcomeInsight(null);
     setKeyInsightQueue([]);
   }, []);
 
@@ -87,19 +76,11 @@ export const InsightProvider: React.FC<{ children: ReactNode }> = ({ children })
   const showCarousel = keyInsightQueue.length >= 2;
 
   return (
-    <InsightContext.Provider value={{ showInsight, showWelcome, queueKeyInsight, dismissAll }}>
+    <InsightContext.Provider value={{ showInsight, queueKeyInsight, dismissAll }}>
       {children}
 
-      {/* Welcome Moment - highest priority */}
-      {welcomeInsight && (
-        <WelcomeMoment
-          insight={welcomeInsight}
-          onComplete={() => setWelcomeInsight(null)}
-        />
-      )}
-
       {/* Horizontal Bar - actionable insights */}
-      {activeActionable && !welcomeInsight && (
+      {activeActionable && (
         <HorizontalBar
           insight={activeActionable}
           onDismiss={() => setActiveActionable(null)}
@@ -107,7 +88,7 @@ export const InsightProvider: React.FC<{ children: ReactNode }> = ({ children })
       )}
 
       {/* Side Box or Carousel - key insights */}
-      {!welcomeInsight && !activeActionable && (
+      {!activeActionable && (
         <>
           {showCarousel ? (
             <InsightCarousel
