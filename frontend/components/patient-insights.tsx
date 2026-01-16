@@ -2023,7 +2023,7 @@ ${clinicName} Team`
           )}
           
           {/* ROI TRACKING */}
-          {outreachSummary && outreachSummary.contacted_count > 0 && (
+          {outreachSummary && outreachSummary.contacted_count > 0 && analysisData?.channel_roi && Object.entries(analysisData.channel_roi).filter(([_, data]: [string, any]) => data.leads > 0 || data.funded > 0).length > 0 && (
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
@@ -2033,37 +2033,31 @@ ${clinicName} Team`
                   Channel performance from your data
                 </span>
               </div>
-              
+
               <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E5E7EB]">
-                {analysisData?.channel_roi && Object.entries(analysisData.channel_roi).filter(([_, data]: [string, any]) => data.leads > 0 || data.funded > 0).length > 0 ? (
-                  <div className="space-y-4">
-                    {Object.entries(analysisData.channel_roi).filter(([_, data]: [string, any]) => data.leads > 0 || data.funded > 0).map(([source, data]: [string, any]) => (
-                      <div key={source} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="font-medium text-[#111827] capitalize">{source.replace(/_/g, ' ')}</div>
-                        <div className="flex items-center gap-6">
-                          <div className="text-right min-w-[60px]">
-                            <div className="text-[#6B7280]">Leads</div>
-                            <div className="font-bold text-[#111827]">{data.leads || 0}</div>
-                          </div>
-                          <div className="text-right min-w-[60px]">
-                            <div className="text-[#6B7280]">Funded</div>
-                            <div className="font-bold text-emerald-600">{data.funded || 0}</div>
-                          </div>
-                          <div className="text-right min-w-[60px]">
-                            <div className="text-[#6B7280]">ROI</div>
-                            <div className={`font-bold ${data.roi > 2 ? 'text-emerald-600' : data.roi > 1 ? 'text-amber-600' : 'text-red-600'}`}>
-                              {data.roi ? `${data.roi.toFixed(1)}x` : '—'}
-                            </div>
+                <div className="space-y-4">
+                  {Object.entries(analysisData.channel_roi).filter(([_, data]: [string, any]) => data.leads > 0 || data.funded > 0).map(([source, data]: [string, any]) => (
+                    <div key={source} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                      <div className="font-medium text-[#111827] capitalize">{source.replace(/_/g, ' ')}</div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-right min-w-[60px]">
+                          <div className="text-[#6B7280]">Leads</div>
+                          <div className="font-bold text-[#111827]">{data.leads || 0}</div>
+                        </div>
+                        <div className="text-right min-w-[60px]">
+                          <div className="text-[#6B7280]">Funded</div>
+                          <div className="font-bold text-emerald-600">{data.funded || 0}</div>
+                        </div>
+                        <div className="text-right min-w-[60px]">
+                          <div className="text-[#6B7280]">ROI</div>
+                          <div className={`font-bold ${data.roi > 2 ? 'text-emerald-600' : data.roi > 1 ? 'text-amber-600' : 'text-red-600'}`}>
+                            {data.roi ? `${data.roi.toFixed(1)}x` : '—'}
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-[#6B7280] text-center py-4">
-                    Add a "source" or "lead_source" column to your CSV to see channel breakdown.
-                  </p>
-                )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </section>
           )}
