@@ -475,7 +475,7 @@ export function CampaignGeneratorContent() {
    {/* The Opportunity - Outcome first */}
 <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
   {/* Gradient accent bar */}
-  <div className="h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500" />
+  <div className="h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400" />
 
   <div className="p-8">
     <div className="flex items-start justify-between mb-6">
@@ -562,109 +562,98 @@ export function CampaignGeneratorContent() {
   </div>
 </div>
 
-    {/* VIP Section */}
+    {/* Section Divider */}
+    <div className="flex items-center gap-4 my-8">
+      <div className="flex-1 h-px bg-gray-200" />
+      <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">Your Best Patients</span>
+      <div className="flex-1 h-px bg-gray-200" />
+    </div>
+
+    {/* VIP Analysis Section */}
     {vipData && vipData.summary && (
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-        {/* Gradient accent bar */}
+        {/* Amber gradient accent bar */}
         <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400" />
 
-        <div className="p-8">
+        <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
-                  VIP Patients
+                  VIP Analysis
                 </span>
                 <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-medium rounded-full">
                   Top 20%
                 </span>
 
-                {/* Info button with tooltip */}
+                {/* Info tooltip */}
                 <div className="relative group">
                   <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
-                    <Info className="w-4 h-4" strokeWidth={1.5} />
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                    </svg>
                   </button>
-                  {/* Tooltip */}
                   <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                     <p className="font-medium mb-1">How VIPs are calculated:</p>
                     <ul className="text-gray-300 text-xs space-y-1">
                       <li>• Ranked by lifetime value (total spend)</li>
                       <li>• Top 20% of patients by revenue</li>
-                      <li>• VIPs generate {vipData.summary.revenueConcentration}% of total revenue</li>
-                      <li>• Avg VIP spends ${Math.round(vipData.summary.avgBestPatientValue).toLocaleString()} vs ${Math.round(vipData.summary.avgOverallValue).toLocaleString()} overall</li>
+                      <li>• These patients drive most of your profit</li>
                     </ul>
                     <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
                   </div>
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900">
-                {vipData.summary.bestPatientCount} high-value patients
-              </h3>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {vipData.summary.bestPatientCount} patients drive {vipData.summary.revenueConcentration}% of revenue
+              </h2>
             </div>
             <button
               onClick={() => router.push('/patient-insights')}
-              className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+              className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors"
             >
               View All VIPs
             </button>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-4 gap-4 mb-6">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Total LTV</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${Math.round((vipData.summary.avgBestPatientValue * vipData.summary.bestPatientCount) / 1000)}K
-              </p>
+          {/* Stats Row */}
+          <div className="flex items-center gap-6 pb-6 mb-6 border-b border-gray-100">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-gray-900">{vipData.summary.bestPatientCount}</span>
+              <span className="text-gray-400 text-sm">VIPs</span>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Avg LTV</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${Math.round(vipData.summary.avgBestPatientValue / 1000).toFixed(1)}K
-              </p>
+            <div className="w-px h-6 bg-gray-200" />
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-gray-900">${Math.round(vipData.summary.avgBestPatientValue / 1000).toFixed(1)}K</span>
+              <span className="text-gray-400 text-sm">avg VIP LTV</span>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Avg Visits</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {vipData.behavior_patterns?.avg_visits_per_year ? vipData.behavior_patterns.avg_visits_per_year.toFixed(1) : '2.5'}×/yr
-              </p>
+            <div className="w-px h-6 bg-gray-200" />
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-emerald-600">{(vipData.summary.avgBestPatientValue / vipData.summary.avgOverallValue).toFixed(1)}×</span>
+              <span className="text-gray-400 text-sm">more valuable</span>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">% of Revenue</p>
-              <p className="text-2xl font-bold text-emerald-600">
-                {vipData.summary.revenueConcentration}%
-              </p>
+            <div className="w-px h-6 bg-gray-200" />
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-amber-600">{vipData.summary.revenueConcentration}%</span>
+              <span className="text-gray-400 text-sm">of revenue</span>
             </div>
           </div>
 
-          {/* VIP Characteristics */}
-          <div className="border-t border-gray-100 pt-4">
-            <p className="text-gray-500 text-sm mb-3">What makes them VIPs:</p>
-            <div className="flex flex-wrap gap-2">
-              <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">
-                {(vipData.summary.avgBestPatientValue / vipData.summary.avgOverallValue).toFixed(1)}× more valuable
-              </span>
-              {vipData.behavior_patterns?.avg_visits_per_year && vipData.behavior_patterns.avg_visits_per_year > 2 && (
-                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">
-                  {vipData.behavior_patterns.avg_visits_per_year.toFixed(1)}× visits/year
-                </span>
-              )}
-              {vipData.summary.revenueConcentration >= 60 && (
-                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">
-                  Drive {vipData.summary.revenueConcentration}% of revenue
-                </span>
-              )}
-              {vipData.demographics?.avg_age && (
-                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">
-                  Ages {Math.round(vipData.demographics.avg_age - 5)}-{Math.round(vipData.demographics.avg_age + 5)}
-                </span>
-              )}
-            </div>
-          </div>
+          {/* Key Insight */}
+          <p className="text-gray-600">
+            <span className="text-gray-900 font-semibold">The opportunity:</span> Find 5 more patients like your VIPs and add ${(vipData.summary.avgBestPatientValue * 5).toLocaleString()} in annual revenue.
+          </p>
         </div>
       </div>
     )}
+
+    {/* Section Divider */}
+    <div className="flex items-center gap-4 my-8">
+      <div className="flex-1 h-px bg-gray-200" />
+      <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">Ready-to-Use Campaigns</span>
+      <div className="flex-1 h-px bg-gray-200" />
+    </div>
 
     {/* Controls */}
     <div className="flex items-center justify-between mb-4">
@@ -762,6 +751,110 @@ export function CampaignGeneratorContent() {
                 }`}>
                   {platform.strategyDescription}
                 </p>
+              </div>
+
+              {/* Tactical Guidance */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-4 border border-gray-200">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target className="h-4 w-4 text-gray-700" />
+                  <h4 className="text-sm font-semibold text-gray-900">Tactical Guidance</h4>
+                </div>
+
+                {platform.name === 'Facebook Ads' && (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Campaign Objectives</div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>• <span className="font-medium">Awareness:</span> Reach campaigns with demographic + interest targeting</p>
+                        <p>• <span className="font-medium">Consideration:</span> Engagement + Video Views for educational content</p>
+                        <p>• <span className="font-medium">Conversion:</span> Lead Generation campaigns with instant forms</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Audience Strategy</div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>• <span className="font-medium">Lookalike:</span> Upload your VIP patient list (top 20%) to create 1-3% lookalikes</p>
+                        <p>• <span className="font-medium">Interest:</span> Beauty, wellness, cosmetic procedures, local gyms/spas</p>
+                        <p>• <span className="font-medium">Retargeting:</span> Website visitors (last 30 days), video viewers (50%+)</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Creative Best Practices</div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>• Use carousel ads with before/after transformations (3-5 slides)</p>
+                        <p>• Include patient testimonials as video (15-30 sec)</p>
+                        <p>• CTA: "Book Free Consultation" or "Learn More" (avoid "Shop Now")</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {platform.name === 'Instagram Ads' && (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Ad Formats</div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>• <span className="font-medium">Stories:</span> 9:16 vertical, 15-sec video clips with "Swipe Up" CTA</p>
+                        <p>• <span className="font-medium">Reels:</span> Trending audio + before/after transformations (30 sec max)</p>
+                        <p>• <span className="font-medium">Feed:</span> High-quality images in carousel format (4:5 ratio)</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Content Strategy</div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>• <span className="font-medium">Organic + Paid:</span> Run ads to promote your best-performing organic posts</p>
+                        <p>• <span className="font-medium">Influencer Partnerships:</span> Partner with local micro-influencers (5-50k followers)</p>
+                        <p>• <span className="font-medium">User-Generated Content:</span> Repost patient results with permission</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Engagement Tactics</div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>• Respond to all DMs within 1 hour (use auto-responders for after-hours)</p>
+                        <p>• Run "Ask Me Anything" sessions in Stories monthly</p>
+                        <p>• Use polls and quizzes to boost engagement and algorithm visibility</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {platform.name === 'Google Search' && (
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Campaign Types</div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>• <span className="font-medium">Search Ads:</span> Target high-intent keywords ("{campaignData?.overview?.procedure || 'botox'} near me", "best medspa {city || 'local'}")</p>
+                        <p>• <span className="font-medium">Local Services Ads:</span> Google-guaranteed badge for trust + top placement</p>
+                        <p>• <span className="font-medium">Performance Max:</span> AI-optimized across Search, Display, YouTube, Gmail</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Keyword Strategy</div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>• <span className="font-medium">Exact Match:</span> "[{campaignData?.overview?.procedure || 'botox'}]", "[medspa {city || 'near me'}]"</p>
+                        <p>• <span className="font-medium">Phrase Match:</span> "{campaignData?.overview?.procedure || 'botox'} near me", "best medspa"</p>
+                        <p>• <span className="font-medium">Negative Keywords:</span> -free, -cheap, -DIY, -school, -training</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Landing Page Optimization</div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>• Match ad copy to headline (Quality Score boost)</p>
+                        <p>• Include click-to-call button (mobile-optimized)</p>
+                        <p>• Add booking widget above the fold (reduce friction)</p>
+                        <p>• Display reviews/ratings prominently (social proof)</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Bidding & Budget</div>
+                      <div className="text-sm text-gray-600 space-y-1">
+                        <p>• Start with "Maximize Conversions" (manual CPC after 30 conversions)</p>
+                        <p>• Set location bid adjustments (+20% for high-value ZIP codes)</p>
+                        <p>• Monitor Search Impression Share (aim for 70%+ to dominate local search)</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Ad Details */}
@@ -1167,7 +1260,7 @@ function generateCampaignFromRealData(params: any) {
   const platforms = [
     {
       name: 'Facebook Ads',
-      icon: <Facebook className="h-6 w-6 text-blue-600" />,
+      icon: <Facebook className="h-5 w-5 text-blue-600" />,
       reasoning: `${Math.round(fbPct * 100)}% - ${avgAge ? (avgAge > 40 ? `Ages ${Math.round(avgAge)}+ demographic` : 'Local reach & awareness') : 'Local awareness'}`,
       strategyTitle: avgFrequency > 3 ? 'Facebook: Loyalty & Repeat Visits' : `Facebook: New ${isRealEstate ? 'Client' : 'Patient'} Acquisition`,
       strategyDescription: avgFrequency > 3
@@ -1202,7 +1295,7 @@ function generateCampaignFromRealData(params: any) {
     },
     {
       name: 'Instagram Ads',
-      icon: <Instagram className="h-6 w-6 text-pink-600" />,
+      icon: <Instagram className="h-5 w-5 text-pink-600" />,
       reasoning: `${Math.round(igPct * 100)}% - ${avgAge && avgAge < 35 ? `Ages ${Math.round(avgAge)} (IG core demographic)` : 'Visual proof & awareness'}`,
       strategyTitle: avgAge && avgAge < 35 ? 'Instagram: Your Core Demographic' : 'Instagram: Visual Proof & Brand Building',
       strategyDescription: avgAge && avgAge < 35
@@ -1231,7 +1324,7 @@ function generateCampaignFromRealData(params: any) {
     },
     {
       name: 'Google Search',
-      icon: <Search className="h-6 w-6 text-slate-700" />,
+      icon: <Search className="h-5 w-5 text-slate-700" />,
       reasoning: `${Math.round(googlePct * 100)}% - ${avgCompetition > 3 ? 'High competition requires search dominance' : 'High-intent capture'}`,
       strategyTitle: avgCompetition > 3 ? 'Google: Bottom-Funnel Capture' : 'Google: Low-Cost Conversions',
       strategyDescription: avgCompetition > 3
