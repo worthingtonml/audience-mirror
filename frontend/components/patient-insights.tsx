@@ -532,7 +532,55 @@ export default function PatientInsights() {
   useEffect(() => {
     if (!analysisData || isMortgage) return;
 
-    // Check for milestones/big wins first (Welcome Moment)
+    // Priority order: Urgent > Market Signal > Campaign Win > Milestone
+    // Only show ONE insight at a time based on priority
+
+    // 1. URGENT: VIPs at risk (Horizontal Bar)
+    const vipsAtRisk = analysisData.patient_segments?.lapsed_regulars?.count || 0;
+    const vipRevenueAtRisk = analysisData.patient_segments?.lapsed_regulars?.revenue_at_risk || 0;
+    if (vipsAtRisk > 0 && vipRevenueAtRisk > 0) {
+      showInsight({
+        id: `urgent_vips_${analysisData.upload_id || new Date().getMonth()}`,
+        type: 'urgent',
+        headline: `${vipsAtRisk} VIPs haven't been back in 90+ days`,
+        subtext: `$${vipRevenueAtRisk.toLocaleString()} in annual revenue at risk`,
+        cta: 'Send win-back',
+        anchor: '#decision-queue',
+      });
+      return;
+    }
+
+    // 2. URGENT: High-severity strategic insights (Horizontal Bar)
+    if (analysisData.strategic_insights && analysisData.strategic_insights.length > 0) {
+      const highRiskInsight = analysisData.strategic_insights.find((i: any) => i.severity === 'high');
+      if (highRiskInsight) {
+        showInsight({
+          id: `urgent_risk_${analysisData.upload_id || new Date().getMonth()}`,
+          type: 'urgent',
+          headline: highRiskInsight.title || 'High churn risk detected',
+          subtext: highRiskInsight.description || 'Multiple warning signals detected',
+          cta: 'Review risks',
+          anchor: '#strategic-insights',
+        });
+        return;
+      }
+    }
+
+    // 3. MARKET SIGNAL: Cross-sell opportunity (Horizontal Bar)
+    if (analysisData.service_analysis?.primary_opportunity) {
+      const opp = analysisData.service_analysis.primary_opportunity;
+      showInsight({
+        id: `market_signal_${opp.title}_${analysisData.upload_id || new Date().getMonth()}`,
+        type: 'market_signal',
+        headline: opp.title,
+        subtext: `${opp.patient_count} patients · $${opp.potential_revenue?.toLocaleString()} potential`,
+        cta: 'View patients',
+        anchor: '#cross-sell-section',
+      });
+      return;
+    }
+
+    // 4. MILESTONE: Big revenue wins (Welcome Moment)
     if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered >= 5000) {
       showWelcome({
         id: `milestone_${new Date().getMonth()}_${new Date().getFullYear()}`,
@@ -545,7 +593,7 @@ export default function PatientInsights() {
       return;
     }
 
-    // Regular campaign wins (Side Box - Key Insight)
+    // 5. CAMPAIGN WIN: Regular wins (Side Box - Key Insight)
     if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered > 0) {
       showInsight({
         id: `campaign_win_${new Date().getMonth()}_${new Date().getFullYear()}`,
@@ -555,16 +603,17 @@ export default function PatientInsights() {
         headline: 'recovered',
         supportingStat: `${outreachSummary.returned_count} patients returned`,
       });
+      return;
     }
 
-    // Benchmark insights (Side Box - Key Insight)
+    // 6. BENCHMARK: Retention above average (Side Box - Key Insight)
     const totalPatients = analysisData.patient_count || 0;
     const highFreqCount = analysisData.patient_segments?.high_frequency?.count || 0;
     if (totalPatients > 0 && highFreqCount > 0) {
       const retentionRate = Math.round((highFreqCount / totalPatients) * 100);
       if (retentionRate >= 15) {
         showInsight({
-          id: `benchmark_${new Date().getMonth()}`,
+          id: `benchmark_${analysisData.upload_id || new Date().getMonth()}`,
           type: 'benchmark',
           metric: `${retentionRate}%`,
           metricLabel: '12-month retention',
@@ -573,20 +622,99 @@ export default function PatientInsights() {
         });
       }
     }
-
-    // Cross-sell opportunity (Horizontal Bar - Actionable)
-    if (analysisData.service_analysis?.primary_opportunity) {
-      const opp = analysisData.service_analysis.primary_opportunity;
-      showInsight({
-        id: `cross_sell_${opp.title}`,
-        type: 'market_signal',
-        headline: opp.title,
-        subtext: `${opp.patient_count} patients · $${opp.potential_revenue?.toLocaleString()} potential`,
-        cta: 'View patients',
-        anchor: '#cross-sell-section',
-      });
-    }
   }, [analysisData, outreachSummary, isMortgage, showInsight, showWelcome, router]);
+
+  // Dev toggle: Ctrl+Shift+I to test random insights
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+Shift+I or Cmd+Shift+I
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+
+        // Array of test insights
+        const testInsights = [
+          // Urgent - VIPs at risk
+          {
+            id: `dev_test_urgent_${Date.now()}`,
+            type: 'urgent' as const,
+            headline: '12 VIPs haven\'t been back in 90+ days',
+            subtext: '$28,400 in annual revenue at risk',
+            cta: 'Send win-back',
+            anchor: '#decision-queue',
+          },
+          // Urgent - High churn
+          {
+            id: `dev_test_urgent_churn_${Date.now()}`,
+            type: 'urgent' as const,
+            headline: 'High churn risk detected',
+            subtext: '45% of new patients leave after first visit',
+            cta: 'Review risks',
+            anchor: '#strategic-insights',
+          },
+          // Market Signal - Cross-sell
+          {
+            id: `dev_test_market_${Date.now()}`,
+            type: 'market_signal' as const,
+            headline: 'Botox patients ready for skincare',
+            subtext: '34 patients · $12,800 potential',
+            cta: 'View patients',
+            anchor: '#cross-sell-section',
+          },
+          // Timing - Seasonal opportunity
+          {
+            id: `dev_test_timing_${Date.now()}`,
+            type: 'timing' as const,
+            headline: 'Launch summer prep campaigns now',
+            subtext: 'Peak booking window closes in 14 days',
+            cta: 'Create campaign',
+            anchor: '#campaigns',
+          },
+          // Milestone - Big win
+          {
+            id: `dev_test_milestone_${Date.now()}`,
+            type: 'milestone' as const,
+            metric: '$12,500',
+            metricLabel: 'This month',
+            headline: 'recovered',
+            supportingStat: '8 patients came back',
+          },
+          // Campaign Win
+          {
+            id: `dev_test_campaign_${Date.now()}`,
+            type: 'campaign_win' as const,
+            metric: '$4,200',
+            metricLabel: 'This month',
+            headline: 'recovered',
+            supportingStat: '3 patients returned',
+          },
+          // Benchmark
+          {
+            id: `dev_test_benchmark_${Date.now()}`,
+            type: 'benchmark' as const,
+            metric: '18%',
+            metricLabel: '12-month retention',
+            headline: 'above average',
+            supportingStat: 'Industry median: 12%',
+          },
+        ];
+
+        // Pick random insight
+        const randomInsight = testInsights[Math.floor(Math.random() * testInsights.length)];
+
+        // Show as welcome moment if milestone, otherwise regular insight
+        if (randomInsight.type === 'milestone') {
+          showWelcome(randomInsight);
+        } else {
+          showInsight(randomInsight);
+        }
+
+        console.log('🎯 Dev insight triggered:', randomInsight.type);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showInsight, showWelcome]);
 
   const toggleZip = (zip: string) => {
     setSelectedZips((prev) => ({ ...prev, [zip]: !prev[zip] }));
