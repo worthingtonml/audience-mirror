@@ -6,6 +6,16 @@ import { ArrowLeft, Copy, Check, Facebook, Instagram, Search, Target, Lightbulb,
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
+// Helper function to get seasonal timing message
+function getSeasonalTiming(): string {
+  const month = new Date().getMonth() + 1; // 1-12
+  if (month === 1 || month === 2) return 'WHILE RESOLUTION ENERGY IS HIGH';
+  if (month === 3 || month === 4 || month === 5) return 'SUMMER BODY SEASON';
+  if (month === 6 || month === 7 || month === 8) return 'BEFORE FALL CALENDARS FILL';
+  if (month === 9 || month === 10) return 'HOLIDAY PARTY PREP';
+  return 'BEFORE THE NEW YEAR RUSH';
+}
+
 export function CampaignGeneratorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,6 +41,7 @@ export function CampaignGeneratorContent() {
   const [smsType, setSmsType] = useState('reactivation');
   const [showEmails, setShowEmails] = useState(true);
   const [showSms, setShowSms] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('aesthetics');
   
   useEffect(() => {
     const zipCodes = searchParams.get('zip')?.split(',') || [];
@@ -325,18 +336,52 @@ export function CampaignGeneratorContent() {
                 {campaignData.overview.totalZips} neighborhoods • {campaignData.overview.procedure}
               </span>
               <span className="text-gray-300">•</span>
-              <span className="text-gray-500 text-sm">{campaignData.overview.profileType}</span>
+              <span className="inline-flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                Ready to act
+              </span>
+              <span className="text-gray-300">•</span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 text-violet-700 text-xs font-medium rounded-full border border-violet-200">
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {getSeasonalTiming()}
+              </span>
             </div>
           </div>
 
-          {/* Right side - Back button */}
-          <button
-            onClick={() => router.push('/patient-insights')}
-            className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-          >
-            <ArrowLeft className="h-4 w-4 inline mr-2" />
-            Back to insights
-          </button>
+          {/* Right side - Dropdown and Back button */}
+          <div className="flex items-center gap-3">
+            {/* Category dropdown with chevron */}
+            <div className="relative">
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="px-4 py-2 pr-10 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent appearance-none cursor-pointer min-w-[140px]"
+              >
+                <option value="aesthetics">Aesthetics</option>
+                <option value="wellness">Wellness</option>
+              </select>
+              {/* Chevron icon */}
+              <svg
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+
+            <button
+              onClick={() => router.push('/patient-insights')}
+              className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            >
+              <ArrowLeft className="h-4 w-4 inline mr-2" />
+              Back to insights
+            </button>
+          </div>
         </div>
 
         {/* Data Quality Indicator - Subtle */}

@@ -85,15 +85,18 @@ function SkeletonCard({ className = '' }: { className?: string }) {
 
 function SkeletonHero() {
   return (
-    <div className="bg-gradient-to-r from-[#1e1b4b] via-[#4338ca] to-[#7c3aed] rounded-xl p-6 animate-pulse">
-      <div className="h-4 bg-white/20 rounded w-1/4 mb-4"></div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i}>
-            <div className="h-8 bg-white/20 rounded w-1/2 mb-2"></div>
-            <div className="h-3 bg-white/20 rounded w-3/4"></div>
-          </div>
-        ))}
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-pulse">
+      <div className="h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500" />
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6">
+        <div className="h-4 bg-white/20 rounded w-1/4 mb-4"></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i}>
+              <div className="h-8 bg-white/20 rounded w-1/2 mb-2"></div>
+              <div className="h-3 bg-white/20 rounded w-3/4"></div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -116,32 +119,32 @@ function AcquisitionPageHeader({ segmentSummary, loading }: AcquisitionPageHeade
     : '';
 
   return (
-    <div className="mb-8">
-      <button
-        onClick={() => router.back()}
-        className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 mb-4 transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Patient Insights
-      </button>
-
-      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Your Data-Driven Campaign
-          </h1>
-          <p className="text-gray-600 mt-1">
-            A simple plan to bring in more patients who look like your best VIPs.
-          </p>
+    <div className="py-6 flex items-start justify-between gap-4 mb-6">
+      {/* Left side - Title */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Find New Patients</h1>
+        <div className="flex items-center gap-2 mt-1">
           {!loading && subtitle && (
-            <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+            <>
+              <span className="text-gray-500 text-sm">{subtitle}</span>
+              <span className="text-gray-300">•</span>
+            </>
           )}
+          <span className="inline-flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+            Ready to act
+          </span>
         </div>
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium whitespace-nowrap self-start">
-          <Target className="h-4 w-4" />
-          Goal: Attract new VIP patients
-        </span>
       </div>
+
+      {/* Right side - Back button */}
+      <button
+        onClick={() => router.push('/patient-insights')}
+        className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+      >
+        <ArrowLeft className="h-4 w-4 inline mr-2" />
+        Back to insights
+      </button>
     </div>
   );
 }
@@ -174,8 +177,8 @@ function CampaignPersonalizationCard({ summary, defaultExpanded = true }: Campai
         className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-indigo-600" />
+          <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
+            <Sparkles className="h-5 w-5 text-gray-600" />
           </div>
           <div className="text-left">
             <h2 className="font-semibold text-gray-900">Campaign Personalization</h2>
@@ -225,48 +228,51 @@ function AcquisitionProjectionHero({ projection }: AcquisitionProjectionHeroProp
   };
 
   return (
-    <div className="bg-gradient-to-r from-[#1e1b4b] via-[#4338ca] to-[#7c3aed] rounded-xl p-6 text-white">
-      <h3 className="text-sm font-medium text-indigo-200 mb-4">
-        What this campaign can add each month
-      </h3>
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500" />
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 text-white">
+        <h3 className="text-sm font-medium text-gray-300 mb-4">
+          What this campaign can add each month
+        </h3>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div>
-          <div className="text-3xl md:text-4xl font-bold">
-            {formatCurrency(projection.projectedRevenueMonthly)}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div>
+            <div className="text-3xl md:text-4xl font-bold">
+              {formatCurrency(projection.projectedRevenueMonthly)}
+            </div>
+            <div className="text-sm text-gray-300 mt-1">
+              from {projection.projectedNewPatientsMonthly} new VIP patients like the ones you already see
+            </div>
           </div>
-          <div className="text-sm text-indigo-200 mt-1">
-            from {projection.projectedNewPatientsMonthly} new VIP patients like the ones you already see
+
+          <div>
+            <div className="text-3xl md:text-4xl font-bold">
+              {formatCurrency(projection.projectedAdSpendMonthly)}
+            </div>
+            <div className="text-sm text-gray-300 mt-1">ad spend</div>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-3xl md:text-4xl font-bold text-emerald-400">
+                {projection.projectedReturnMultiple.toFixed(1)}×
+              </span>
+            </div>
+            <div className="text-sm text-gray-300 mt-1">estimated return</div>
+          </div>
+
+          <div>
+            <div className="text-3xl md:text-4xl font-bold">
+              ${Math.round(projection.projectedAdSpendMonthly / 30)}
+            </div>
+            <div className="text-sm text-gray-300 mt-1">per day</div>
           </div>
         </div>
 
-        <div>
-          <div className="text-3xl md:text-4xl font-bold">
-            {formatCurrency(projection.projectedAdSpendMonthly)}
-          </div>
-          <div className="text-sm text-indigo-200 mt-1">ad spend</div>
-        </div>
-
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="text-3xl md:text-4xl font-bold text-emerald-300">
-              {projection.projectedReturnMultiple.toFixed(1)}×
-            </span>
-          </div>
-          <div className="text-sm text-indigo-200 mt-1">estimated return</div>
-        </div>
-
-        <div>
-          <div className="text-3xl md:text-4xl font-bold">
-            ${Math.round(projection.projectedAdSpendMonthly / 30)}
-          </div>
-          <div className="text-sm text-indigo-200 mt-1">per day</div>
-        </div>
+        <p className="text-xs text-gray-400 mt-6">
+          Estimate based on similar medspa campaigns in markets like yours.
+        </p>
       </div>
-
-      <p className="text-xs text-indigo-300 mt-6">
-        Estimate based on similar medspa campaigns in markets like yours.
-      </p>
     </div>
   );
 }
@@ -336,7 +342,7 @@ function ChannelMixSection({ channels, segmentId, onExport, exporting }: Channel
       <button
         onClick={onExport}
         disabled={exporting}
-        className="flex items-center gap-2 px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+        className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
       >
         {exporting ? (
           <RefreshCw className="h-4 w-4 animate-spin" />
@@ -562,7 +568,7 @@ function ChannelCard({ channel, segmentId }: ChannelCardProps) {
               <button
                 onClick={handleGenerate}
                 disabled={generating}
-                className="w-full py-3 bg-[#6366f1] hover:bg-[#4f46e5] text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {generating ? (
                   <>
@@ -605,7 +611,7 @@ function ChannelCard({ channel, segmentId }: ChannelCardProps) {
                   className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
                     copiedField === 'ad-copy'
                       ? 'bg-green-100 text-green-700'
-                      : 'bg-[#6366f1] hover:bg-[#4f46e5] text-white'
+                      : 'bg-gray-900 hover:bg-gray-800 text-white'
                   }`}
                 >
                   {copiedField === 'ad-copy' ? (
@@ -766,14 +772,14 @@ function AcquisitionCampaignPageContent() {
   // Error state
   if (error && !loading) {
     return (
-      <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Something went wrong</h2>
           <p className="text-gray-500 mb-4">{error}</p>
           <button
             onClick={() => router.back()}
-            className="text-[#6366f1] hover:text-[#4f46e5] font-medium"
+            className="text-gray-600 hover:text-gray-900 font-medium"
           >
             ← Back to Patient Insights
           </button>
@@ -783,7 +789,7 @@ function AcquisitionCampaignPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F7F8FA]">
+    <div className="min-h-screen bg-white">
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <AcquisitionPageHeader segmentSummary={summary} loading={loading} />
@@ -841,9 +847,9 @@ function AcquisitionCampaignPageContent() {
 // Loading fallback for Suspense
 function LoadingFallback() {
   return (
-    <div className="min-h-screen bg-[#F7F8FA] flex items-center justify-center">
+    <div className="min-h-screen bg-white flex items-center justify-center">
       <div className="text-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#6366f1] mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-900 mx-auto mb-4"></div>
         <p className="text-gray-500">Loading campaign data...</p>
       </div>
     </div>
