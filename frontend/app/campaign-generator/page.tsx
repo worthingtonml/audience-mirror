@@ -14,6 +14,9 @@ import {
   Target,
   Zap,
   AlertCircle,
+  Facebook,
+  Instagram,
+  Search,
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
@@ -229,7 +232,7 @@ function AcquisitionProjectionHero({ projection }: AcquisitionProjectionHeroProp
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500" />
+      <div className="h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400" />
 
       <div className="p-6">
         <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-4">
@@ -302,7 +305,7 @@ function VIPSection({ vipData }: VIPSectionProps) {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
-                VIP Patients
+                VIP Analysis
               </span>
               <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-medium rounded-full">
                 Top 20%
@@ -327,9 +330,9 @@ function VIPSection({ vipData }: VIPSectionProps) {
                 </div>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-gray-900">
-              {summary.bestPatientCount} high-value patients
-            </h3>
+            <h2 className="text-2xl font-bold text-gray-900">
+              {summary.bestPatientCount} patients drive {summary.revenueConcentration}% of revenue
+            </h2>
           </div>
           <button
             onClick={() => router.push('/patient-insights')}
@@ -339,24 +342,33 @@ function VIPSection({ vipData }: VIPSectionProps) {
           </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-4">
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Avg VIP LTV</p>
-            <p className="text-2xl font-bold text-gray-900">${Math.round(avgBestValue / 1000).toFixed(1)}K</p>
+        {/* Stats Row - Horizontal layout */}
+        <div className="flex items-center gap-6 pb-6 mb-6 border-b border-gray-100">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-gray-900">{summary.bestPatientCount}</span>
+            <span className="text-gray-400 text-sm">VIPs</span>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Avg Overall</p>
-            <p className="text-2xl font-bold text-gray-900">${Math.round(avgOverallValue / 1000).toFixed(1)}K</p>
+          <div className="w-px h-6 bg-gray-200" />
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-gray-900">${Math.round(avgBestValue / 1000).toFixed(1)}K</span>
+            <span className="text-gray-400 text-sm">avg VIP LTV</span>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">VIP Multiplier</p>
-            <p className="text-2xl font-bold text-emerald-600">{multiplier}×</p>
+          <div className="w-px h-6 bg-gray-200" />
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-emerald-600">{multiplier}×</span>
+            <span className="text-gray-400 text-sm">more valuable</span>
           </div>
-          <div className="bg-gray-50 rounded-lg p-4">
-            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Revenue Share</p>
-            <p className="text-2xl font-bold text-emerald-600">{summary.revenueConcentration}%</p>
+          <div className="w-px h-6 bg-gray-200" />
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-amber-600">{summary.revenueConcentration}%</span>
+            <span className="text-gray-400 text-sm">of revenue</span>
           </div>
         </div>
+
+        {/* Key Insight */}
+        <p className="text-gray-600">
+          <span className="text-gray-900 font-semibold">The opportunity:</span> Find 5 more patients like your VIPs and add ${(avgBestValue * 5).toLocaleString()} in annual revenue.
+        </p>
       </div>
     </div>
   );
@@ -374,10 +386,10 @@ type ChannelMixSectionProps = {
 };
 
 function ChannelMixSection({ channels, segmentId, onExport, exporting }: ChannelMixSectionProps) {
-  const channelConfig: Record<ChannelKey, { iconBg: string; iconText: string; icon: string }> = {
-    facebook: { iconBg: 'bg-blue-100', iconText: 'text-blue-600', icon: 'f' },
-    instagram: { iconBg: 'bg-pink-100', iconText: 'text-pink-600', icon: '📷' },
-    google: { iconBg: 'bg-gray-100', iconText: 'text-gray-700', icon: 'G' },
+  const channelConfig: Record<ChannelKey, { iconBg: string; iconColor: string; icon: React.ReactNode }> = {
+    facebook: { iconBg: 'bg-blue-100', iconColor: 'text-blue-600', icon: <Facebook className="h-5 w-5" /> },
+    instagram: { iconBg: 'bg-pink-100', iconColor: 'text-pink-600', icon: <Instagram className="h-5 w-5" /> },
+    google: { iconBg: 'bg-gray-100', iconColor: 'text-gray-700', icon: <Search className="h-5 w-5" /> },
   };
 
   return (
@@ -395,8 +407,8 @@ function ChannelMixSection({ channels, segmentId, onExport, exporting }: Channel
           return (
             <div key={channel.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               <div className="flex items-center gap-2 mb-2">
-                <div className={`w-8 h-8 ${config.iconBg} rounded-lg flex items-center justify-center`}>
-                  <span className={`${config.iconText} font-bold text-sm`}>{config.icon}</span>
+                <div className={`w-8 h-8 ${config.iconBg} rounded-lg flex items-center justify-center ${config.iconColor}`}>
+                  {config.icon}
                 </div>
                 <span className="font-medium text-gray-900">{channel.label}</span>
               </div>
@@ -441,10 +453,10 @@ function ChannelCard({ channel, segmentId }: ChannelCardProps) {
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const channelConfig: Record<ChannelKey, { iconBg: string; iconText: string; icon: string }> = {
-    facebook: { iconBg: 'bg-blue-100', iconText: 'text-blue-600', icon: 'f' },
-    instagram: { iconBg: 'bg-pink-100', iconText: 'text-pink-600', icon: '📷' },
-    google: { iconBg: 'bg-gray-100', iconText: 'text-gray-700', icon: 'G' },
+  const channelConfig: Record<ChannelKey, { iconBg: string; iconColor: string; icon: React.ReactNode }> = {
+    facebook: { iconBg: 'bg-blue-100', iconColor: 'text-blue-600', icon: <Facebook className="h-5 w-5" /> },
+    instagram: { iconBg: 'bg-pink-100', iconColor: 'text-pink-600', icon: <Instagram className="h-5 w-5" /> },
+    google: { iconBg: 'bg-gray-100', iconColor: 'text-gray-700', icon: <Search className="h-5 w-5" /> },
   };
 
   const config = channelConfig[channel.id];
@@ -503,8 +515,8 @@ function ChannelCard({ channel, segmentId }: ChannelCardProps) {
         className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 ${config.iconBg} rounded-lg flex items-center justify-center`}>
-            <span className={`${config.iconText} font-bold`}>{config.icon}</span>
+          <div className={`w-10 h-10 ${config.iconBg} rounded-lg flex items-center justify-center ${config.iconColor}`}>
+            {config.icon}
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2">
@@ -530,6 +542,110 @@ function ChannelCard({ channel, segmentId }: ChannelCardProps) {
       {/* Content */}
       {expanded && (
         <div className="px-4 pb-4 border-t border-gray-100">
+          {/* Tactical Guidance */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-4 mt-4 border border-gray-200">
+            <div className="flex items-center gap-2 mb-3">
+              <Target className="h-4 w-4 text-gray-700" />
+              <h4 className="text-sm font-semibold text-gray-900">Tactical Guidance</h4>
+            </div>
+
+            {channel.id === 'facebook' && (
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Campaign Objectives</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• <span className="font-medium">Awareness:</span> Reach campaigns with demographic + interest targeting</p>
+                    <p>• <span className="font-medium">Consideration:</span> Engagement + Video Views for educational content</p>
+                    <p>• <span className="font-medium">Conversion:</span> Lead Generation campaigns with instant forms</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Audience Strategy</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• <span className="font-medium">Lookalike:</span> Upload your VIP patient list (top 20%) to create 1-3% lookalikes</p>
+                    <p>• <span className="font-medium">Interest:</span> Beauty, wellness, cosmetic procedures, local gyms/spas</p>
+                    <p>• <span className="font-medium">Retargeting:</span> Website visitors (last 30 days), video viewers (50%+)</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Creative Best Practices</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• Use carousel ads with before/after transformations (3-5 slides)</p>
+                    <p>• Include patient testimonials as video (15-30 sec)</p>
+                    <p>• CTA: "Book Free Consultation" or "Learn More" (avoid "Shop Now")</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {channel.id === 'instagram' && (
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Ad Formats</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• <span className="font-medium">Stories:</span> 9:16 vertical, 15-sec video clips with "Swipe Up" CTA</p>
+                    <p>• <span className="font-medium">Reels:</span> Trending audio + before/after transformations (30 sec max)</p>
+                    <p>• <span className="font-medium">Feed:</span> High-quality images in carousel format (4:5 ratio)</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Content Strategy</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• <span className="font-medium">Organic + Paid:</span> Run ads to promote your best-performing organic posts</p>
+                    <p>• <span className="font-medium">Influencer Partnerships:</span> Partner with local micro-influencers (5-50k followers)</p>
+                    <p>• <span className="font-medium">User-Generated Content:</span> Repost patient results with permission</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Engagement Tactics</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• Respond to all DMs within 1 hour (use auto-responders for after-hours)</p>
+                    <p>• Run "Ask Me Anything" sessions in Stories monthly</p>
+                    <p>• Use polls and quizzes to boost engagement and algorithm visibility</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {channel.id === 'google' && (
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Campaign Types</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• <span className="font-medium">Search Ads:</span> Target high-intent keywords ("botox near me", "best medspa")</p>
+                    <p>• <span className="font-medium">Local Services Ads:</span> Google-guaranteed badge for trust + top placement</p>
+                    <p>• <span className="font-medium">Performance Max:</span> AI-optimized across Search, Display, YouTube, Gmail</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Keyword Strategy</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• <span className="font-medium">Exact Match:</span> "[botox]", "[medspa near me]"</p>
+                    <p>• <span className="font-medium">Phrase Match:</span> "botox near me", "best medspa"</p>
+                    <p>• <span className="font-medium">Negative Keywords:</span> -free, -cheap, -DIY, -school, -training</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Landing Page Optimization</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• Match ad copy to headline (Quality Score boost)</p>
+                    <p>• Include click-to-call button (mobile-optimized)</p>
+                    <p>• Add booking widget above the fold (reduce friction)</p>
+                    <p>• Display reviews/ratings prominently (social proof)</p>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Bidding & Budget</div>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>• Start with "Maximize Conversions" (manual CPC after 30 conversions)</p>
+                    <p>• Set location bid adjustments (+20% for high-value ZIP codes)</p>
+                    <p>• Monitor Search Impression Share (aim for 70%+ to dominate local search)</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Strategy band (if generated) */}
           {content?.strategy && (
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
@@ -829,8 +945,26 @@ function AcquisitionCampaignPageContent() {
             <AcquisitionProjectionHero projection={projection} />
           ) : null}
 
+          {/* Section Divider */}
+          {!loading && vipData && (
+            <div className="flex items-center gap-4 my-8">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">Your Best Patients</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+          )}
+
           {/* VIP Section */}
           {!loading && vipData && <VIPSection vipData={vipData} />}
+
+          {/* Section Divider */}
+          {!loading && channels.length > 0 && (
+            <div className="flex items-center gap-4 my-8">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">Ready-to-Use Campaigns</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+          )}
 
           {/* Channel Mix */}
           {!loading && channels.length > 0 && (
