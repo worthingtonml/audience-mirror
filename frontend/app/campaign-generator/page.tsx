@@ -14,7 +14,6 @@ import {
   Target,
   Zap,
   AlertCircle,
-  Bot,
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
@@ -87,16 +86,17 @@ function SkeletonHero() {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden animate-pulse">
       <div className="h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500" />
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6">
-        <div className="h-4 bg-white/20 rounded w-1/4 mb-4"></div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="p-6">
+        <div className="h-3 bg-gray-200 rounded w-1/4 mb-4"></div>
+        <div className="flex items-center gap-6 pb-6 mb-4 border-b border-gray-100">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i}>
-              <div className="h-8 bg-white/20 rounded w-1/2 mb-2"></div>
-              <div className="h-3 bg-white/20 rounded w-3/4"></div>
+            <div key={i} className="flex items-baseline gap-2">
+              <div className="h-8 bg-gray-200 rounded w-16"></div>
+              <div className="h-3 bg-gray-200 rounded w-12"></div>
             </div>
           ))}
         </div>
+        <div className="h-3 bg-gray-200 rounded w-3/4"></div>
       </div>
     </div>
   );
@@ -230,48 +230,133 @@ function AcquisitionProjectionHero({ projection }: AcquisitionProjectionHeroProp
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500" />
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 text-white">
-        <h3 className="text-sm font-medium text-gray-300 mb-4">
+
+      <div className="p-6">
+        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-4">
           What this campaign can add each month
-        </h3>
+        </p>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div>
-            <div className="text-3xl md:text-4xl font-bold">
+        {/* Stats Row */}
+        <div className="flex items-center gap-6 pb-6 mb-4 border-b border-gray-100">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-gray-900">
               {formatCurrency(projection.projectedRevenueMonthly)}
-            </div>
-            <div className="text-sm text-gray-300 mt-1">
-              from {projection.projectedNewPatientsMonthly} new VIP patients like the ones you already see
-            </div>
+            </span>
+            <span className="text-gray-400 text-sm">revenue</span>
           </div>
-
-          <div>
-            <div className="text-3xl md:text-4xl font-bold">
+          <div className="w-px h-6 bg-gray-200" />
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-gray-900">
               {formatCurrency(projection.projectedAdSpendMonthly)}
-            </div>
-            <div className="text-sm text-gray-300 mt-1">ad spend</div>
+            </span>
+            <span className="text-gray-400 text-sm">ad spend</span>
           </div>
-
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-3xl md:text-4xl font-bold text-emerald-400">
-                {projection.projectedReturnMultiple.toFixed(1)}×
-              </span>
-            </div>
-            <div className="text-sm text-gray-300 mt-1">estimated return</div>
+          <div className="w-px h-6 bg-gray-200" />
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-emerald-600">
+              {projection.projectedReturnMultiple.toFixed(1)}×
+            </span>
+            <span className="text-gray-400 text-sm">estimated return</span>
           </div>
-
-          <div>
-            <div className="text-3xl md:text-4xl font-bold">
+          <div className="w-px h-6 bg-gray-200" />
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-gray-900">
               ${Math.round(projection.projectedAdSpendMonthly / 30)}
-            </div>
-            <div className="text-sm text-gray-300 mt-1">per day</div>
+            </span>
+            <span className="text-gray-400 text-sm">per day</span>
           </div>
         </div>
 
-        <p className="text-xs text-gray-400 mt-6">
-          Estimate based on similar medspa campaigns in markets like yours.
+        <p className="text-gray-400 text-sm">
+          from {projection.projectedNewPatientsMonthly} new VIP patients · Estimate based on similar medspa campaigns in markets like yours
         </p>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// VIP SECTION
+// ============================================================================
+
+type VIPSectionProps = {
+  vipData: any;
+};
+
+function VIPSection({ vipData }: VIPSectionProps) {
+  const router = useRouter();
+
+  if (!vipData || !vipData.summary) return null;
+
+  const { summary } = vipData;
+  const avgBestValue = summary.avgBestPatientValue || 0;
+  const avgOverallValue = summary.avgOverallValue || 1;
+  const multiplier = avgOverallValue > 0 ? (avgBestValue / avgOverallValue).toFixed(1) : '0.0';
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400" />
+
+      <div className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+                VIP Patients
+              </span>
+              <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-medium rounded-full">
+                Top 20%
+              </span>
+
+              {/* Info tooltip */}
+              <div className="relative group">
+                <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                  </svg>
+                </button>
+                <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <p className="font-medium mb-1">How VIPs are calculated:</p>
+                  <ul className="text-gray-300 text-xs space-y-1">
+                    <li>• Ranked by lifetime value (total spend)</li>
+                    <li>• Top 20% of patients by revenue</li>
+                    <li>• VIPs generate {summary.revenueConcentration}% of total revenue</li>
+                    <li>• Avg VIP spends ${Math.round(avgBestValue).toLocaleString()} vs ${Math.round(avgOverallValue).toLocaleString()} overall</li>
+                  </ul>
+                  <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
+                </div>
+              </div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900">
+              {summary.bestPatientCount} high-value patients
+            </h3>
+          </div>
+          <button
+            onClick={() => router.push('/patient-insights')}
+            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            View All VIPs
+          </button>
+        </div>
+
+        <div className="grid grid-cols-4 gap-4">
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Avg VIP LTV</p>
+            <p className="text-2xl font-bold text-gray-900">${Math.round(avgBestValue / 1000).toFixed(1)}K</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Avg Overall</p>
+            <p className="text-2xl font-bold text-gray-900">${Math.round(avgOverallValue / 1000).toFixed(1)}K</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">VIP Multiplier</p>
+            <p className="text-2xl font-bold text-emerald-600">{multiplier}×</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Revenue Share</p>
+            <p className="text-2xl font-bold text-emerald-600">{summary.revenueConcentration}%</p>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -289,51 +374,34 @@ type ChannelMixSectionProps = {
 };
 
 function ChannelMixSection({ channels, segmentId, onExport, exporting }: ChannelMixSectionProps) {
-  const channelIcons: Record<ChannelKey, React.ReactNode> = {
-    facebook: (
-      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-      </svg>
-    ),
-    instagram: (
-      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-      </svg>
-    ),
-    google: (
-      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-      </svg>
-    ),
-  };
-
-  const channelColors: Record<ChannelKey, { bg: string; text: string }> = {
-    facebook: { bg: 'bg-blue-50', text: 'text-blue-700' },
-    instagram: { bg: 'bg-pink-50', text: 'text-pink-700' },
-    google: { bg: 'bg-green-50', text: 'text-green-700' },
+  const channelConfig: Record<ChannelKey, { iconBg: string; iconText: string; icon: string }> = {
+    facebook: { iconBg: 'bg-blue-100', iconText: 'text-blue-600', icon: 'f' },
+    instagram: { iconBg: 'bg-pink-100', iconText: 'text-pink-600', icon: '📷' },
+    google: { iconBg: 'bg-gray-100', iconText: 'text-gray-700', icon: 'G' },
   };
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-      <h3 className="font-semibold text-gray-900 mb-1">
+      <h3 className="text-lg font-semibold text-gray-900 mb-2">
         Where to find more patients like your best ones
       </h3>
-      <p className="text-sm text-gray-500 mb-4">
+      <p className="text-gray-500 text-sm mb-4">
         Use this mix as a starting point. You can still adjust budgets in Facebook, Instagram, and Google later.
       </p>
 
-      <div className="flex flex-wrap gap-3 mb-6">
+      <div className="grid grid-cols-3 gap-3 mb-4">
         {channels.map((channel) => {
-          const colors = channelColors[channel.id];
+          const config = channelConfig[channel.id];
           return (
-            <div
-              key={channel.id}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg ${colors.bg} ${colors.text}`}
-            >
-              {channelIcons[channel.id]}
-              <span className="font-medium">{channel.label}</span>
-              <span className="text-sm opacity-75">· {channel.budgetSharePercent}% of budget</span>
-              <span className="text-xs opacity-60">· {channel.role}</span>
+            <div key={channel.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-8 h-8 ${config.iconBg} rounded-lg flex items-center justify-center`}>
+                  <span className={`${config.iconText} font-bold text-sm`}>{config.icon}</span>
+                </div>
+                <span className="font-medium text-gray-900">{channel.label}</span>
+              </div>
+              <p className="text-emerald-600 font-semibold">{channel.budgetSharePercent}% of budget</p>
+              <p className="text-gray-500 text-sm">{channel.role}</p>
             </div>
           );
         })}
@@ -355,60 +423,6 @@ function ChannelMixSection({ channels, segmentId, onExport, exporting }: Channel
   );
 }
 
-// ============================================================================
-// GEO TEASER CARD (AI Search Visibility)
-// ============================================================================
-
-function GeoTeaserCard() {
-  return (
-    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-6 text-white relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
-      <div className="absolute bottom-0 left-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl"></div>
-      
-      <div className="relative">
-        <div className="flex items-center gap-2 mb-3">
-          <div className="h-8 w-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
-            <Bot className="h-4 w-4 text-indigo-400" />
-          </div>
-          <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
-            Coming Soon
-          </span>
-        </div>
-        
-        <h3 className="text-lg font-semibold mb-2">AI Search Visibility</h3>
-        <p className="text-sm text-slate-300 mb-4">
-          See how your practice appears when patients ask ChatGPT, Perplexity, or Claude for recommendations. 
-          Track your visibility and get tips to rank higher in AI-powered search.
-        </p>
-
-        <div className="flex items-center gap-4 mb-4 text-xs text-slate-400">
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-            ChatGPT
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-            Perplexity
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-            Claude
-          </div>
-        </div>
-
-        <a 
-          href="https://forms.gle/B7vc9PDM5udokSAu7" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-medium rounded-lg transition-colors"
-        >
-          Join Waitlist
-        </a>
-      </div>
-    </div>
-  );
-}
 
 
 // ============================================================================
@@ -427,13 +441,13 @@ function ChannelCard({ channel, segmentId }: ChannelCardProps) {
   const [error, setError] = useState<string | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const channelColors: Record<ChannelKey, { bg: string; text: string; strategy: string }> = {
-    facebook: { bg: 'bg-blue-50', text: 'text-blue-700', strategy: 'bg-blue-100 text-blue-800' },
-    instagram: { bg: 'bg-pink-50', text: 'text-pink-700', strategy: 'bg-pink-100 text-pink-800' },
-    google: { bg: 'bg-green-50', text: 'text-green-700', strategy: 'bg-green-100 text-green-800' },
+  const channelConfig: Record<ChannelKey, { iconBg: string; iconText: string; icon: string }> = {
+    facebook: { iconBg: 'bg-blue-100', iconText: 'text-blue-600', icon: 'f' },
+    instagram: { iconBg: 'bg-pink-100', iconText: 'text-pink-600', icon: '📷' },
+    google: { iconBg: 'bg-gray-100', iconText: 'text-gray-700', icon: 'G' },
   };
 
-  const colors = channelColors[channel.id];
+  const config = channelConfig[channel.id];
 
   const handleGenerate = async () => {
     setGenerating(true);
@@ -486,50 +500,40 @@ function ChannelCard({ channel, segmentId }: ChannelCardProps) {
       {/* Header */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+        className="w-full px-4 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <div className={`h-10 w-10 rounded-lg ${colors.bg} flex items-center justify-center ${colors.text}`}>
-            {channel.id === 'facebook' && (
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-              </svg>
-            )}
-            {channel.id === 'instagram' && (
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
-              </svg>
-            )}
-            {channel.id === 'google' && (
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z" />
-              </svg>
-            )}
+          <div className={`w-10 h-10 ${config.iconBg} rounded-lg flex items-center justify-center`}>
+            <span className={`${config.iconText} font-bold`}>{config.icon}</span>
           </div>
           <div className="text-left">
             <div className="flex items-center gap-2">
-              <h4 className="font-semibold text-gray-900">{channel.label}</h4>
-              <span className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600">
+              <span className="font-semibold text-gray-900">{channel.label}</span>
+              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
                 {channel.budgetSharePercent}% of budget · ${channel.dailyBudget}/day
               </span>
             </div>
-            <p className="text-sm text-gray-500">{channel.role}</p>
+            <p className="text-gray-500 text-sm">{channel.role}</p>
           </div>
         </div>
-        {expanded ? (
-          <ChevronUp className="h-5 w-5 text-gray-400" />
-        ) : (
-          <ChevronDown className="h-5 w-5 text-gray-400" />
-        )}
+        <svg
+          className={`w-5 h-5 text-gray-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
       </button>
 
       {/* Content */}
       {expanded && (
-        <div className="px-6 pb-6 border-t border-gray-100">
+        <div className="px-4 pb-4 border-t border-gray-100">
           {/* Strategy band (if generated) */}
           {content?.strategy && (
-            <div className={`${colors.strategy} rounded-lg p-4 mt-4`}>
-              <p className="text-sm font-medium">{content.strategy}</p>
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mt-4">
+              <p className="text-sm font-medium text-gray-900">{content.strategy}</p>
             </div>
           )}
 
@@ -704,6 +708,7 @@ function AcquisitionCampaignPageContent() {
   const [summary, setSummary] = useState<AcquisitionSegmentSummary | null>(null);
   const [projection, setProjection] = useState<AcquisitionProjection | null>(null);
   const [channels, setChannels] = useState<ChannelRecommendation[]>([]);
+  const [vipData, setVipData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -737,6 +742,20 @@ function AcquisitionCampaignPageContent() {
         setSummary(summaryData);
         setProjection(projectionData);
         setChannels(channelsData);
+
+        // Fetch VIP data from patient-intel API
+        const uploadId = localStorage.getItem('uploadId');
+        if (uploadId) {
+          try {
+            const vipRes = await fetch(`${API_URL}/api/v1/patient-intel/${uploadId}`);
+            if (vipRes.ok) {
+              const vipDataResult = await vipRes.json();
+              setVipData(vipDataResult);
+            }
+          } catch (vipErr) {
+            console.error('[VIP Data Error]', vipErr);
+          }
+        }
       } catch (err) {
         setError('Failed to load campaign data. Please try again.');
       } finally {
@@ -810,6 +829,9 @@ function AcquisitionCampaignPageContent() {
             <AcquisitionProjectionHero projection={projection} />
           ) : null}
 
+          {/* VIP Section */}
+          {!loading && vipData && <VIPSection vipData={vipData} />}
+
           {/* Channel Mix */}
           {!loading && channels.length > 0 && (
             <ChannelMixSection
@@ -819,9 +841,6 @@ function AcquisitionCampaignPageContent() {
               exporting={exporting}
             />
           )}
-
-          {/* AI Search Visibility Teaser */}
-          {!loading && <GeoTeaserCard />}
 
           {/* Ad Campaigns */}
           {!loading && channels.length > 0 && (
