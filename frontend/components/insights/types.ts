@@ -53,7 +53,7 @@ export const INSIGHT_CONFIG = {
   market_signal: {
     label: 'Market Signal',
     accentColor: 'violet' as const,
-    icon: 'zap' as const,
+    icon: 'users' as const,
   },
   timing: {
     label: 'Timing',

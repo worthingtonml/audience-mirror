@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { KeyInsight, INSIGHT_CONFIG } from './types';
-import { TrendingUp, BarChart3, Sparkles, X } from 'lucide-react';
+import { TrendingUp, BarChart3, Sparkles, Users, Calendar, AlertTriangle, X } from 'lucide-react';
 import './animations.css';
 
 interface SideBoxProps {
@@ -16,6 +16,9 @@ const ICONS = {
   'trending-up': TrendingUp,
   'bar-chart': BarChart3,
   'sparkles': Sparkles,
+  'users': Users,
+  'calendar': Calendar,
+  'alert-triangle': AlertTriangle,
 };
 
 const COLORS = {
@@ -77,21 +80,21 @@ export const SideBox: React.FC<SideBoxProps> = ({
         ${isExiting ? 'sidebox-exit' : 'sidebox-enter'}
       `}
     >
-      <div className="bg-[#0a0a0b] rounded-2xl w-72 overflow-hidden shadow-2xl shadow-black/20">
+      <div className="bg-[#0a0a0b] rounded-2xl w-72 overflow-hidden shadow-2xl border border-white/[0.06]">
         {/* Header */}
         <div className="px-5 pt-5 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className={`w-1.5 h-1.5 ${colors.dot} rounded-full animate-pulse-dot`} />
-              <span className="text-white/40 text-xs font-medium uppercase tracking-wider">
+              <span className="text-xs font-medium uppercase tracking-wider text-white/40">
                 {config.label}
               </span>
             </div>
             <button
               onClick={handleDismiss}
-              className="p-1 text-white/30 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+              className="p-1.5 text-white/30 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" strokeWidth={1.5} />
             </button>
           </div>
 
@@ -101,7 +104,7 @@ export const SideBox: React.FC<SideBoxProps> = ({
               <Icon className={`w-6 h-6 ${colors.icon}`} strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-white/40 text-xs uppercase tracking-wider">
+              <p className="text-xs uppercase tracking-wider text-white/40">
                 {insight.metricLabel}
               </p>
               <p className="text-white text-2xl font-bold">{insight.metric}</p>
@@ -114,7 +117,7 @@ export const SideBox: React.FC<SideBoxProps> = ({
 
         {/* Footer */}
         {insight.supportingStat && (
-          <div className="px-5 py-3 bg-white/5 border-t border-white/5">
+          <div className="px-5 py-3 bg-white/[0.02] border-t border-white/[0.06]">
             <p className="text-white/40 text-sm">{insight.supportingStat}</p>
           </div>
         )}

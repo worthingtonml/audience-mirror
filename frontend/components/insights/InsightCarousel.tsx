@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { KeyInsight, INSIGHT_CONFIG } from './types';
-import { TrendingUp, BarChart3, Sparkles, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { TrendingUp, BarChart3, Sparkles, Users, Calendar, AlertTriangle, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import './animations.css';
 
 interface InsightCarouselProps {
@@ -14,6 +14,9 @@ const ICONS = {
   'trending-up': TrendingUp,
   'bar-chart': BarChart3,
   'sparkles': Sparkles,
+  'users': Users,
+  'calendar': Calendar,
+  'alert-triangle': AlertTriangle,
 };
 
 const COLORS = {
@@ -76,12 +79,12 @@ export const InsightCarousel: React.FC<InsightCarouselProps> = ({
         ${isExiting ? 'sidebox-exit' : 'sidebox-enter'}
       `}
     >
-      <div className="bg-[#0a0a0b] rounded-2xl w-80 overflow-hidden shadow-2xl shadow-black/20">
+      <div className="bg-[#0a0a0b] rounded-2xl w-80 overflow-hidden shadow-2xl border border-white/[0.06]">
         {/* Header with nav */}
         <div className="px-5 pt-5 pb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className={`w-1.5 h-1.5 ${colors.dot} rounded-full animate-pulse-dot`} />
-            <span className="text-white/40 text-xs font-medium uppercase tracking-wider">
+            <span className="text-xs font-medium uppercase tracking-wider text-white/40">
               Key Insights
             </span>
           </div>
@@ -90,19 +93,19 @@ export const InsightCarousel: React.FC<InsightCarouselProps> = ({
               onClick={goPrev}
               className="p-1.5 text-white/30 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-4 h-4" strokeWidth={1.5} />
             </button>
             <button
               onClick={goNext}
               className="p-1.5 text-white/30 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4" strokeWidth={1.5} />
             </button>
             <button
               onClick={handleDismiss}
               className="p-1.5 text-white/30 hover:text-white hover:bg-white/5 rounded-lg transition-colors ml-2"
             >
-              <X className="w-4 h-4" />
+              <X className="w-4 h-4" strokeWidth={1.5} />
             </button>
           </div>
         </div>
@@ -114,7 +117,7 @@ export const InsightCarousel: React.FC<InsightCarouselProps> = ({
               <Icon className={`w-6 h-6 ${colors.icon}`} strokeWidth={1.5} />
             </div>
             <div>
-              <p className="text-white/40 text-xs uppercase tracking-wider">
+              <p className="text-xs uppercase tracking-wider text-white/40">
                 {currentInsight.metricLabel}
               </p>
               <p className="text-white text-2xl font-bold">{currentInsight.metric}</p>
@@ -126,8 +129,8 @@ export const InsightCarousel: React.FC<InsightCarouselProps> = ({
         </div>
 
         {/* Footer with dots */}
-        <div className="px-5 py-3 bg-white/5 border-t border-white/5 flex items-center justify-between">
-          <p className="text-white/40 text-sm">{currentInsight.supportingStat}</p>
+        <div className="px-5 py-3 bg-white/[0.02] border-t border-white/[0.06] flex items-center justify-between">
+          <p className="text-white/40 text-sm flex-1">{currentInsight.supportingStat}</p>
           <div className="flex items-center gap-1.5">
             {insights.map((_, idx) => (
               <button
@@ -136,6 +139,7 @@ export const InsightCarousel: React.FC<InsightCarouselProps> = ({
                 className={`w-1.5 h-1.5 rounded-full transition-colors ${
                   idx === currentIndex ? 'bg-white' : 'bg-white/30'
                 }`}
+                aria-label={`Go to insight ${idx + 1}`}
               />
             ))}
           </div>
