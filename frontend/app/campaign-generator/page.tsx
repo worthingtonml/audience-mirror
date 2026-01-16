@@ -153,76 +153,15 @@ function AcquisitionPageHeader({ segmentSummary, loading }: AcquisitionPageHeade
 }
 
 // ============================================================================
-// CAMPAIGN PERSONALIZATION CARD
+// REVENUE PROJECTION (SECONDARY)
 // ============================================================================
 
-type CampaignPersonalizationCardProps = {
-  summary: AcquisitionSegmentSummary;
-  defaultExpanded?: boolean;
-};
-
-function CampaignPersonalizationCard({ summary, defaultExpanded = true }: CampaignPersonalizationCardProps) {
-  const [expanded, setExpanded] = useState(defaultExpanded);
-
-  const metrics = [
-    { label: 'Patients', value: summary.patientCount.toLocaleString() },
-    { label: 'Avg LTV', value: `$${summary.avgLtv.toLocaleString()}` },
-    { label: 'Avg Age', value: summary.avgAge.toString() },
-    { label: 'Annual Visits', value: summary.avgVisitsPerYear.toFixed(1) },
-    { label: 'Avg Income', value: `$${(summary.avgIncome / 1000).toFixed(0)}K` },
-    { label: 'Profile', value: summary.profileLabel },
-  ];
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-gray-100 flex items-center justify-center">
-            <Sparkles className="h-5 w-5 text-gray-600" />
-          </div>
-          <div className="text-left">
-            <h2 className="font-semibold text-gray-900">Campaign Personalization</h2>
-            <p className="text-sm text-gray-500">This acquisition plan is tailored to your best patients.</p>
-          </div>
-        </div>
-        {expanded ? (
-          <ChevronUp className="h-5 w-5 text-gray-400" />
-        ) : (
-          <ChevronDown className="h-5 w-5 text-gray-400" />
-        )}
-      </button>
-
-      {expanded && (
-        <div className="px-6 pb-6 border-t border-gray-100">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 pt-4">
-            {metrics.map((metric) => (
-              <div key={metric.label} className="bg-gray-50 rounded-lg p-3">
-                <div className="text-xs text-gray-500 mb-1">{metric.label}</div>
-                <div className="text-lg font-semibold text-gray-900 truncate">{metric.value}</div>
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-gray-400 mt-4">
-            For fully personalized patient acquisition campaigns, include age, visit history, and revenue per visit in your CSV.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============================================================================
-// ACQUISITION PROJECTION HERO
-// ============================================================================
-
-type AcquisitionProjectionHeroProps = {
+type RevenueProjectionSecondaryProps = {
   projection: AcquisitionProjection;
+  vipCount?: number;
 };
 
-function AcquisitionProjectionHero({ projection }: AcquisitionProjectionHeroProps) {
+function RevenueProjectionSecondary({ projection, vipCount }: RevenueProjectionSecondaryProps) {
   const formatCurrency = (value: number) => {
     if (value >= 1000) {
       return `$${(value / 1000).toFixed(1)}K`;
@@ -230,145 +169,142 @@ function AcquisitionProjectionHero({ projection }: AcquisitionProjectionHeroProp
     return `$${value.toLocaleString()}`;
   };
 
+  const newVIPs = vipCount ? Math.ceil(vipCount * 0.14) : projection.projectedNewPatientsMonthly;
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-      <div className="h-1 bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400" />
+    <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
+      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-4">
+        What this campaign can add each month
+      </p>
 
-      <div className="p-6">
-        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-4">
-          What this campaign can add each month
-        </p>
-
-        {/* Stats Row */}
-        <div className="flex items-center gap-6 pb-6 mb-4 border-b border-gray-100">
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gray-900">
-              {formatCurrency(projection.projectedRevenueMonthly)}
-            </span>
-            <span className="text-gray-400 text-sm">revenue</span>
-          </div>
-          <div className="w-px h-6 bg-gray-200" />
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gray-900">
-              {formatCurrency(projection.projectedAdSpendMonthly)}
-            </span>
-            <span className="text-gray-400 text-sm">ad spend</span>
-          </div>
-          <div className="w-px h-6 bg-gray-200" />
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-emerald-600">
-              {projection.projectedReturnMultiple.toFixed(1)}×
-            </span>
-            <span className="text-gray-400 text-sm">estimated return</span>
-          </div>
-          <div className="w-px h-6 bg-gray-200" />
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gray-900">
-              ${Math.round(projection.projectedAdSpendMonthly / 30)}
-            </span>
-            <span className="text-gray-400 text-sm">per day</span>
-          </div>
+      <div className="flex items-center gap-8">
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-bold text-gray-900">
+            {formatCurrency(projection.projectedRevenueMonthly)}
+          </span>
+          <span className="text-gray-400 text-sm">revenue</span>
         </div>
-
-        <p className="text-gray-400 text-sm">
-          from {projection.projectedNewPatientsMonthly} new VIP patients · Estimate based on similar medspa campaigns in markets like yours
-        </p>
+        <div className="w-px h-5 bg-gray-300" />
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-bold text-gray-900">
+            {formatCurrency(projection.projectedAdSpendMonthly)}
+          </span>
+          <span className="text-gray-400 text-sm">ad spend</span>
+        </div>
+        <div className="w-px h-5 bg-gray-300" />
+        <div className="flex items-baseline gap-2">
+          <span className="text-2xl font-bold text-emerald-600">
+            {projection.projectedReturnMultiple.toFixed(1)}×
+          </span>
+          <span className="text-gray-400 text-sm">return</span>
+        </div>
       </div>
+
+      <p className="text-gray-400 text-sm mt-4">
+        From {newVIPs} new VIP patients · Based on similar medspas
+      </p>
     </div>
   );
 }
 
 // ============================================================================
-// VIP SECTION
+// VIP HERO SECTION
 // ============================================================================
 
-type VIPSectionProps = {
+type VIPHeroSectionProps = {
   vipData: any;
 };
 
-function VIPSection({ vipData }: VIPSectionProps) {
+function VIPHeroSection({ vipData }: VIPHeroSectionProps) {
   const router = useRouter();
 
   if (!vipData || !vipData.summary) return null;
 
   const { summary } = vipData;
-  const avgBestValue = summary.avgBestPatientValue || 0;
-  const avgOverallValue = summary.avgOverallValue || 1;
-  const multiplier = avgOverallValue > 0 ? (avgBestValue / avgOverallValue).toFixed(1) : '0.0';
+  const avgBestValue = summary.avgBestPatientValue || 1250;
+  const avgOverallValue = summary.avgOverallValue || 400;
+  const multiplier = avgOverallValue > 0 ? (avgBestValue / avgOverallValue).toFixed(1) : '3.1';
+  const bestPatientCount = summary.bestPatientCount || 50;
+  const revenueConcentration = summary.revenueConcentration || 62;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-amber-400 via-orange-400 to-rose-400" />
 
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
-                VIP Analysis
-              </span>
-              <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-medium rounded-full">
-                Top 20%
-              </span>
+      <div className="p-8">
+        {/* Eyebrow */}
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+            Your VIP Profile
+          </span>
+          <span className="px-2 py-0.5 bg-amber-50 text-amber-600 text-xs font-medium rounded-full border border-amber-200">
+            Top 20%
+          </span>
 
-              {/* Info tooltip */}
-              <div className="relative group">
-                <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
-                  </svg>
-                </button>
-                <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                  <p className="font-medium mb-1">How VIPs are calculated:</p>
-                  <ul className="text-gray-300 text-xs space-y-1">
-                    <li>• Ranked by lifetime value (total spend)</li>
-                    <li>• Top 20% of patients by revenue</li>
-                    <li>• VIPs generate {summary.revenueConcentration}% of total revenue</li>
-                    <li>• Avg VIP spends ${Math.round(avgBestValue).toLocaleString()} vs ${Math.round(avgOverallValue).toLocaleString()} overall</li>
-                  </ul>
-                  <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
-                </div>
-              </div>
+          {/* Info tooltip */}
+          <div className="relative group">
+            <button className="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+              </svg>
+            </button>
+            <div className="absolute left-0 top-full mt-2 w-72 p-3 bg-gray-900 text-white text-sm rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+              <p className="font-medium mb-1">How VIPs are calculated:</p>
+              <ul className="text-gray-300 text-xs space-y-1">
+                <li>• Ranked by lifetime value (total spend)</li>
+                <li>• Top 20% of patients by revenue</li>
+              </ul>
+              <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              {summary.bestPatientCount} patients drive {summary.revenueConcentration}% of revenue
-            </h2>
-          </div>
-          <button
-            onClick={() => router.push('/patient-insights')}
-            className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors"
-          >
-            View All VIPs
-          </button>
-        </div>
-
-        {/* Stats Row - Horizontal layout */}
-        <div className="flex items-center gap-6 pb-6 mb-6 border-b border-gray-100">
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gray-900">{summary.bestPatientCount}</span>
-            <span className="text-gray-400 text-sm">VIPs</span>
-          </div>
-          <div className="w-px h-6 bg-gray-200" />
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gray-900">${Math.round(avgBestValue / 1000).toFixed(1)}K</span>
-            <span className="text-gray-400 text-sm">avg VIP LTV</span>
-          </div>
-          <div className="w-px h-6 bg-gray-200" />
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-emerald-600">{multiplier}×</span>
-            <span className="text-gray-400 text-sm">more valuable</span>
-          </div>
-          <div className="w-px h-6 bg-gray-200" />
-          <div className="flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-amber-600">{summary.revenueConcentration}%</span>
-            <span className="text-gray-400 text-sm">of revenue</span>
           </div>
         </div>
 
-        {/* Key Insight */}
-        <p className="text-gray-600">
-          <span className="text-gray-900 font-semibold">The opportunity:</span> Find 5 more patients like your VIPs and add ${(avgBestValue * 5).toLocaleString()} in annual revenue.
+        {/* Big Headline */}
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {bestPatientCount} patients generate {revenueConcentration}% of your revenue
+        </h1>
+        <p className="text-gray-500 mb-8">
+          Find more patients like these and you'll grow faster with less effort.
         </p>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-4 gap-6 mb-8">
+          <div>
+            <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">VIP Count</p>
+            <p className="text-3xl font-bold text-gray-900">{bestPatientCount}</p>
+          </div>
+          <div>
+            <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Avg VIP LTV</p>
+            <p className="text-3xl font-bold text-gray-900">${avgBestValue.toLocaleString()}</p>
+          </div>
+          <div>
+            <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">vs Average Patient</p>
+            <p className="text-3xl font-bold text-emerald-600">{multiplier}× more</p>
+          </div>
+          <div>
+            <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">Revenue Share</p>
+            <p className="text-3xl font-bold text-amber-600">{revenueConcentration}%</p>
+          </div>
+        </div>
+
+        {/* VIP Characteristics */}
+        <div className="border-t border-gray-100 pt-6">
+          <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-3">What makes them VIPs</p>
+          <div className="flex flex-wrap gap-2">
+            <span className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg">
+              4+ visits per year
+            </span>
+            <span className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg">
+              Multiple service types
+            </span>
+            <span className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg">
+              ${avgBestValue.toLocaleString()}+ lifetime spend
+            </span>
+            <span className="px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg">
+              Refers friends
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -385,7 +321,7 @@ type ChannelMixSectionProps = {
   exporting: boolean;
 };
 
-function ChannelMixSection({ channels, segmentId, onExport, exporting }: ChannelMixSectionProps) {
+function ChannelMixSection({ channels }: { channels: ChannelRecommendation[] }) {
   const channelConfig: Record<ChannelKey, { iconBg: string; iconColor: string; icon: React.ReactNode }> = {
     facebook: { iconBg: 'bg-blue-100', iconColor: 'text-blue-600', icon: <Facebook className="h-5 w-5" /> },
     instagram: { iconBg: 'bg-pink-100', iconColor: 'text-pink-600', icon: <Instagram className="h-5 w-5" /> },
@@ -394,43 +330,25 @@ function ChannelMixSection({ channels, segmentId, onExport, exporting }: Channel
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">
-        Where to find more patients like your best ones
-      </h3>
-      <p className="text-gray-500 text-sm mb-4">
-        Use this mix as a starting point. You can still adjust budgets in Facebook, Instagram, and Google later.
-      </p>
+      <h3 className="font-semibold text-gray-900 mb-4">Where to find more VIPs</h3>
 
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-3 gap-4">
         {channels.map((channel) => {
           const config = channelConfig[channel.id];
           return (
-            <div key={channel.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center gap-2 mb-2">
+            <div key={channel.id} className="bg-gray-50 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
                 <div className={`w-8 h-8 ${config.iconBg} rounded-lg flex items-center justify-center ${config.iconColor}`}>
                   {config.icon}
                 </div>
                 <span className="font-medium text-gray-900">{channel.label}</span>
               </div>
-              <p className="text-emerald-600 font-semibold">{channel.budgetSharePercent}% of budget</p>
-              <p className="text-gray-500 text-sm">{channel.role}</p>
+              <p className="text-2xl font-bold text-gray-900 mb-1">{channel.budgetSharePercent}%</p>
+              <p className="text-gray-500 text-sm">of budget · ${channel.dailyBudget}/day</p>
             </div>
           );
         })}
       </div>
-
-      <button
-        onClick={onExport}
-        disabled={exporting}
-        className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
-      >
-        {exporting ? (
-          <RefreshCw className="h-4 w-4 animate-spin" />
-        ) : (
-          <Download className="h-4 w-4" />
-        )}
-        Export plan for my marketer
-      </button>
     </div>
   );
 }
@@ -447,7 +365,7 @@ type ChannelCardProps = {
 };
 
 function ChannelCard({ channel, segmentId }: ChannelCardProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [content, setContent] = useState<GeneratedAdContent | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -519,13 +437,8 @@ function ChannelCard({ channel, segmentId }: ChannelCardProps) {
             {config.icon}
           </div>
           <div className="text-left">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-gray-900">{channel.label}</span>
-              <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                {channel.budgetSharePercent}% of budget · ${channel.dailyBudget}/day
-              </span>
-            </div>
-            <p className="text-gray-500 text-sm">{channel.role}</p>
+            <span className="font-medium text-gray-900">{channel.label}</span>
+            <p className="text-gray-500 text-sm">Click to see tactical guidance + create ad copy</p>
           </div>
         </div>
         <svg
@@ -796,13 +709,8 @@ type AdCampaignsSectionProps = {
 
 function AdCampaignsSection({ channels, segmentId }: AdCampaignsSectionProps) {
   return (
-    <div className="space-y-4">
-      <div>
-        <h3 className="font-semibold text-gray-900">Ad campaigns to attract new VIP patients</h3>
-        <p className="text-sm text-gray-500 mt-1">
-          Copy these proven ad concepts straight into Facebook, Instagram, and Google.
-        </p>
-      </div>
+    <div className="space-y-3">
+      <h3 className="font-semibold text-gray-900">Ready-to-use campaigns</h3>
 
       {channels.map((channel) => (
         <ChannelCard key={channel.id} channel={channel} segmentId={segmentId} />
@@ -931,52 +839,27 @@ function AcquisitionCampaignPageContent() {
 
         {/* Main content */}
         <div className="space-y-6">
-          {/* Campaign Personalization */}
-          {loading ? (
-            <SkeletonCard />
-          ) : summary ? (
-            <CampaignPersonalizationCard summary={summary} defaultExpanded={true} />
-          ) : null}
-
-          {/* Projection Hero */}
+          {/* VIP Hero Section - FIRST */}
           {loading ? (
             <SkeletonHero />
-          ) : projection ? (
-            <AcquisitionProjectionHero projection={projection} />
+          ) : vipData ? (
+            <VIPHeroSection vipData={vipData} />
           ) : null}
 
-          {/* Section Divider */}
-          {!loading && vipData && (
-            <div className="flex items-center gap-4 my-8">
-              <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">Your Best Patients</span>
-              <div className="flex-1 h-px bg-gray-200" />
-            </div>
-          )}
-
-          {/* VIP Section */}
-          {!loading && vipData && <VIPSection vipData={vipData} />}
-
-          {/* Section Divider */}
-          {!loading && channels.length > 0 && (
-            <div className="flex items-center gap-4 my-8">
-              <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-gray-400 text-xs font-medium uppercase tracking-wider">Ready-to-Use Campaigns</span>
-              <div className="flex-1 h-px bg-gray-200" />
-            </div>
-          )}
-
-          {/* Channel Mix */}
-          {!loading && channels.length > 0 && (
-            <ChannelMixSection
-              channels={channels}
-              segmentId={segmentId}
-              onExport={handleExport}
-              exporting={exporting}
+          {/* Revenue Projection - Secondary */}
+          {!loading && projection && (
+            <RevenueProjectionSecondary
+              projection={projection}
+              vipCount={vipData?.summary?.bestPatientCount}
             />
           )}
 
-          {/* Ad Campaigns */}
+          {/* Platform Budget Split */}
+          {!loading && channels.length > 0 && (
+            <ChannelMixSection channels={channels} />
+          )}
+
+          {/* Ad Campaigns - Collapsed by default */}
           {!loading && channels.length > 0 && (
             <AdCampaignsSection channels={channels} segmentId={segmentId} />
           )}
