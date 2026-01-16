@@ -1108,42 +1108,45 @@ ${clinicName} Team`
           className="mx-auto w-full px-6 md:px-10"
           style={{ maxWidth: 1400 }}
         >
-          <div className="py-6 flex items-center justify-between gap-4">
+          <div className="py-6 flex items-start justify-between gap-4">
+            {/* Left side - Title */}
             <div>
-              <h1 className="text-xl md:text-2xl font-semibold text-[#111827] tracking-tight">
+              <h1 className="text-2xl font-bold text-gray-900">
                 {terms.planTitle}
               </h1>
-              <p className="text-xs md:text-sm text-[#9CA3AF] mt-1 flex items-center gap-2">
-                <span>{patientCount} {terms.customers} analyzed</span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#e0e7ff] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#6366f1]">
-                  <Clock className="h-3 w-3" />
-                  {getSeasonalCopy(season).timing}
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-gray-500 text-sm">{patientCount} {terms.customers} analyzed</span>
+                <span className="text-gray-300">•</span>
+                <span className="inline-flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                  Ready to act
                 </span>
-              </p>
+              </div>
             </div>
-            
-            <select
-              value={vertical}
-              onChange={(e) => setVertical(e.target.value)}
-              className="px-3 py-2 text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg focus:ring-[#6366f1] focus:border-[#6366f1]"
-            >
-              <option value="medspa">Aesthetics</option>
-              <option value="real_estate_mortgage">Real Estate / Mortgage</option>
-            </select>
 
-            {availableProcedures.length > 0 && (
-              <div className="relative" ref={dropdownRef}>
-                <button
-                  onClick={() =>
-                    setShowProcedureDropdown((open) => !open)
-                  }
-                  disabled={isFiltering}
-                  className="flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-medium text-[#111827] bg-white border border-[#CBD5E1] rounded-lg hover:bg-[#eef2ff] disabled:opacity-50 transition-colors shadow-sm"
-                >
-                  <Target className="h-4 w-4 text-[#6366f1]" />
-                  {procedureDisplayText}
-                  <ChevronDown className="h-4 w-4 text-[#9CA3AF]" />
-                </button>
+            {/* Right side - Dropdowns */}
+            <div className="flex items-center gap-3">
+              {/* Vertical selector */}
+              <select
+                value={vertical}
+                onChange={(e) => setVertical(e.target.value)}
+                className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent appearance-none cursor-pointer min-w-[140px]"
+              >
+                <option value="medspa">Aesthetics</option>
+                <option value="real_estate_mortgage">Real Estate / Mortgage</option>
+              </select>
+
+              {/* Procedure filter */}
+              {availableProcedures.length > 0 && (
+                <div className="relative" ref={dropdownRef}>
+                  <button
+                    onClick={() => setShowProcedureDropdown((open) => !open)}
+                    disabled={isFiltering}
+                    className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent disabled:opacity-50 cursor-pointer min-w-[140px] flex items-center justify-between gap-2"
+                  >
+                    <span>{procedureDisplayText}</span>
+                    <ChevronDown className="h-4 w-4 text-gray-400" />
+                  </button>
 
                 {showProcedureDropdown && (
                   <div className="absolute right-0 mt-2 w-64 bg-white border border-[#CBD5E1] rounded-xl shadow-xl z-10 overflow-hidden">
@@ -1201,8 +1204,9 @@ ${clinicName} Team`
                     </div>
                   </div>
                 )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
