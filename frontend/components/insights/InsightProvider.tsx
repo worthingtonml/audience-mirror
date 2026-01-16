@@ -1,106 +1,131 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import { Insight, KeyInsight, ActionableInsight, isKeyInsight, isActionableInsight } from './types';
+import { SideBox } from './SideBox';
+import { HorizontalBar } from './HorizontalBar';
 import { WelcomeMoment } from './WelcomeMoment';
-import { CommandBar } from './CommandBar';
-
-interface Insight {
-  id: string;
-  priority: 'high' | 'normal';  // high = welcome moment, normal = command bar
-  type: string;
-  headline: string;
-  metric?: string;
-  metricLabel?: string;
-  subtext?: string;
-  cta?: string;
-  onAction?: () => void;
-}
+import { InsightCarousel } from './InsightCarousel';
 
 interface InsightContextType {
   showInsight: (insight: Insight) => void;
-  dismissInsight: () => void;
+  showWelcome: (insight: KeyInsight) => void;
+  queueKeyInsight: (insight: KeyInsight) => void;
+  dismissAll: () => void;
 }
 
 const InsightContext = createContext<InsightContextType | null>(null);
 
 export const useInsight = () => {
-  const context = useContext(InsightContext);
-  if (!context) throw new Error('useInsight must be used within InsightProvider');
-  return context;
+  const ctx = useContext(InsightContext);
+  if (!ctx) throw new Error('useInsight must be used within InsightProvider');
+  return ctx;
 };
 
-// Check if insight was shown recently
+// LocalStorage helpers
+const SHOWN_KEY = 'insights_shown';
 const wasRecentlyShown = (id: string): boolean => {
-  const shown = localStorage.getItem(`insight_shown_${id}`);
-  if (!shown) return false;
-  const timestamp = parseInt(shown, 10);
-  const hoursSince = (Date.now() - timestamp) / (1000 * 60 * 60);
-  return hoursSince < 24; // Don't show same insight within 24h
+  try {
+    const shown = JSON.parse(localStorage.getItem(SHOWN_KEY) || '{}');
+    const timestamp = shown[id];
+    if (!timestamp) return false;
+    const hoursSince = (Date.now() - timestamp) / (1000 * 60 * 60);
+    return hoursSince < 24;
+  } catch {
+    return false;
+  }
 };
 
-const markAsShown = (id: string) => {
-  localStorage.setItem(`insight_shown_${id}`, Date.now().toString());
+const markShown = (id: string) => {
+  try {
+    const shown = JSON.parse(localStorage.getItem(SHOWN_KEY) || '{}');
+    shown[id] = Date.now();
+    localStorage.setItem(SHOWN_KEY, JSON.stringify(shown));
+  } catch {}
 };
 
 export const InsightProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentInsight, setCurrentInsight] = useState<Insight | null>(null);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [showCommand, setShowCommand] = useState(false);
+  const [activeKeyInsight, setActiveKeyInsight] = useState<KeyInsight | null>(null);
+  const [activeActionable, setActiveActionable] = useState<ActionableInsight | null>(null);
+  const [welcomeInsight, setWelcomeInsight] = useState<KeyInsight | null>(null);
+  const [keyInsightQueue, setKeyInsightQueue] = useState<KeyInsight[]>([]);
 
+  // Show single insight
   const showInsight = useCallback((insight: Insight) => {
-    // Skip if recently shown
     if (wasRecentlyShown(insight.id)) return;
+    markShown(insight.id);
 
-    setCurrentInsight(insight);
-    markAsShown(insight.id);
-
-    if (insight.priority === 'high') {
-      setShowWelcome(true);
-    } else {
-      setShowCommand(true);
+    if (isKeyInsight(insight)) {
+      setActiveKeyInsight(insight);
+    } else if (isActionableInsight(insight)) {
+      setActiveActionable(insight);
     }
   }, []);
 
-  const dismissInsight = useCallback(() => {
-    setShowWelcome(false);
-    setShowCommand(false);
-    setCurrentInsight(null);
+  // Show welcome moment
+  const showWelcome = useCallback((insight: KeyInsight) => {
+    if (wasRecentlyShown(insight.id)) return;
+    markShown(insight.id);
+    setWelcomeInsight(insight);
   }, []);
 
-  const handleWelcomeComplete = useCallback(() => {
-    setShowWelcome(false);
-    // Optionally show command bar after welcome
-    if (currentInsight) {
-      setTimeout(() => setShowCommand(true), 300);
-    }
-  }, [currentInsight]);
+  // Queue for carousel
+  const queueKeyInsight = useCallback((insight: KeyInsight) => {
+    if (wasRecentlyShown(insight.id)) return;
+    markShown(insight.id);
+    setKeyInsightQueue((prev) => [...prev, insight]);
+  }, []);
+
+  const dismissAll = useCallback(() => {
+    setActiveKeyInsight(null);
+    setActiveActionable(null);
+    setWelcomeInsight(null);
+    setKeyInsightQueue([]);
+  }, []);
+
+  // Show carousel if queue has multiple items
+  const showCarousel = keyInsightQueue.length >= 2;
 
   return (
-    <InsightContext.Provider value={{ showInsight, dismissInsight }}>
+    <InsightContext.Provider value={{ showInsight, showWelcome, queueKeyInsight, dismissAll }}>
       {children}
 
-      {/* Welcome Moment */}
-      {showWelcome && currentInsight && (
+      {/* Welcome Moment - highest priority */}
+      {welcomeInsight && (
         <WelcomeMoment
-          type={currentInsight.type as any}
-          metric={currentInsight.metric || ''}
-          metricLabel={currentInsight.metricLabel || ''}
-          subtitle={currentInsight.subtext || ''}
-          onComplete={handleWelcomeComplete}
+          insight={welcomeInsight}
+          onComplete={() => setWelcomeInsight(null)}
         />
       )}
 
-      {/* Command Bar */}
-      {showCommand && currentInsight && !showWelcome && (
-        <CommandBar
-          type={currentInsight.type as any}
-          headline={currentInsight.headline}
-          subtext={currentInsight.subtext}
-          metric={currentInsight.metric}
-          cta={currentInsight.cta}
-          onAction={currentInsight.onAction}
-          onDismiss={dismissInsight}
+      {/* Horizontal Bar - actionable insights */}
+      {activeActionable && !welcomeInsight && (
+        <HorizontalBar
+          insight={activeActionable}
+          onDismiss={() => setActiveActionable(null)}
         />
+      )}
+
+      {/* Side Box or Carousel - key insights */}
+      {!welcomeInsight && !activeActionable && (
+        <>
+          {showCarousel ? (
+            <InsightCarousel
+              insights={keyInsightQueue}
+              onDismiss={() => setKeyInsightQueue([])}
+            />
+          ) : activeKeyInsight ? (
+            <SideBox
+              insight={activeKeyInsight}
+              onDismiss={() => setActiveKeyInsight(null)}
+            />
+          ) : keyInsightQueue.length === 1 ? (
+            <SideBox
+              insight={keyInsightQueue[0]}
+              onDismiss={() => setKeyInsightQueue([])}
+            />
+          ) : null}
+        </>
       )}
     </InsightContext.Provider>
   );

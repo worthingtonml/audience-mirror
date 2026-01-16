@@ -197,7 +197,7 @@ function generateStrengthCopy(analysisData: any, isRealEstate: boolean = false):
 
 export default function PatientInsights() {
   const router = useRouter();
-  const { showInsight } = useInsight();
+  const { showInsight, showWelcome } = useInsight();
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [smsCampaigns, setSmsCampaigns] = useState<any[]>([]);
@@ -532,62 +532,61 @@ export default function PatientInsights() {
   useEffect(() => {
     if (!analysisData || isMortgage) return;
 
-    // Generate and show insights using new system
-    // Check for big wins/milestones first (high priority - Welcome Moment)
+    // Check for milestones/big wins first (Welcome Moment)
     if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered >= 5000) {
-      showInsight({
-        id: `monthly_win_${new Date().getMonth()}_${new Date().getFullYear()}`,
-        priority: 'high',
-        type: 'big_win',
-        headline: 'Campaign Win',
+      showWelcome({
+        id: `milestone_${new Date().getMonth()}_${new Date().getFullYear()}`,
+        type: 'milestone',
         metric: `$${Math.round(outreachSummary.revenue_recovered).toLocaleString()}`,
-        metricLabel: 'recovered',
-        subtext: `${outreachSummary.returned_count} patients came back`,
+        metricLabel: 'This month',
+        headline: 'recovered',
+        supportingStat: `${outreachSummary.returned_count} patients came back`,
       });
+      return;
     }
-    // Regular wins (normal priority - Command Bar)
-    else if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered > 0) {
+
+    // Regular campaign wins (Side Box - Key Insight)
+    if (outreachSummary?.returned_count > 0 && outreachSummary?.revenue_recovered > 0) {
       showInsight({
         id: `campaign_win_${new Date().getMonth()}_${new Date().getFullYear()}`,
-        priority: 'normal',
         type: 'campaign_win',
-        headline: `$${Math.round(outreachSummary.revenue_recovered).toLocaleString()} recovered this month`,
-        subtext: `${outreachSummary.returned_count} patients returned after outreach`,
-        cta: 'See details',
-        onAction: () => router.push('/performance'),
+        metric: `$${Math.round(outreachSummary.revenue_recovered).toLocaleString()}`,
+        metricLabel: 'This month',
+        headline: 'recovered',
+        supportingStat: `${outreachSummary.returned_count} patients returned`,
       });
     }
-    // Benchmark insights
-    else {
-      const totalPatients = analysisData.patient_count || 0;
-      const highFreqCount = analysisData.patient_segments?.high_frequency?.count || 0;
-      if (totalPatients > 0 && highFreqCount > 0) {
-        const retentionRate = Math.round((highFreqCount / totalPatients) * 100);
-        if (retentionRate >= 15) {
-          showInsight({
-            id: `benchmark_${new Date().getMonth()}`,
-            priority: 'normal',
-            type: 'benchmark',
-            headline: 'Your retention is above average',
-            subtext: `${retentionRate}% vs. 12% industry median`,
-            metric: `${retentionRate}%`,
-          });
-        }
-      }
-      // Cross-sell opportunity
-      else if (analysisData.service_analysis?.primary_opportunity) {
-        const opp = analysisData.service_analysis.primary_opportunity;
+
+    // Benchmark insights (Side Box - Key Insight)
+    const totalPatients = analysisData.patient_count || 0;
+    const highFreqCount = analysisData.patient_segments?.high_frequency?.count || 0;
+    if (totalPatients > 0 && highFreqCount > 0) {
+      const retentionRate = Math.round((highFreqCount / totalPatients) * 100);
+      if (retentionRate >= 15) {
         showInsight({
-          id: `cross_sell_${opp.title}`,
-          priority: 'normal',
-          type: 'market_signal',
-          headline: opp.title,
-          subtext: `${opp.patient_count} patients · $${opp.potential_revenue?.toLocaleString()} potential`,
-          cta: 'View patients',
+          id: `benchmark_${new Date().getMonth()}`,
+          type: 'benchmark',
+          metric: `${retentionRate}%`,
+          metricLabel: '12-month retention',
+          headline: 'above average',
+          supportingStat: 'Industry median: 12%',
         });
       }
     }
-  }, [analysisData, outreachSummary, isMortgage, showInsight, router]);
+
+    // Cross-sell opportunity (Horizontal Bar - Actionable)
+    if (analysisData.service_analysis?.primary_opportunity) {
+      const opp = analysisData.service_analysis.primary_opportunity;
+      showInsight({
+        id: `cross_sell_${opp.title}`,
+        type: 'market_signal',
+        headline: opp.title,
+        subtext: `${opp.patient_count} patients · $${opp.potential_revenue?.toLocaleString()} potential`,
+        cta: 'View patients',
+        anchor: '#cross-sell-section',
+      });
+    }
+  }, [analysisData, outreachSummary, isMortgage, showInsight, showWelcome, router]);
 
   const toggleZip = (zip: string) => {
     setSelectedZips((prev) => ({ ...prev, [zip]: !prev[zip] }));
