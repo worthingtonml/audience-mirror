@@ -17,6 +17,12 @@ export default {
           100: '#C7D2FE',    // Blurple focus ring
         },
       },
+      borderRadius: {
+        'lg': '6px',    // was 8px - buttons, inputs
+        'xl': '8px',    // was 12px - smaller cards
+        '2xl': '12px',  // was 16px - cards, containers
+        '3xl': '16px',  // was 24px - large modals
+      },
     },
   },
   plugins: [],
