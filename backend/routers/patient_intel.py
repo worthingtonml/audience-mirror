@@ -483,7 +483,11 @@ def transform_to_patient_intel_format(
 
     # Provider concentration analysis (Key Person Risk)
     vip_patient_ids = set(top_patients['patient_id'].tolist()) if 'patient_id' in top_patients.columns else None
+    print(f"[DEBUG] Analyzing provider concentration with {len(vip_patient_ids) if vip_patient_ids else 0} VIP patients")
+    print(f"[DEBUG] patients_df columns: {list(patients_df.columns)}")
+    print(f"[DEBUG] Does patients_df have 'provider' column? {'provider' in patients_df.columns}")
     provider_risk = analyze_provider_concentration(patients_df, vip_patients=vip_patient_ids, min_risk_threshold=50)
+    print(f"[DEBUG] Provider risk result: {provider_risk}")
 
     # Service rebooking analysis (from dominant profile)
     service_rebooking = None
@@ -491,6 +495,11 @@ def transform_to_patient_intel_format(
     if has_profile_data:
         service_rebooking = profile_analysis.get("service_rebooking")
         gateway_services = profile_analysis.get("gateway_services")
+        print(f"[DEBUG] Retrieved from profile_analysis:")
+        print(f"  - service_rebooking: {service_rebooking}")
+        print(f"  - gateway_services: {gateway_services}")
+    else:
+        print(f"[DEBUG] No profile_data available - service analysis will be None")
 
     # Final response
     response: Dict[str, Any] = {
