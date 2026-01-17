@@ -4,6 +4,7 @@ from typing import Optional, List, Dict, Any
 import pandas as pd
 import tempfile
 import os
+from services.provider_analysis import analyze_provider_concentration
 
 router = APIRouter(prefix="/api", tags=["patient-intel"])
 
@@ -480,6 +481,17 @@ def transform_to_patient_intel_format(
                 }
             )
 
+    # Provider concentration analysis (Key Person Risk)
+    vip_patient_ids = set(top_patients['patient_id'].tolist()) if 'patient_id' in top_patients.columns else None
+    provider_risk = analyze_provider_concentration(patients_df, vip_patients=vip_patient_ids, min_risk_threshold=50)
+
+    # Service rebooking analysis (from dominant profile)
+    service_rebooking = None
+    gateway_services = None
+    if has_profile_data:
+        service_rebooking = profile_analysis.get("service_rebooking")
+        gateway_services = profile_analysis.get("gateway_services")
+
     # Final response
     response: Dict[str, Any] = {
         "success": True,
@@ -497,6 +509,18 @@ def transform_to_patient_intel_format(
             "opportunities": opportunities,
         },
     }
+
+    # Add provider risk data if available
+    if provider_risk:
+        response["providerRisk"] = provider_risk
+
+    # Add service rebooking data if available
+    if service_rebooking:
+        response["serviceRebooking"] = service_rebooking
+
+    # Add gateway services data if available
+    if gateway_services:
+        response["gatewayServices"] = gateway_services
 
     # Add profile data to response if available
     if has_profile_data:

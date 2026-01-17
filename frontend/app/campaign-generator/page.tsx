@@ -220,12 +220,17 @@ function VIPHeroSection({ vipData }: VIPHeroSectionProps) {
 
   if (!vipData || !vipData.summary) return null;
 
-  const { summary } = vipData;
+  const { summary, providerRisk } = vipData;
   const avgBestValue = summary.avgBestPatientValue || 1250;
   const avgOverallValue = summary.avgOverallValue || 400;
   const multiplier = avgOverallValue > 0 ? (avgBestValue / avgOverallValue).toFixed(1) : '3.1';
   const bestPatientCount = summary.bestPatientCount || 50;
   const revenueConcentration = summary.revenueConcentration || 62;
+
+  // Provider concentration risk
+  const hasProviderRisk = providerRisk?.has_concentration_risk;
+  const topProvider = providerRisk?.top_provider;
+  const vipConcentration = providerRisk?.vip_concentration;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -305,6 +310,21 @@ function VIPHeroSection({ vipData }: VIPHeroSectionProps) {
             </span>
           </div>
         </div>
+
+        {/* Provider Risk Warning (only show if risk exists) */}
+        {vipConcentration && (
+          <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-amber-900 mb-1">Key Person Risk</p>
+                <p className="text-sm text-amber-700">
+                  {topProvider?.name} controls {vipConcentration.vip_pct}% of your VIP revenue.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

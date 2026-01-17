@@ -1,10 +1,11 @@
 """
 Service Analysis for Audience Mirror
-Calculates service co-occurrence, bundles, and cross-sell opportunities
+Calculates service co-occurrence, bundles, cross-sell opportunities, and rebooking rates
 """
 
 from collections import defaultdict
 import pandas as pd
+import numpy as np
 
 
 def analyze_services(df, treatment_col='treatment', revenue_col='revenue', patient_id_col='patient_id'):
@@ -289,5 +290,243 @@ def analyze_services(df, treatment_col='treatment', revenue_col='revenue', patie
         result['primary_opportunity'] = result['bundle_opportunity']
     elif result['upsell_opportunity']:
         result['primary_opportunity'] = result['upsell_opportunity']
-    
+
     return result
+
+
+def analyze_service_rebooking(df, min_patients=10):
+    """
+    Analyze rebooking rates by service type to identify retention gaps.
+
+    Returns only the biggest gap (lowest rebooking rate) or strongest outlier.
+    Returns None if no data or insufficient sample size.
+
+    Args:
+        df: Visit-level dataframe (one row per visit)
+        min_patients: Minimum patients per service to include (default 10)
+
+    Returns:
+        dict with service rebooking insight, or None
+    """
+
+    # Find required columns
+    patient_id_col = next((c for c in ['patient_id'] if c in df.columns), None)
+    date_col = next((c for c in ['visit_date', 'date', 'appointment_date'] if c in df.columns), None)
+    treatment_col = next((c for c in ['treatment', 'procedure', 'service'] if c in df.columns), None)
+
+    if not all([patient_id_col, date_col, treatment_col]):
+        return None
+
+    # Clean and prepare data
+    df = df[[patient_id_col, date_col, treatment_col]].copy()
+    df = df[df[treatment_col].notna()].copy()
+    df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+    df = df[df[date_col].notna()]
+
+    if len(df) == 0:
+        return None
+
+    # Sort by patient and date
+    df = df.sort_values([patient_id_col, date_col])
+
+    # Calculate time to next visit for each service
+    service_rebooking = defaultdict(lambda: {'rebooking_days': [], 'patient_count': 0})
+
+    for patient_id, patient_visits in df.groupby(patient_id_col):
+        if len(patient_visits) < 2:
+            continue  # Need at least 2 visits to measure rebooking
+
+        patient_visits = patient_visits.reset_index(drop=True)
+
+        for i in range(len(patient_visits) - 1):
+            current_service = str(patient_visits.iloc[i][treatment_col]).strip()
+            current_date = patient_visits.iloc[i][date_col]
+            next_date = patient_visits.iloc[i + 1][date_col]
+
+            days_to_rebook = (next_date - current_date).days
+
+            if days_to_rebook > 0:  # Valid rebooking
+                service_rebooking[current_service]['rebooking_days'].append(days_to_rebook)
+
+    # Calculate stats for each service
+    service_stats = []
+    for service, data in service_rebooking.items():
+        rebooking_days = data['rebooking_days']
+        patient_count = len(rebooking_days)
+
+        if patient_count < min_patients:
+            continue
+
+        median_days = int(np.median(rebooking_days))
+        avg_days = int(np.mean(rebooking_days))
+
+        # Calculate rebooking rate (% who rebook within expected window)
+        # Expected window varies by service type
+        expected_window = get_service_rebooking_window(service)
+        rebooked_on_time = sum(1 for d in rebooking_days if d <= expected_window)
+        rebooking_rate = round((rebooked_on_time / patient_count) * 100, 1)
+
+        service_stats.append({
+            'service': service,
+            'patient_count': patient_count,
+            'median_days': median_days,
+            'avg_days': avg_days,
+            'expected_window': expected_window,
+            'rebooking_rate': rebooking_rate,
+            'gap': expected_window - median_days  # Positive = returning later than ideal
+        })
+
+    if not service_stats:
+        return None
+
+    # Find the biggest gap (service with lowest rebooking rate OR longest delay)
+    # Prioritize low rebooking rate first, then long delay
+    biggest_gap = min(service_stats, key=lambda x: (x['rebooking_rate'], -abs(x['gap'])))
+
+    # Only surface if rebooking rate is below 60% (material issue)
+    if biggest_gap['rebooking_rate'] >= 60:
+        return None
+
+    return {
+        'service': biggest_gap['service'],
+        'rebooking_rate': biggest_gap['rebooking_rate'],
+        'median_days': biggest_gap['median_days'],
+        'expected_window': biggest_gap['expected_window'],
+        'gap_days': biggest_gap['gap'],
+        'patient_count': biggest_gap['patient_count'],
+        'all_services': service_stats  # For debugging/deeper analysis
+    }
+
+
+def get_service_rebooking_window(service_name):
+    """
+    Return expected rebooking window in days for a given service.
+    Based on medical spa industry standards.
+    """
+    service_lower = service_name.lower()
+
+    # Injectables - 3-4 months
+    if any(kw in service_lower for kw in ['botox', 'dysport', 'jeuveau', 'xeomin', 'filler', 'juvederm', 'restylane', 'sculptra']):
+        return 120  # 4 months
+
+    # Laser treatments - 4-6 weeks for series
+    if any(kw in service_lower for kw in ['laser', 'ipl', 'bbl', 'halo', 'moxi', 'fraxel', 'clear + brilliant', 'co2']):
+        return 45  # 6 weeks
+
+    # Facials and skincare - 4-6 weeks
+    if any(kw in service_lower for kw in ['facial', 'hydrafacial', 'peel', 'microneedling', 'dermaplaning']):
+        return 45  # 6 weeks
+
+    # Body contouring - 4-8 weeks for series
+    if any(kw in service_lower for kw in ['coolsculpting', 'emsculpt', 'body', 'cellulite', 'skin tightening']):
+        return 60  # 8 weeks
+
+    # Default - quarterly maintenance
+    return 90  # 3 months
+
+
+def analyze_gateway_services(df, min_patients=15, min_multiplier=1.5):
+    """
+    Identify which starting services lead to higher lifetime value (gateway services).
+
+    Returns only services with LTV multiplier >= min_multiplier.
+    Returns None if no data or no qualifying gateway services.
+
+    Args:
+        df: Visit-level dataframe (one row per visit)
+        min_patients: Minimum patients who started with this service (default 15)
+        min_multiplier: Minimum LTV multiplier to qualify (default 1.5)
+
+    Returns:
+        dict with gateway service insight, or None
+    """
+
+    # Find required columns
+    patient_id_col = next((c for c in ['patient_id'] if c in df.columns), None)
+    date_col = next((c for c in ['visit_date', 'date', 'appointment_date'] if c in df.columns), None)
+    treatment_col = next((c for c in ['treatment', 'procedure', 'service'] if c in df.columns), None)
+    revenue_col = next((c for c in ['revenue', 'amount', 'total'] if c in df.columns), None)
+
+    if not all([patient_id_col, date_col, treatment_col, revenue_col]):
+        return None
+
+    # Clean and prepare data
+    df = df[[patient_id_col, date_col, treatment_col, revenue_col]].copy()
+    df = df[df[treatment_col].notna()].copy()
+    df[date_col] = pd.to_datetime(df[date_col], errors='coerce')
+    df = df[df[date_col].notna()]
+    df[revenue_col] = pd.to_numeric(df[revenue_col], errors='coerce').fillna(0)
+
+    if len(df) == 0:
+        return None
+
+    # Sort by patient and date
+    df = df.sort_values([patient_id_col, date_col])
+
+    # Identify first service for each patient and calculate total LTV
+    first_services = {}
+    patient_ltv = defaultdict(float)
+
+    for patient_id, patient_visits in df.groupby(patient_id_col):
+        if len(patient_visits) == 0:
+            continue
+
+        patient_visits = patient_visits.reset_index(drop=True)
+
+        # First service
+        first_service = str(patient_visits.iloc[0][treatment_col]).strip()
+
+        # Total LTV
+        total_ltv = patient_visits[revenue_col].sum()
+
+        if patient_id not in first_services:
+            first_services[patient_id] = first_service
+
+        patient_ltv[patient_id] = total_ltv
+
+    # Calculate average LTV by first service
+    service_ltv = defaultdict(list)
+
+    for patient_id, first_service in first_services.items():
+        ltv = patient_ltv[patient_id]
+        service_ltv[first_service].append(ltv)
+
+    # Calculate stats for each gateway service
+    overall_avg_ltv = np.mean(list(patient_ltv.values())) if patient_ltv else 0
+
+    if overall_avg_ltv == 0:
+        return None
+
+    gateway_services = []
+    for service, ltvs in service_ltv.items():
+        patient_count = len(ltvs)
+
+        if patient_count < min_patients:
+            continue
+
+        avg_ltv = np.mean(ltvs)
+        multiplier = avg_ltv / overall_avg_ltv
+
+        if multiplier >= min_multiplier:
+            gateway_services.append({
+                'service': service,
+                'patient_count': patient_count,
+                'avg_ltv': int(avg_ltv),
+                'multiplier': round(multiplier, 1),
+                'total_revenue': int(sum(ltvs))
+            })
+
+    if not gateway_services:
+        return None
+
+    # Return the strongest gateway service (highest multiplier)
+    best_gateway = max(gateway_services, key=lambda x: x['multiplier'])
+
+    return {
+        'service': best_gateway['service'],
+        'multiplier': best_gateway['multiplier'],
+        'avg_ltv': best_gateway['avg_ltv'],
+        'patient_count': best_gateway['patient_count'],
+        'overall_avg_ltv': int(overall_avg_ltv),
+        'all_gateways': gateway_services  # For debugging/deeper analysis
+    }

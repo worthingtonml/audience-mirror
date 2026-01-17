@@ -1295,13 +1295,44 @@ ${clinicName} Team`
                 {/* Opportunity - Amber (room to grow) */}
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400 text-sm">Opportunity:</span>
-                  <span className="px-3 py-1 bg-amber-50 text-amber-600 text-sm font-medium rounded-full border border-amber-200">
-                    No skincare uptake
-                  </span>
+                  {analysisData?.serviceRebooking ? (
+                    <span className="px-3 py-1 bg-amber-50 text-amber-600 text-sm font-medium rounded-full border border-amber-200">
+                      {analysisData.serviceRebooking.service} rebooking {analysisData.serviceRebooking.rebooking_rate}%
+                    </span>
+                  ) : (
+                    <span className="px-3 py-1 bg-amber-50 text-amber-600 text-sm font-medium rounded-full border border-amber-200">
+                      No skincare uptake
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
           </section>
+
+          {/* ================================================================ */}
+          {/* GATEWAY SERVICE INSIGHT                                        */}
+          {/* Only show if gateway service exists (multiplier >= 1.5)       */}
+          {/* ================================================================ */}
+          {analysisData?.gatewayServices && (
+            <section className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl border border-emerald-200 p-6 shadow-sm mb-10">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-emerald-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 mb-1">Gateway Service</h3>
+                  <p className="text-gray-700">
+                    Patients who start with {analysisData.gatewayServices.service} spend {analysisData.gatewayServices.multiplier}× more over their lifetime.
+                  </p>
+                  <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
+                    <span>${analysisData.gatewayServices.avg_ltv.toLocaleString()} avg LTV</span>
+                    <span>·</span>
+                    <span>{analysisData.gatewayServices.patient_count} patients</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
 
           {/* ================================================================ */}
           {/* MEDSPA: DECISION QUEUE SECTION                                */}

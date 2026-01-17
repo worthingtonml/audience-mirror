@@ -1849,7 +1849,9 @@ def identify_dominant_profile(
         "profile_summary": summary,
         "cohort_descriptor": cohort_descriptor,
         "patient_segments": patient_segments,
-        "service_analysis": service_analysis
+        "service_analysis": service_analysis,
+        "service_rebooking": service_rebooking,
+        "gateway_services": gateway_services
     }
 def generate_strategic_insights(
     patients_df: pd.DataFrame,
@@ -2084,7 +2086,16 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
 
         # Ensure unique index
         patients_df = patients_df.reset_index(drop=True)
-        
+
+        # Analyze service rebooking BEFORE aggregation (needs visit-level data)
+        from services.service_analysis import analyze_service_rebooking, analyze_gateway_services
+        service_rebooking = analyze_service_rebooking(patients_df)
+        print(f"[ANALYSIS] Service rebooking analysis: {service_rebooking.get('service') if service_rebooking else 'No issues found'}")
+
+        # Analyze gateway services (first services that lead to high LTV)
+        gateway_services = analyze_gateway_services(patients_df)
+        print(f"[ANALYSIS] Gateway service analysis: {gateway_services.get('service') if gateway_services else 'No gateway services found'}")
+
         # CRITICAL: Aggregate visit rows into patient rows
         patients_df = aggregate_visits_to_patients(patients_df)
         
