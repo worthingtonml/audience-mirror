@@ -319,7 +319,7 @@ function VIPHeroSection({ vipData }: VIPHeroSectionProps) {
               <div>
                 <p className="text-sm font-medium text-amber-900 mb-1">Key Person Risk</p>
                 <p className="text-sm text-amber-700">
-                  {topProvider?.name} controls {vipConcentration.vip_pct}% of your VIP revenue.
+                  {vipConcentration.vip_pct}% of VIP revenue is tied to {topProvider?.name} — putting ~${Math.round((avgBestValue * bestPatientCount * vipConcentration.vip_pct) / 100).toLocaleString()} at risk if they leave.
                 </p>
               </div>
             </div>

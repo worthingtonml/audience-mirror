@@ -272,8 +272,11 @@ def aggregate_visits_to_patients(df: pd.DataFrame) -> pd.DataFrame:
     dob_col = 'dob' if 'dob' in grouped.columns else 'date_of_birth' if 'date_of_birth' in grouped.columns else None
     if dob_col:
         grouped['age'] = (pd.Timestamp.now() - pd.to_datetime(grouped[dob_col], errors='coerce')).dt.days // 365
-    
-    print(f"[AGGREGATE] Result: {len(grouped)} patients, Avg revenue: ${grouped['revenue'].mean():,.2f}, Avg visits: {grouped['visit_count'].mean():.1f}")
+
+    # Print summary stats
+    avg_revenue = grouped['revenue'].mean() if 'revenue' in grouped.columns else 0
+    avg_visits = grouped['visit_count'].mean() if 'visit_count' in grouped.columns else 0
+    print(f"[AGGREGATE] Result: {len(grouped)} patients, Avg revenue: ${avg_revenue:,.2f}, Avg visits: {avg_visits:.1f}")
     
     # Fix patient_id column name if it got mangled
     if 'patient_id_' in grouped.columns and 'patient_id' not in grouped.columns:
