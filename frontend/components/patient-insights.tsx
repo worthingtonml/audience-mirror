@@ -1271,7 +1271,10 @@ ${clinicName} Team`
                 <span className="text-gray-900 font-semibold">The picture:</span>{' '}
                 Your {analysisData?.patient_segments?.high_frequency?.count || 0} VIPs prove patients <em>can</em> become loyal — they visit 4×+ and spend 3× more.
                 But {churnData?.at_risk_percent || 0}% churn means most leave after 2 visits, before they're profitable at ${Math.round(totalRevenue / patientCount)} LTV.
-                Good news: {analysisData?.patient_segments?.referral_champions?.count || 0} patients already refer friends.
+                {analysisData?.serviceRebooking && (
+                  <> Only {analysisData.serviceRebooking.rebooking_rate}% of {analysisData.serviceRebooking.service} patients rebook within {analysisData.serviceRebooking.expected_window} days — top practices see 60%+.</>
+                )}
+                {' '}Good news: {analysisData?.patient_segments?.referral_champions?.count || 0} patients already refer friends.
                 Fix retention and that word-of-mouth compounds instead of leaking. The actions below are sorted by impact.
               </p>
 
