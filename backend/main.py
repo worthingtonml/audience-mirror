@@ -265,7 +265,7 @@ def aggregate_visits_to_patients(df: pd.DataFrame) -> pd.DataFrame:
     if 'revenue' not in grouped.columns and amount_col and amount_col in grouped.columns:
         grouped = grouped.rename(columns={amount_col: 'revenue'})
     
-    if 'first_visit' in grouped.columns and 'last_visit' in grouped.columns:
+    if 'first_visit' in grouped.columns and 'last_visit' in grouped.columns and 'visit_count' in grouped.columns:
         grouped['tenure_days'] = (grouped['last_visit'] - grouped['first_visit']).dt.days
         grouped['visits_per_year'] = grouped['visit_count'] / (grouped['tenure_days'] / 365.25).clip(lower=0.1)
     
