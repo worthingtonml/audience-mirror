@@ -1606,9 +1606,11 @@ def generate_cohort_descriptor(top_patients: pd.DataFrame) -> dict:
     }
 
 def identify_dominant_profile(
-    patients_df: pd.DataFrame, 
+    patients_df: pd.DataFrame,
     zip_features: pd.DataFrame,
-    top_percentile: float = 0.2
+    top_percentile: float = 0.2,
+    service_rebooking=None,
+    gateway_services=None
 ) -> dict:
     """
     PROFILE-FIRST: Identify WHO your best customers are using actual patient data.
@@ -2090,11 +2092,11 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
         # Analyze service rebooking BEFORE aggregation (needs visit-level data)
         from services.service_analysis import analyze_service_rebooking, analyze_gateway_services
         service_rebooking = analyze_service_rebooking(patients_df)
-        print(f"[ANALYSIS] Service rebooking analysis: {service_rebooking.get('service') if service_rebooking else 'No issues found'}")
+        print(f"[ANALYSIS] Service rebooking analysis: {service_rebooking['service'] if service_rebooking else 'No issues found'}")
 
         # Analyze gateway services (first services that lead to high LTV)
         gateway_services = analyze_gateway_services(patients_df)
-        print(f"[ANALYSIS] Gateway service analysis: {gateway_services.get('service') if gateway_services else 'No gateway services found'}")
+        print(f"[ANALYSIS] Gateway service analysis: {gateway_services['service'] if gateway_services else 'No gateway services found'}")
 
         # CRITICAL: Aggregate visit rows into patient rows
         patients_df = aggregate_visits_to_patients(patients_df)
@@ -2659,9 +2661,11 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
         # Generate profile-first analysis
         print(f"[DEBUG] About to call identify_dominant_profile with {len(patients_df)} patients")
         dominant_profile = identify_dominant_profile(
-            patients_df, 
-            zip_features, 
-            top_percentile=0.2
+            patients_df,
+            zip_features,
+            top_percentile=0.2,
+            service_rebooking=service_rebooking,
+            gateway_services=gateway_services
         )
         print(f"[PROFILE] {dominant_profile['profile_summary']}")
         strategic_insights = generate_strategic_insights(
