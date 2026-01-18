@@ -934,10 +934,15 @@ app.include_router(patient_intel_router.router)
 async def startup_event():
     create_tables()
 
-# CORS middleware for development: allow all origins
+# CORS middleware - allow production domains and localhost
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://audiencemirror.io",
+        "https://www.audiencemirror.io",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
