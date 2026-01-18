@@ -880,12 +880,14 @@ function AcquisitionCampaignPageContent() {
                 vipCount={vipData?.summary?.bestPatientCount}
               />
 
-              {/* Key Person Risk (HARDCODED) */}
-              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                <p className="text-amber-800 text-sm">
-                  <span className="font-semibold">72% of VIP revenue</span> is tied to Dr. Smith — putting ~$5,800 at risk if she leaves.
-                </p>
-              </div>
+              {/* Key Person Risk (FROM PROVIDER RISK DATA) */}
+              {vipData?.providerRisk?.vip_concentration && (
+                <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-amber-800 text-sm">
+                    <span className="font-semibold">{vipData.providerRisk.vip_concentration.vip_pct}% of VIP revenue</span> is tied to {vipData.providerRisk.top_provider?.name} — putting ~${Math.round((vipData.summary?.avgBestPatientValue || 1250) * (vipData.summary?.bestPatientCount || 50) * vipData.providerRisk.vip_concentration.vip_pct / 100).toLocaleString()} at risk if they leave.
+                  </p>
+                </div>
+              )}
             </>
           )}
 

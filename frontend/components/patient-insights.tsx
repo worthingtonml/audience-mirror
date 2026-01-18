@@ -1271,7 +1271,9 @@ ${clinicName} Team`
                 <span className="text-gray-900 font-semibold">The picture:</span>{' '}
                 Your {analysisData?.patient_segments?.high_frequency?.count || 0} VIPs prove patients <em>can</em> become loyal — they visit 4×+ and spend 3× more.
                 But {churnData?.at_risk_percent || 0}% churn means most leave after 2 visits, before they're profitable at ${Math.round(totalRevenue / patientCount)} LTV.
-                {' '}Only 38% of HydraFacial patients rebook within 60 days — top practices see 60%+.
+                {analysisData?.serviceRebooking && (
+                  <> Only {analysisData.serviceRebooking.rebooking_rate}% of {analysisData.serviceRebooking.service} patients rebook within {analysisData.serviceRebooking.expected_window} days — top practices see 60%+.</>
+                )}
                 {' '}Good news: {analysisData?.patient_segments?.referral_champions?.count || 0} patients already refer friends.
                 Fix retention and that word-of-mouth compounds instead of leaking. The actions below are sorted by impact.
               </p>
@@ -1336,15 +1338,19 @@ ${clinicName} Team`
           )}
 
           {/* ================================================================ */}
-          {/* PATIENT JOURNEY CARD (HARDCODED)                               */}
+          {/* PATIENT JOURNEY CARD (FROM GATEWAY SERVICES)                   */}
           {/* ================================================================ */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-10">
-            <div className="h-1 bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400" />
-            <div className="p-6">
-              <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">Patient Journey</p>
-              <p className="text-xl font-bold text-gray-900">Patients who start with Botox spend 2.3× more over 12 months</p>
+          {analysisData?.gatewayServices && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-10">
+              <div className="h-1 bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400" />
+              <div className="p-6">
+                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">Patient Journey</p>
+                <p className="text-xl font-bold text-gray-900">
+                  Patients who start with {analysisData.gatewayServices.service} spend {analysisData.gatewayServices.multiplier}× more over 12 months
+                </p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ================================================================ */}
           {/* MEDSPA: DECISION QUEUE SECTION                                */}
