@@ -874,10 +874,19 @@ function AcquisitionCampaignPageContent() {
 
           {/* Revenue Projection - Secondary */}
           {!loading && projection && (
-            <RevenueProjectionSecondary
-              projection={projection}
-              vipCount={vipData?.summary?.bestPatientCount}
-            />
+            <>
+              <RevenueProjectionSecondary
+                projection={projection}
+                vipCount={vipData?.summary?.bestPatientCount}
+              />
+
+              {/* Key Person Risk (HARDCODED) */}
+              <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-amber-800 text-sm">
+                  <span className="font-semibold">72% of VIP revenue</span> is tied to Dr. Smith — putting ~$5,800 at risk if she leaves.
+                </p>
+              </div>
+            </>
           )}
 
           {/* Platform Budget Split */}
