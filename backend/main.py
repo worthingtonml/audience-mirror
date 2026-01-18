@@ -1384,6 +1384,7 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
         "service_analysis": dominant_profile_data.get("service_analysis", {}) if dominant_profile_data else {},
         "serviceRebooking": dominant_profile_data.get("service_rebooking") if dominant_profile_data else None,
         "gatewayServices": dominant_profile_data.get("gateway_services") if dominant_profile_data else None,
+        "providerRisk": dominant_profile_data.get("provider_risk") if dominant_profile_data else None,
         "geographic_summary": dominant_profile_data.get("geographic_summary", {}) if dominant_profile_data else {},
         "profile_summary": dominant_profile_data.get("profile_summary", "") if dominant_profile_data else "",
         "strategic_insights": analysis_run.strategic_insights if analysis_run.strategic_insights else [],
@@ -1620,7 +1621,8 @@ def identify_dominant_profile(
     zip_features: pd.DataFrame,
     top_percentile: float = 0.2,
     service_rebooking=None,
-    gateway_services=None
+    gateway_services=None,
+    provider_risk=None
 ) -> dict:
     """
     PROFILE-FIRST: Identify WHO your best customers are using actual patient data.
@@ -1863,12 +1865,14 @@ def identify_dominant_profile(
         "patient_segments": patient_segments,
         "service_analysis": service_analysis,
         "service_rebooking": service_rebooking,
-        "gateway_services": gateway_services
+        "gateway_services": gateway_services,
+        "provider_risk": provider_risk
     }
 
     print(f"[DEBUG] dominant_profile being returned:")
     print(f"  - service_rebooking: {service_rebooking}")
     print(f"  - gateway_services: {gateway_services}")
+    print(f"  - provider_risk: {provider_risk}")
 def generate_strategic_insights(
     patients_df: pd.DataFrame,
     behavior_patterns: dict,
@@ -2115,7 +2119,20 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
         print(f"[DEBUG] Full gateway_services data: {gateway_services}")
 
         # CRITICAL: Aggregate visit rows into patient rows
-        patients_df = aggregate_visits_to_patients(patients_df)
+        patients_df_aggregated = aggregate_visits_to_patients(patients_df)
+
+        # Analyze provider concentration AFTER aggregation (uses patient-level data)
+        from services.provider_analysis import analyze_provider_concentration
+        # Get VIP patient IDs (top 20% by revenue) for VIP concentration analysis
+        revenue_col = 'revenue' if 'revenue' in patients_df_aggregated.columns else 'total_spent'
+        top_20pct_count = max(1, int(len(patients_df_aggregated) * 0.2))
+        vip_patient_ids = set(patients_df_aggregated.nlargest(top_20pct_count, revenue_col).get('patient_id', pd.Series()).dropna())
+        provider_risk = analyze_provider_concentration(patients_df, vip_patients=vip_patient_ids, min_risk_threshold=50)
+        print(f"[ANALYSIS] Provider risk analysis: {'Risk detected' if provider_risk and provider_risk.get('has_concentration_risk') else 'No concentration risk'}")
+        print(f"[DEBUG] Full provider_risk data: {provider_risk}")
+
+        # Continue with aggregated data
+        patients_df = patients_df_aggregated
         
         competitors_df = load_competitors_csv(dataset["competitors_path"]) if dataset.get("competitors_path") else None
         print("[ANALYSIS] Loaded competitors")
@@ -2681,7 +2698,8 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
             zip_features,
             top_percentile=0.2,
             service_rebooking=service_rebooking,
-            gateway_services=gateway_services
+            gateway_services=gateway_services,
+            provider_risk=provider_risk
         )
         print(f"[PROFILE] {dominant_profile['profile_summary']}")
         strategic_insights = generate_strategic_insights(

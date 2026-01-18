@@ -121,17 +121,14 @@ export function CampaignGeneratorContent() {
             console.log('[Google AI]', googleAd);
           });
 
-          // Fetch VIP data from patient-intel API
-          const uploadId = localStorage.getItem('uploadId');
-          if (uploadId) {
-            fetch(`${API_URL}/api/v1/patient-intel/${uploadId}`)
-              .then(res => res.json())
-              .then(intelData => {
-                console.log('[VIP Data]', intelData);
-                setVipData(intelData);
-              })
-              .catch(err => console.error('[VIP Data Error]', err));
-          }
+          // Extract VIP data from run results (includes providerRisk, serviceRebooking, gatewayServices)
+          const vipIntelData = {
+            providerRisk: data.providerRisk,
+            serviceRebooking: data.serviceRebooking,
+            gatewayServices: data.gatewayServices
+          };
+          console.log('[VIP Data]', vipIntelData);
+          setVipData(vipIntelData);
 
         }
         setLoading(false);

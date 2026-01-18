@@ -538,3 +538,119 @@ def transform_to_patient_intel_format(
 
     return response
 
+
+@router.get("/v1/patient-intel/{dataset_id}")
+async def get_patient_intel_by_dataset(dataset_id: str) -> Dict[str, Any]:
+    """
+    Get patient intelligence analysis for a dataset.
+    This endpoint is called by the frontend to fetch VIP analysis, provider risk, etc.
+    """
+    from main import get_db
+    from database import Dataset
+    from services.data_loaders import validate_and_load_patients
+    from sqlalchemy.orm import Session
+
+    # Get database session
+    db: Session = next(get_db())
+
+    try:
+        # Find dataset in database
+        dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+        if not dataset:
+            raise HTTPException(status_code=404, detail=f"Dataset {dataset_id} not found")
+
+        # Load patient data from saved file
+        is_valid, errors, patients_df = validate_and_load_patients(dataset.patients_path)
+        if not is_valid or patients_df is None:
+            raise HTTPException(status_code=400, detail={"errors": errors})
+
+        # Run the patient intel analysis
+        return await analyze_patient_intel_from_df(patients_df)
+
+    finally:
+        db.close()
+
+
+async def analyze_patient_intel_from_df(patients_df: pd.DataFrame) -> Dict[str, Any]:
+    """
+    Analyze patient dataframe and return VIP analysis with provider risk,
+    service rebooking, and gateway services.
+    """
+    from main import identify_dominant_profile
+
+    # Calculate VIP patients (top 20%)
+    patients_df = patients_df.copy()
+    if 'revenue' not in patients_df.columns:
+        raise HTTPException(status_code=400, detail="Patient data missing revenue column")
+
+    patients_df = patients_df.sort_values('revenue', ascending=False).reset_index(drop=True)
+    total_patients = len(patients_df)
+    top_20_count = max(int(total_patients * 0.2), 1)
+
+    top_patients = patients_df.head(top_20_count)
+
+    # Calculate revenue metrics
+    total_revenue = patients_df['revenue'].sum()
+    top_revenue = top_patients['revenue'].sum()
+    concentration = (top_revenue / total_revenue * 100) if total_revenue > 0 else 0
+
+    avg_best_value = top_patients['revenue'].mean()
+    avg_overall_value = patients_df['revenue'].mean()
+    multiplier = (avg_best_value / avg_overall_value) if avg_overall_value > 0 else 1
+
+    # Detect dominant profile for service analysis
+    profile_info = identify_dominant_profile(patients_df)
+    has_profile_data = profile_info and 'profile_analysis' in profile_info
+    profile_analysis = profile_info.get('profile_analysis', {}) if has_profile_data else {}
+
+    # Provider concentration analysis (Key Person Risk)
+    vip_patient_ids = set(top_patients['patient_id'].tolist()) if 'patient_id' in top_patients.columns else None
+    print(f"[DEBUG] Analyzing provider concentration with {len(vip_patient_ids) if vip_patient_ids else 0} VIP patients")
+    print(f"[DEBUG] patients_df columns: {list(patients_df.columns)}")
+    print(f"[DEBUG] Does patients_df have 'provider' column? {'provider' in patients_df.columns}")
+    provider_risk = analyze_provider_concentration(patients_df, vip_patients=vip_patient_ids, min_risk_threshold=50)
+    print(f"[DEBUG] Provider risk result: {provider_risk}")
+
+    # Service rebooking analysis (from dominant profile)
+    service_rebooking = None
+    gateway_services = None
+    if has_profile_data:
+        service_rebooking = profile_analysis.get("service_rebooking")
+        gateway_services = profile_analysis.get("gateway_services")
+        print(f"[DEBUG] Retrieved from profile_analysis:")
+        print(f"  - service_rebooking: {service_rebooking}")
+        print(f"  - gateway_services: {gateway_services}")
+    else:
+        print(f"[DEBUG] No profile_data available - service analysis will be None")
+
+    # Build response
+    response: Dict[str, Any] = {
+        "success": True,
+        "summary": {
+            "totalPatients": total_patients,
+            "bestPatientCount": top_20_count,
+            "revenueConcentration": int(concentration),
+            "avgBestPatientValue": int(avg_best_value),
+            "avgOverallValue": int(avg_overall_value),
+            "multiplier": round(multiplier, 1),
+        },
+    }
+
+    # Add provider risk data if available
+    if provider_risk:
+        response["providerRisk"] = provider_risk
+
+    # Add service rebooking data if available
+    if service_rebooking:
+        response["serviceRebooking"] = service_rebooking
+
+    # Add gateway services data if available
+    if gateway_services:
+        response["gatewayServices"] = gateway_services
+
+    # Add profile data to response if available
+    if has_profile_data:
+        response["summary"]["dominantProfile"] = profile_info.get("combined", "Premium Market")
+
+    return response
+

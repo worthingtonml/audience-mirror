@@ -787,14 +787,20 @@ function AcquisitionCampaignPageContent() {
         setProjection(projectionData);
         setChannels(channelsData);
 
-        // Fetch VIP data from patient-intel API
-        const uploadId = localStorage.getItem('uploadId');
-        if (uploadId) {
+        // Fetch VIP data from run results API (includes providerRisk, serviceRebooking, gatewayServices)
+        const runId = sessionStorage.getItem('runId');
+        if (runId) {
           try {
-            const vipRes = await fetch(`${API_URL}/api/v1/patient-intel/${uploadId}`);
+            const vipRes = await fetch(`${API_URL}/api/v1/runs/${runId}/results`);
             if (vipRes.ok) {
-              const vipDataResult = await vipRes.json();
-              setVipData(vipDataResult);
+              const runData = await vipRes.json();
+              if (runData.status === 'done') {
+                setVipData({
+                  providerRisk: runData.providerRisk,
+                  serviceRebooking: runData.serviceRebooking,
+                  gatewayServices: runData.gatewayServices
+                });
+              }
             }
           } catch (vipErr) {
             console.error('[VIP Data Error]', vipErr);
