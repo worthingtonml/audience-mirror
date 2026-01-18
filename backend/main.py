@@ -1385,6 +1385,7 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
         "serviceRebooking": dominant_profile_data.get("service_rebooking") if dominant_profile_data else None,
         "gatewayServices": dominant_profile_data.get("gateway_services") if dominant_profile_data else None,
         "providerRisk": dominant_profile_data.get("provider_risk") if dominant_profile_data else None,
+        "journeyComparison": dominant_profile_data.get("journey_comparison") if dominant_profile_data else None,
         "geographic_summary": dominant_profile_data.get("geographic_summary", {}) if dominant_profile_data else {},
         "profile_summary": dominant_profile_data.get("profile_summary", "") if dominant_profile_data else "",
         "strategic_insights": analysis_run.strategic_insights if analysis_run.strategic_insights else [],
@@ -1622,7 +1623,8 @@ def identify_dominant_profile(
     top_percentile: float = 0.2,
     service_rebooking=None,
     gateway_services=None,
-    provider_risk=None
+    provider_risk=None,
+    journey_comparison=None
 ) -> dict:
     """
     PROFILE-FIRST: Identify WHO your best customers are using actual patient data.
@@ -1866,13 +1868,15 @@ def identify_dominant_profile(
         "service_analysis": service_analysis,
         "service_rebooking": service_rebooking,
         "gateway_services": gateway_services,
-        "provider_risk": provider_risk
+        "provider_risk": provider_risk,
+        "journey_comparison": journey_comparison
     }
 
     print(f"[DEBUG] dominant_profile being returned:")
     print(f"  - service_rebooking: {service_rebooking}")
     print(f"  - gateway_services: {gateway_services}")
     print(f"  - provider_risk: {provider_risk}")
+    print(f"  - journey_comparison: {journey_comparison}")
 def generate_strategic_insights(
     patients_df: pd.DataFrame,
     behavior_patterns: dict,
@@ -2130,6 +2134,12 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
         provider_risk = analyze_provider_concentration(patients_df, vip_patients=vip_patient_ids, min_risk_threshold=50)
         print(f"[ANALYSIS] Provider risk analysis: {'Risk detected' if provider_risk and provider_risk.get('has_concentration_risk') else 'No concentration risk'}")
         print(f"[DEBUG] Full provider_risk data: {provider_risk}")
+
+        # Analyze patient journey (retention funnel and service path)
+        from services.journey_analysis import analyze_patient_journey
+        journey_comparison = analyze_patient_journey(patients_df, vip_patient_ids=vip_patient_ids, min_patients=20, min_vips=3)
+        print(f"[ANALYSIS] Journey analysis: {'Calculated' if journey_comparison else 'Insufficient data'}")
+        print(f"[DEBUG] Full journey_comparison data: {journey_comparison}")
 
         # Continue with aggregated data
         patients_df = patients_df_aggregated
@@ -2699,7 +2709,8 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
             top_percentile=0.2,
             service_rebooking=service_rebooking,
             gateway_services=gateway_services,
-            provider_risk=provider_risk
+            provider_risk=provider_risk,
+            journey_comparison=journey_comparison
         )
         print(f"[PROFILE] {dominant_profile['profile_summary']}")
         strategic_insights = generate_strategic_insights(

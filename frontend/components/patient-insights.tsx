@@ -22,6 +22,7 @@ import { SMSSendModal } from './sms-send-modal';
 import { CampaignWorkflowModal } from './campaign-workflow-modal';
 import { useInsight } from './insights/InsightProvider';
 import { DISC_TYPES } from '@/lib/industryConfig';
+import JourneyComparison from './JourneyComparison';
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
@@ -1338,18 +1339,10 @@ ${clinicName} Team`
           )}
 
           {/* ================================================================ */}
-          {/* PATIENT JOURNEY CARD (FROM GATEWAY SERVICES)                   */}
+          {/* PATIENT JOURNEY COMPARISON (RETENTION & SERVICE PATH)          */}
           {/* ================================================================ */}
-          {analysisData?.gatewayServices && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-10">
-              <div className="h-1 bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400" />
-              <div className="p-6">
-                <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-2">Patient Journey</p>
-                <p className="text-xl font-bold text-gray-900">
-                  Patients who start with {analysisData.gatewayServices.service} spend {analysisData.gatewayServices.multiplier}× more over 12 months
-                </p>
-              </div>
-            </div>
+          {analysisData?.journeyComparison && (
+            <JourneyComparison journeyData={analysisData.journeyComparison} />
           )}
 
           {/* ================================================================ */}
