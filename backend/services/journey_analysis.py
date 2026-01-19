@@ -46,30 +46,57 @@ def analyze_patient_journey(df, vip_patient_ids=None, min_patients=20, min_vips=
     total_patient_count = df[patient_id_col].nunique()
     vip_count = len(vip_patient_ids) if vip_patient_ids else 0
 
-    print(f"[JOURNEY DEBUG] Total patients: {total_patient_count}, VIP count: {vip_count}, Min patients: {min_patients}, Min VIPs: {min_vips}")
+    print(f"\n{'='*80}")
+    print(f"[JOURNEY DEBUG] STARTING JOURNEY ANALYSIS")
+    print(f"[JOURNEY DEBUG] Data shape: {len(df)} rows, {total_patient_count} unique patients")
+    print(f"[JOURNEY DEBUG] VIP count: {vip_count}")
+    print(f"[JOURNEY DEBUG] Thresholds: min_patients={min_patients}, min_vips={min_vips}")
 
     # Check minimum thresholds
-    if total_patient_count < min_patients or vip_count < min_vips:
-        print(f"[JOURNEY DEBUG] Insufficient data: need {min_patients} patients (have {total_patient_count}) and {min_vips} VIPs (have {vip_count})")
+    if total_patient_count < min_patients:
+        print(f"[JOURNEY DEBUG] FAILED: Not enough total patients ({total_patient_count} < {min_patients})")
+        print(f"{'='*80}\n")
         return None
 
+    if vip_count < min_vips:
+        print(f"[JOURNEY DEBUG] FAILED: Not enough VIP patients ({vip_count} < {min_vips})")
+        print(f"{'='*80}\n")
+        return None
+
+    print(f"[JOURNEY DEBUG] ✓ Passed patient count checks")
+
     # Calculate VIP retention
+    print(f"[JOURNEY DEBUG] Calculating VIP retention...")
     vip_retention, vip_avg_days = calculate_visit_retention(df, vip_patient_ids, patient_id_col, date_col)
+    print(f"[JOURNEY DEBUG] VIP retention: {vip_retention}")
+    print(f"[JOURNEY DEBUG] VIP avg days to V2: {vip_avg_days}")
 
     # Calculate all patients retention
+    print(f"[JOURNEY DEBUG] Calculating all-patient retention...")
     all_patient_ids = set(df[patient_id_col].unique())
     all_retention, all_avg_days = calculate_visit_retention(df, all_patient_ids, patient_id_col, date_col)
+    print(f"[JOURNEY DEBUG] All retention: {all_retention}")
+    print(f"[JOURNEY DEBUG] All avg days to V2: {all_avg_days}")
 
     # Check for meaningful difference (>15% gap at any stage)
     retention_gaps = [vip_retention[i] - all_retention[i] for i in range(len(vip_retention))]
     max_gap_idx = np.argmax(retention_gaps)
     max_gap = retention_gaps[max_gap_idx]
 
-    print(f"[JOURNEY DEBUG] Retention gaps: {retention_gaps}, Max gap: {max_gap}% at stage {max_gap_idx}")
+    print(f"\n[JOURNEY DEBUG] RETENTION COMPARISON:")
+    print(f"  Visit 1: VIP={vip_retention[0]}%, All={all_retention[0]}%, Gap={retention_gaps[0]}%")
+    print(f"  Visit 2: VIP={vip_retention[1]}%, All={all_retention[1]}%, Gap={retention_gaps[1]}%")
+    print(f"  Visit 3: VIP={vip_retention[2]}%, All={all_retention[2]}%, Gap={retention_gaps[2]}%")
+    print(f"  Visit 4+: VIP={vip_retention[3]}%, All={all_retention[3]}%, Gap={retention_gaps[3]}%")
+    print(f"\n[JOURNEY DEBUG] Max gap: {max_gap}% at stage {max_gap_idx}")
+    print(f"[JOURNEY DEBUG] Need at least 15% gap to show component")
 
     if max_gap < 15:
-        print(f"[JOURNEY DEBUG] Gap too small ({max_gap}%), need at least 15%")
+        print(f"[JOURNEY DEBUG] FAILED: Gap too small ({max_gap}% < 15%)")
+        print(f"{'='*80}\n")
         return None  # Not meaningful enough difference
+
+    print(f"[JOURNEY DEBUG] ✓ Passed gap check ({max_gap}% >= 15%)")
 
     # Calculate service paths if treatment column exists
     vip_service_path = None
@@ -87,6 +114,10 @@ def analyze_patient_journey(df, vip_patient_ids=None, min_patients=20, min_vips=
         'allRate': int(all_retention[max_gap_idx + 1]) if max_gap_idx + 1 < len(all_retention) else int(all_retention[1]),
         'gap': int(max_gap)
     }
+
+    print(f"\n[JOURNEY DEBUG] ✓✓✓ SUCCESS! Returning journey comparison data")
+    print(f"[JOURNEY DEBUG] Biggest drop-off: {biggest_drop_off['stage']} (VIP={biggest_drop_off['vipRate']}%, All={biggest_drop_off['allRate']}%)")
+    print(f"{'='*80}\n")
 
     return {
         'vip': {
