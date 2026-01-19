@@ -46,8 +46,11 @@ def analyze_patient_journey(df, vip_patient_ids=None, min_patients=20, min_vips=
     total_patient_count = df[patient_id_col].nunique()
     vip_count = len(vip_patient_ids) if vip_patient_ids else 0
 
+    print(f"[JOURNEY DEBUG] Total patients: {total_patient_count}, VIP count: {vip_count}, Min patients: {min_patients}, Min VIPs: {min_vips}")
+
     # Check minimum thresholds
     if total_patient_count < min_patients or vip_count < min_vips:
+        print(f"[JOURNEY DEBUG] Insufficient data: need {min_patients} patients (have {total_patient_count}) and {min_vips} VIPs (have {vip_count})")
         return None
 
     # Calculate VIP retention
@@ -62,7 +65,10 @@ def analyze_patient_journey(df, vip_patient_ids=None, min_patients=20, min_vips=
     max_gap_idx = np.argmax(retention_gaps)
     max_gap = retention_gaps[max_gap_idx]
 
+    print(f"[JOURNEY DEBUG] Retention gaps: {retention_gaps}, Max gap: {max_gap}% at stage {max_gap_idx}")
+
     if max_gap < 15:
+        print(f"[JOURNEY DEBUG] Gap too small ({max_gap}%), need at least 15%")
         return None  # Not meaningful enough difference
 
     # Calculate service paths if treatment column exists

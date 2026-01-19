@@ -2137,7 +2137,8 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
 
         # Analyze patient journey (retention funnel and service path)
         from services.journey_analysis import analyze_patient_journey
-        journey_comparison = analyze_patient_journey(patients_df, vip_patient_ids=vip_patient_ids, min_patients=20, min_vips=3)
+        print(f"[JOURNEY] Starting journey analysis with {len(patients_df)} visit rows, {len(vip_patient_ids)} VIP patients")
+        journey_comparison = analyze_patient_journey(patients_df, vip_patient_ids=vip_patient_ids, min_patients=10, min_vips=2)
         print(f"[ANALYSIS] Journey analysis: {'Calculated' if journey_comparison else 'Insufficient data'}")
         print(f"[DEBUG] Full journey_comparison data: {journey_comparison}")
 
