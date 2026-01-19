@@ -1342,7 +1342,21 @@ ${clinicName} Team`
           {/* PATIENT JOURNEY COMPARISON (RETENTION & SERVICE PATH)          */}
           {/* ================================================================ */}
           {analysisData?.journeyComparison && (
-            <JourneyComparison journeyData={analysisData.journeyComparison} />
+            <JourneyComparison
+              journeyData={analysisData.journeyComparison}
+              onSendFollowUp={() => {
+                const element = document.getElementById('one-and-done-section');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  setTimeout(() => {
+                    element.classList.add('ring-2', 'ring-violet-400', 'ring-offset-2');
+                    setTimeout(() => {
+                      element.classList.remove('ring-2', 'ring-violet-400', 'ring-offset-2');
+                    }, 2000);
+                  }, 500);
+                }
+              }}
+            />
           )}
 
           {/* ================================================================ */}
@@ -1363,6 +1377,7 @@ ${clinicName} Team`
                   
                   {/* 1. One-and-done patients */}
                   <div
+                    id="one-and-done-section"
                     onClick={() => {
                       openActionModal(
                         'one-and-done',
@@ -1373,7 +1388,7 @@ ${clinicName} Team`
                         'Send win-back text'
                       );
                     }}
-                    className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
+                    className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all duration-300 cursor-pointer flex items-center gap-4"
                   >
                     <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
                       <AlertCircle className="w-5 h-5 text-gray-500" />
