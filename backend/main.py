@@ -2137,10 +2137,23 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
 
         # Analyze patient journey (retention funnel and service path)
         from services.journey_analysis import analyze_patient_journey
-        print(f"[JOURNEY] Starting journey analysis with {len(patients_df)} visit rows, {len(vip_patient_ids)} VIP patients")
-        journey_comparison = analyze_patient_journey(patients_df, vip_patient_ids=vip_patient_ids, min_patients=10, min_vips=2)
-        print(f"[ANALYSIS] Journey analysis: {'Calculated' if journey_comparison else 'Insufficient data'}")
-        print(f"[DEBUG] Full journey_comparison data: {journey_comparison}")
+        print(f"[JOURNEY] ========== JOURNEY ANALYSIS START ==========")
+        print(f"[JOURNEY] Input data: {len(patients_df)} visit rows")
+        print(f"[JOURNEY] VIP patient IDs: {len(vip_patient_ids)} VIPs")
+        print(f"[JOURNEY] Data columns: {patients_df.columns.tolist()}")
+        print(f"[JOURNEY] Sample VIP IDs: {list(vip_patient_ids)[:5] if vip_patient_ids else 'EMPTY SET'}")
+
+        try:
+            journey_comparison = analyze_patient_journey(patients_df, vip_patient_ids=vip_patient_ids, min_patients=10, min_vips=2)
+            print(f"[JOURNEY] ========== JOURNEY ANALYSIS COMPLETE ==========")
+            print(f"[JOURNEY] Result: {'Calculated' if journey_comparison else 'Insufficient data'}")
+            print(f"[JOURNEY] Full data: {journey_comparison}")
+        except Exception as e:
+            print(f"[JOURNEY] ========== JOURNEY ANALYSIS CRASHED ==========")
+            print(f"[JOURNEY] Error: {e}")
+            import traceback
+            print(traceback.format_exc())
+            journey_comparison = None
 
         # Continue with aggregated data
         patients_df = patients_df_aggregated
