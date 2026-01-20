@@ -1359,15 +1359,46 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
             print(f"[DEBUG] Mortgage analysis failed: {e}")
 
     # Return full structure for frontend
-    # Calculate actual total revenue from stored segments
-    actual_total_revenue = sum(
-        seg.get('expected_monthly_revenue', 0) 
-        for seg in top_segments
-    ) if top_segments else 0
+    # CORRECTLY calculate total revenue by reloading and aggregating patient data
+    filtered_patient_count = getattr(analysis_run, 'patient_count', 0)
+    filtered_revenue = 0
+    actual_total_revenue = 0
 
-    # Safely calculate filtered counts/revenue if df_grouped is still in scope
-    filtered_patient_count = len(df_grouped) if df_grouped is not None else getattr(analysis_run, 'patient_count', 0)
-    filtered_revenue = float(df_grouped["revenue"].sum()) if df_grouped is not None and "revenue" in df_grouped.columns else actual_total_revenue
+    # Reload patient data to calculate actual revenue
+    if dataset and dataset.patients_path:
+        try:
+            # Read the raw visit-level data
+            df_visits = pd.read_csv(dataset.patients_path)
+
+            # Aggregate visits to patient level (this sums revenue per patient)
+            df_patients = aggregate_visits_to_patients(df_visits)
+
+            # Calculate totals from aggregated patient data
+            if 'revenue' in df_patients.columns:
+                actual_total_revenue = float(df_patients['revenue'].sum())
+                filtered_revenue = actual_total_revenue
+                filtered_patient_count = len(df_patients)
+                print(f"[REVENUE CALC] Calculated from {len(df_visits)} visits → {filtered_patient_count} patients")
+                print(f"[REVENUE CALC] Total revenue: ${actual_total_revenue:,.0f}")
+            else:
+                print(f"[REVENUE CALC] No revenue column found after aggregation")
+        except Exception as e:
+            print(f"[REVENUE CALC] Failed to calculate revenue: {e}")
+            import traceback
+            traceback.print_exc()
+            # Fallback to stored segment data
+            actual_total_revenue = sum(
+                seg.get('expected_monthly_revenue', 0)
+                for seg in top_segments
+            ) if top_segments else 0
+            filtered_revenue = actual_total_revenue
+
+    print(f"\n{'='*80}")
+    print(f"[REVENUE DEBUG] Final calculated values:")
+    print(f"[REVENUE DEBUG] filtered_patient_count: {filtered_patient_count}")
+    print(f"[REVENUE DEBUG] filtered_revenue: ${filtered_revenue:,.0f}")
+    print(f"[REVENUE DEBUG] actual_total_revenue: ${actual_total_revenue:,.0f}")
+    print(f"{'='*80}\n")
 
     return {
         "status": "done",
