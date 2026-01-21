@@ -319,7 +319,7 @@ function VIPHeroSection({ vipData }: VIPHeroSectionProps) {
               <div>
                 <p className="text-sm font-medium text-amber-900 mb-1">Key Person Risk</p>
                 <p className="text-sm text-amber-700">
-                  {vipConcentration.vip_pct}% of VIP revenue is tied to {topProvider?.name} — putting ~${Math.round((avgBestValue * bestPatientCount * vipConcentration.vip_pct) / 100).toLocaleString()} at risk if they leave.
+                  {vipConcentration.vip_pct}% of VIP revenue is tied to {topProvider?.name} — putting ~${topProvider?.revenue?.toLocaleString() || 0} at risk if they leave.
                 </p>
               </div>
             </div>
@@ -884,7 +884,7 @@ function AcquisitionCampaignPageContent() {
               {vipData?.providerRisk?.vip_concentration && (
                 <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <p className="text-amber-800 text-sm">
-                    <span className="font-semibold">{vipData.providerRisk.vip_concentration.vip_pct}% of VIP revenue</span> is tied to {vipData.providerRisk.top_provider?.name} — putting ~${Math.round((vipData.summary?.avgBestPatientValue || 1250) * (vipData.summary?.bestPatientCount || 50) * vipData.providerRisk.vip_concentration.vip_pct / 100).toLocaleString()} at risk if they leave.
+                    <span className="font-semibold">{vipData.providerRisk.vip_concentration.vip_pct}% of VIP revenue</span> is tied to {vipData.providerRisk.top_provider?.name} — putting ~${vipData.providerRisk.top_provider?.revenue?.toLocaleString() || 0} at risk if they leave.
                   </p>
                 </div>
               )}
