@@ -202,6 +202,7 @@ export default function PatientInsights() {
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [smsCampaigns, setSmsCampaigns] = useState<any[]>([]);
+  const [expandedWeek, setExpandedWeek] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [selectedZips, setSelectedZips] = useState<Record<string, boolean>>({});
   const [showZipEditor, setShowZipEditor] = useState(false);
@@ -1415,7 +1416,15 @@ ${clinicName} Team`
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">One-and-done patients</span>
+                            <div className="group relative inline-block">
+                              <span className="font-medium text-gray-900 cursor-help border-b border-dotted border-gray-400">
+                                One-and-done patients
+                              </span>
+                              <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
+                                1 visit only, 30-60 days ago
+                                <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
+                              </div>
+                            </div>
                           </div>
                           <p className="text-sm text-gray-500 mb-2">
                             {analysisData?.patient_segments?.one_and_done?.count || 0} patients · ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable
@@ -1473,7 +1482,15 @@ ${clinicName} Team`
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">Lapsed regulars</span>
+                            <div className="group relative inline-block">
+                              <span className="font-medium text-gray-900 cursor-help border-b border-dotted border-gray-400">
+                                Lapsed regulars
+                              </span>
+                              <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
+                                2+ visits, no visit in 90+ days
+                                <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
+                              </div>
+                            </div>
                           </div>
                           <p className="text-sm text-gray-500 mb-2">
                             {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients · ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk
@@ -1531,7 +1548,15 @@ ${clinicName} Team`
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">High-frequency patients</span>
+                            <div className="group relative inline-block">
+                              <span className="font-medium text-gray-900 cursor-help border-b border-dotted border-gray-400">
+                                High-frequency patients
+                              </span>
+                              <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
+                                4+ visits per year
+                                <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
+                              </div>
+                            </div>
                           </div>
                           <p className="text-sm text-gray-500 mb-2">
                             {analysisData?.patient_segments?.high_frequency?.count || 0} patients · ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV
@@ -1589,7 +1614,15 @@ ${clinicName} Team`
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-gray-900">Referral champions</span>
+                            <div className="group relative inline-block">
+                              <span className="font-medium text-gray-900 cursor-help border-b border-dotted border-gray-400">
+                                Referral champions
+                              </span>
+                              <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
+                                Came via referral or word of mouth
+                                <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
+                              </div>
+                            </div>
                           </div>
                           <p className="text-sm text-gray-500 mb-2">
                             {analysisData?.patient_segments?.referral_champions?.count || 0} patients · {analysisData?.patient_segments?.referral_champions?.conversion_rate || 68}% conversion
