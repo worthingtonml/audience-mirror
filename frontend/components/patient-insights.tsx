@@ -1949,86 +1949,27 @@ ${clinicName} Team`
                   </p>
                 </div>
 
-                {/* What This Campaign Could Deliver */}
-                <div className="mt-8">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium tracking-wide text-gray-400 uppercase">
-                      WHAT THIS CAMPAIGN COULD DELIVER
-                    </span>
-                    <span className="text-xs text-gray-400">30-day retention campaign projections</span>
-                  </div>
-
-                  <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                    {/* Row 1: One-and-done */}
-                    <div className="p-4 flex items-center justify-between border-b border-gray-200">
-                      <div>
-                        <p className="text-sm text-gray-900">
-                          Win back {Math.round((analysisData?.patient_segments?.one_and_done?.count || 0) * 0.15)} of {analysisData?.patient_segments?.one_and_done?.count || 0} one-and-done patients
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">Based on 15% win-back rate</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm font-semibold text-green-600">
-                          +${Math.round((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) * 0.15).toLocaleString()}
-                        </span>
-                        <span className="text-xs text-gray-400 ml-1">recovered</span>
-                      </div>
+                {/* Total Bar */}
+                <div className="mt-6">
+                  <div className="bg-gray-900 rounded-xl p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-white font-medium">Total potential if you execute this campaign</p>
+                      <p className="text-xs text-gray-400">Projections based on industry benchmarks, not guarantees</p>
                     </div>
-
-                    {/* Row 2: Lapsed regulars */}
-                    <div className="p-4 flex items-center justify-between border-b border-gray-200">
-                      <div>
-                        <p className="text-sm text-gray-900">
-                          Retain {Math.round((analysisData?.patient_segments?.lapsed_regulars?.count || 0) * 0.60)} of {analysisData?.patient_segments?.lapsed_regulars?.count || 0} lapsed regulars
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">Based on 60% save rate with outreach</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm font-semibold text-green-600">
-                          +${Math.round((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) * 0.60).toLocaleString()}
-                        </span>
-                        <span className="text-xs text-gray-400 ml-1">protected</span>
-                      </div>
-                    </div>
-
-                    {/* Row 3: Referral champions */}
-                    <div className="p-4 flex items-center justify-between border-b border-gray-200">
-                      <div>
-                        <p className="text-sm text-gray-900">
-                          Activate {Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30)} referral from {analysisData?.patient_segments?.referral_champions?.count || 0} champions
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">Based on 30% activation rate</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-sm font-semibold text-green-600">
-                          +${Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450).toLocaleString()}
-                        </span>
-                        <span className="text-xs text-gray-400 ml-1">new revenue</span>
-                      </div>
-                    </div>
-
-                    {/* Total Row */}
-                    <div className="p-4 bg-gray-900 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-white font-medium">Total potential if you execute this campaign</p>
-                        <p className="text-xs text-gray-400 mt-0.5">Projections based on industry benchmarks, not guarantees</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-lg font-semibold text-white">
-                          ${(() => {
-                            const oneAndDone = Math.round((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) * 0.15);
-                            const lapsed = Math.round((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) * 0.60);
-                            const referral = Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450);
-                            return (oneAndDone + lapsed + referral).toLocaleString();
-                          })()}
-                        </span>
-                        <p className="text-xs text-green-400">annual impact</p>
-                      </div>
+                    <div className="text-right">
+                      <span className="text-xl font-semibold text-white">
+                        ${(() => {
+                          const oneAndDone = Math.round((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) * 0.15);
+                          const lapsed = Math.round((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) * 0.60);
+                          const referral = Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450);
+                          return (oneAndDone + lapsed + referral).toLocaleString();
+                        })()}
+                      </span>
+                      <p className="text-xs text-green-400">annual impact</p>
                     </div>
                   </div>
 
-                  {/* Footer note */}
-                  <p className="text-center text-xs text-gray-400 mt-4">
+                  <p className="text-center text-xs text-gray-400 mt-3">
                     Projections improve as we learn from your actual campaign results
                   </p>
                 </div>
