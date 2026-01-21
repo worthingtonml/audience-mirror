@@ -202,7 +202,6 @@ export default function PatientInsights() {
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [smsCampaigns, setSmsCampaigns] = useState<any[]>([]);
-  const [expandedWeek, setExpandedWeek] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [selectedZips, setSelectedZips] = useState<Record<string, boolean>>({});
   const [showZipEditor, setShowZipEditor] = useState(false);
@@ -1362,292 +1361,335 @@ ${clinicName} Team`
 
           {/* ================================================================ */}
           {/* MEDSPA: 30-DAY RETENTION CAMPAIGN                             */}
-          {/* Reframed as phased campaign, not flat task list               */}
+          {/* Prioritized by impact design                                  */}
           {/* ================================================================ */}
           {!isMortgage && (
             <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-10">
               <div className="max-w-2xl mx-auto">
 
-                {/* Campaign Header */}
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Your 30-Day Retention Campaign</h2>
-                  <p className="text-gray-600 mb-4">Turn one-time visitors into regulars and regulars into advocates</p>
+                {/* Campaign Header Card */}
+                <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                      YOUR 30-DAY RETENTION CAMPAIGN
+                    </h2>
+                    <span className="text-xs text-gray-400">This is your next 30 days</span>
+                  </div>
 
-                  {/* Campaign Goals Summary */}
-                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-4">
-                    <p className="text-sm font-semibold text-gray-900 mb-2">Campaign Targets</p>
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <p>• Recover ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} from one-and-done patients</p>
-                      <p>• Protect ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} in at-risk recurring revenue</p>
-                      <p>• Activate {analysisData?.patient_segments?.referral_champions?.count || 0} referral sources</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Turn one-time visitors into regulars
+                  </h3>
+
+                  <p className="text-sm text-gray-600 mb-4">
+                    Your most urgent priority is <span className="font-semibold text-gray-900">protecting ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk</span> from lapsed regulars — they're about to churn. After that, focus on one-and-done patients (${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable). Your high-frequency patients and referral champions are healthy — nurture them once the urgent items are handled.
+                  </p>
+
+                  <div className="border-t border-gray-200 pt-4 mt-4">
+                    <div className="grid grid-cols-4 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Recover</p>
+                        <p className="text-base font-bold text-gray-900">
+                          ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Protect</p>
+                        <p className="text-base font-bold text-gray-900">
+                          ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 mb-1">Activate</p>
+                        <p className="text-base font-bold text-gray-900">
+                          {analysisData?.patient_segments?.referral_champions?.count || 0} referrals
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-gray-500 mb-1">Total potential</p>
+                        <p className="text-base font-bold text-emerald-600">
+                          ${(() => {
+                            const oneAndDone = Math.round((analysisData?.patient_segments?.one_and_done?.count || 0) * 0.15 * (analysisData?.patient_segments?.one_and_done?.avg_spend || 0));
+                            const lapsed = Math.round((analysisData?.patient_segments?.lapsed_regulars?.count || 0) * 0.60 * (analysisData?.patient_segments?.lapsed_regulars?.avg_ltv || 0));
+                            const referral = Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450);
+                            return (oneAndDone + lapsed + referral).toLocaleString();
+                          })()}/yr
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-6">
+                {/* Section Label */}
+                <div className="mb-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-gray-400">
+                    PRIORITIZED BY IMPACT
+                  </p>
+                </div>
 
-                  {/* WEEK 1: RESCUE */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-700 text-sm font-bold flex-shrink-0">1</div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Week 1: RESCUE</h3>
-                        <p className="text-sm text-gray-500">One-and-done patients (highest recoverable value)</p>
+                <div className="space-y-4">
+
+                  {/* (1) RECOVER - Lapsed Regulars (Critical) */}
+                  <div
+                    onClick={() => {
+                      openActionModal(
+                        'lapsed-regulars',
+                        'Lapsed regulars',
+                        analysisData?.patient_segments?.lapsed_regulars?.count || 0,
+                        analysisData?.patient_segments?.lapsed_regulars?.patients || [],
+                        'personal-outreach',
+                        'Start personal outreach'
+                      );
+                    }}
+                    className="bg-orange-50/50 border border-orange-100 rounded-xl p-4 hover:shadow-sm transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 text-white text-sm font-bold flex-shrink-0">
+                        1
                       </div>
-                    </div>
-
-                    <div
-                      id="one-and-done-section"
-                      onClick={() => {
-                        openActionModal(
-                          'one-and-done',
-                          'One-and-done patients',
-                          analysisData?.patient_segments?.one_and_done?.count || 0,
-                          analysisData?.patient_segments?.one_and_done?.patients || [],
-                          'win-back',
-                          'Send win-back text'
-                        );
-                      }}
-                      className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all duration-300 cursor-pointer ml-11"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <AlertCircle className="w-5 h-5 text-gray-500" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-semibold text-gray-900">RECOVER</span>
+                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
+                            At risk
+                          </span>
+                          <span className="text-xs text-gray-400">Week 1-2</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="group relative inline-block">
-                              <span className="font-medium text-gray-900 cursor-help border-b border-dotted border-gray-400">
-                                One-and-done patients
-                              </span>
-                              <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
-                                1 visit only, 30-60 days ago
-                                <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
-                              </div>
-                            </div>
+                        <div className="group relative inline-block mb-1">
+                          <span className="text-sm text-gray-700 cursor-help border-b border-dotted border-gray-400">
+                            Lapsed regulars
+                          </span>
+                          <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
+                            2+ visits, no visit in 90+ days
+                            <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
                           </div>
-                          <p className="text-sm text-gray-500 mb-2">
-                            {analysisData?.patient_segments?.one_and_done?.count || 0} patients · ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable
+                        </div>
+                        <p className="text-sm text-gray-500 mb-3">
+                          {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients · ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-gray-500">
+                            Likely: Keep {Math.round((analysisData?.patient_segments?.lapsed_regulars?.count || 0) * 0.60)} of {analysisData?.patient_segments?.lapsed_regulars?.count || 0} <span className="text-gray-400">(60% save)</span>
                           </p>
-                          <p className="text-xs text-emerald-600 font-medium">
-                            Expected: Win back 1 patient (+${Math.round((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) * 0.15).toLocaleString()} based on 15% rate)
+                          <p className="text-sm font-semibold text-green-600">
+                            +${Math.round((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) * 0.60).toLocaleString()}
                           </p>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openActionModal(
-                              'one-and-done',
-                              'One-and-done patients',
-                              analysisData?.patient_segments?.one_and_done?.count || 0,
-                              analysisData?.patient_segments?.one_and_done?.patients || [],
-                              'win-back',
-                              'Send win-back text'
-                            );
-                          }}
-                          className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
-                        >
-                          Send check-in
-                        </button>
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openActionModal(
+                            'lapsed-regulars',
+                            'Lapsed regulars',
+                            analysisData?.patient_segments?.lapsed_regulars?.count || 0,
+                            analysisData?.patient_segments?.lapsed_regulars?.patients || [],
+                            'personal-outreach',
+                            'Start personal outreach'
+                          );
+                        }}
+                        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
+                      >
+                        Launch reactivation email
+                      </button>
                     </div>
                   </div>
 
-                  {/* WEEK 2: RECOVER */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-amber-700 text-sm font-bold flex-shrink-0">2</div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Week 2: RECOVER</h3>
-                        <p className="text-sm text-gray-500">Lapsed regulars (protect recurring revenue)</p>
+                  {/* (2) RESCUE - One-and-done */}
+                  <div
+                    id="one-and-done-section"
+                    onClick={() => {
+                      openActionModal(
+                        'one-and-done',
+                        'One-and-done patients',
+                        analysisData?.patient_segments?.one_and_done?.count || 0,
+                        analysisData?.patient_segments?.one_and_done?.patients || [],
+                        'win-back',
+                        'Send win-back text'
+                      );
+                    }}
+                    className="bg-red-50/50 border border-red-100 rounded-xl p-4 hover:shadow-sm transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500 text-white text-sm font-bold flex-shrink-0">
+                        2
                       </div>
-                    </div>
-
-                    <div
-                      onClick={() => {
-                        openActionModal(
-                          'lapsed-regulars',
-                          'Lapsed regulars',
-                          analysisData?.patient_segments?.lapsed_regulars?.count || 0,
-                          analysisData?.patient_segments?.lapsed_regulars?.patients || [],
-                          'personal-outreach',
-                          'Start personal outreach'
-                        );
-                      }}
-                      className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer ml-11"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <Clock className="w-5 h-5 text-gray-500" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-semibold text-gray-900">RESCUE</span>
+                          <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded-full">
+                            Act first
+                          </span>
+                          <span className="text-xs text-gray-400">Week 1</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="group relative inline-block">
-                              <span className="font-medium text-gray-900 cursor-help border-b border-dotted border-gray-400">
-                                Lapsed regulars
-                              </span>
-                              <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
-                                2+ visits, no visit in 90+ days
-                                <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
-                              </div>
-                            </div>
+                        <div className="group relative inline-block mb-1">
+                          <span className="text-sm text-gray-700 cursor-help border-b border-dotted border-gray-400">
+                            One-and-done patients
+                          </span>
+                          <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
+                            1 visit only, 30-60 days ago
+                            <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
                           </div>
-                          <p className="text-sm text-gray-500 mb-2">
-                            {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients · ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk
+                        </div>
+                        <p className="text-sm text-gray-500 mb-3">
+                          {analysisData?.patient_segments?.one_and_done?.count || 0} patients · ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-gray-500">
+                            Likely: Win back {Math.round((analysisData?.patient_segments?.one_and_done?.count || 0) * 0.15)} of {analysisData?.patient_segments?.one_and_done?.count || 0} <span className="text-gray-400">(15% avg)</span>
                           </p>
-                          <p className="text-xs text-emerald-600 font-medium">
-                            Expected: Retain 2 patients (+${Math.round((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) * 0.60).toLocaleString()} based on 60% rate)
+                          <p className="text-sm font-semibold text-green-600">
+                            +${Math.round((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) * 0.15).toLocaleString()}
                           </p>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openActionModal(
-                              'lapsed-regulars',
-                              'Lapsed regulars',
-                              analysisData?.patient_segments?.lapsed_regulars?.count || 0,
-                              analysisData?.patient_segments?.lapsed_regulars?.patients || [],
-                              'personal-outreach',
-                              'Start personal outreach'
-                            );
-                          }}
-                          className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
-                        >
-                          Reopen
-                        </button>
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openActionModal(
+                            'one-and-done',
+                            'One-and-done patients',
+                            analysisData?.patient_segments?.one_and_done?.count || 0,
+                            analysisData?.patient_segments?.one_and_done?.patients || [],
+                            'win-back',
+                            'Send win-back text'
+                          );
+                        }}
+                        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
+                      >
+                        Send check-in SMS
+                      </button>
                     </div>
                   </div>
 
-                  {/* WEEK 3: NURTURE */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 text-sm font-bold flex-shrink-0">3</div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Week 3: NURTURE</h3>
-                        <p className="text-sm text-gray-500">High-frequency patients (deepen loyalty)</p>
+                  {/* (3) NURTURE - High-frequency */}
+                  <div
+                    onClick={() => {
+                      openActionModal(
+                        'high-frequency',
+                        'High-frequency patients',
+                        analysisData?.patient_segments?.high_frequency?.count || 0,
+                        analysisData?.patient_segments?.high_frequency?.patients || [],
+                        'vip-reward',
+                        'Send VIP reward'
+                      );
+                    }}
+                    className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 hover:shadow-sm transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-bold flex-shrink-0">
+                        3
                       </div>
-                    </div>
-
-                    <div
-                      onClick={() => {
-                        openActionModal(
-                          'high-frequency',
-                          'High-frequency patients',
-                          analysisData?.patient_segments?.high_frequency?.count || 0,
-                          analysisData?.patient_segments?.high_frequency?.patients || [],
-                          'vip-reward',
-                          'Send VIP reward'
-                        );
-                      }}
-                      className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer ml-11"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <Star className="w-5 h-5 text-gray-500" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-semibold text-gray-900">NURTURE</span>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                            Protect
+                          </span>
+                          <span className="text-xs text-gray-400">Week 2-3</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="group relative inline-block">
-                              <span className="font-medium text-gray-900 cursor-help border-b border-dotted border-gray-400">
-                                High-frequency patients
-                              </span>
-                              <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
-                                4+ visits per year
-                                <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
-                              </div>
-                            </div>
+                        <div className="group relative inline-block mb-1">
+                          <span className="text-sm text-gray-700 cursor-help border-b border-dotted border-gray-400">
+                            High-frequency patients
+                          </span>
+                          <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
+                            4+ visits per year
+                            <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
                           </div>
-                          <p className="text-sm text-gray-500 mb-2">
-                            {analysisData?.patient_segments?.high_frequency?.count || 0} patients · ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV
+                        </div>
+                        <p className="text-sm text-gray-500 mb-3">
+                          {analysisData?.patient_segments?.high_frequency?.count || 0} patients · ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-gray-500">
+                            Likely: Deepen {analysisData?.patient_segments?.high_frequency?.count || 0} relationships <span className="text-gray-400">(loyalty boost)</span>
                           </p>
-                          <p className="text-xs text-emerald-600 font-medium">
-                            Expected: Increase retention rate, protect ${Math.round((analysisData?.patient_segments?.high_frequency?.avg_ltv || 0) * (analysisData?.patient_segments?.high_frequency?.count || 0)).toLocaleString()}+ LTV
+                          <p className="text-sm font-semibold text-green-600">
+                            +${Math.round((analysisData?.patient_segments?.high_frequency?.avg_ltv || 0) * (analysisData?.patient_segments?.high_frequency?.count || 0)).toLocaleString()} protected
                           </p>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openActionModal(
-                              'high-frequency',
-                              'High-frequency patients',
-                              analysisData?.patient_segments?.high_frequency?.count || 0,
-                              analysisData?.patient_segments?.high_frequency?.patients || [],
-                              'vip-reward',
-                              'Send VIP reward'
-                            );
-                          }}
-                          className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
-                        >
-                          VIP touchpoint
-                        </button>
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openActionModal(
+                            'high-frequency',
+                            'High-frequency patients',
+                            analysisData?.patient_segments?.high_frequency?.count || 0,
+                            analysisData?.patient_segments?.high_frequency?.patients || [],
+                            'vip-reward',
+                            'Send VIP reward'
+                          );
+                        }}
+                        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
+                      >
+                        Schedule VIP call
+                      </button>
                     </div>
                   </div>
 
-                  {/* WEEK 4: MULTIPLY */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex-shrink-0">4</div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900">Week 4: MULTIPLY</h3>
-                        <p className="text-sm text-gray-500">Referral champions (turn loyalty into growth)</p>
+                  {/* (4) MULTIPLY - Referral champions */}
+                  <div
+                    onClick={() => {
+                      openActionModal(
+                        'referrers',
+                        'Referral champions',
+                        analysisData?.patient_segments?.referral_champions?.count || 0,
+                        analysisData?.patient_segments?.referral_champions?.patients || [],
+                        'referral-program',
+                        'Launch referral program'
+                      );
+                    }}
+                    className="bg-green-50/50 border border-green-100 rounded-xl p-4 hover:shadow-sm transition-all cursor-pointer"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 text-white text-sm font-bold flex-shrink-0">
+                        4
                       </div>
-                    </div>
-
-                    <div
-                      onClick={() => {
-                        openActionModal(
-                          'referrers',
-                          'Referral champions',
-                          analysisData?.patient_segments?.referral_champions?.count || 0,
-                          analysisData?.patient_segments?.referral_champions?.patients || [],
-                          'referral-program',
-                          'Launch referral program'
-                        );
-                      }}
-                      className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer ml-11"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                          <Users className="w-5 h-5 text-gray-500" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-semibold text-gray-900">MULTIPLY</span>
+                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                            Growth
+                          </span>
+                          <span className="text-xs text-gray-400">Week 3-4</span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="group relative inline-block">
-                              <span className="font-medium text-gray-900 cursor-help border-b border-dotted border-gray-400">
-                                Referral champions
-                              </span>
-                              <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
-                                Came via referral or word of mouth
-                                <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
-                              </div>
-                            </div>
+                        <div className="group relative inline-block mb-1">
+                          <span className="text-sm text-gray-700 cursor-help border-b border-dotted border-gray-400">
+                            Referral champions
+                          </span>
+                          <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
+                            Came via referral or word of mouth
+                            <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
                           </div>
-                          <p className="text-sm text-gray-500 mb-2">
-                            {analysisData?.patient_segments?.referral_champions?.count || 0} patients · {analysisData?.patient_segments?.referral_champions?.conversion_rate || 68}% conversion
+                        </div>
+                        <p className="text-sm text-gray-500 mb-3">
+                          {analysisData?.patient_segments?.referral_champions?.count || 0} patients · {analysisData?.patient_segments?.referral_champions?.conversion_rate || 68}% conversion
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-gray-500">
+                            Likely: {Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30)} new patient <span className="text-gray-400">(30% activate)</span>
                           </p>
-                          <p className="text-xs text-emerald-600 font-medium">
-                            Expected: 1 new referral (+$405 based on 30% activation rate)
+                          <p className="text-sm font-semibold text-green-600">
+                            +${Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450).toLocaleString()}
                           </p>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openActionModal(
-                              'referrers',
-                              'Referral champions',
-                              analysisData?.patient_segments?.referral_champions?.count || 0,
-                              analysisData?.patient_segments?.referral_champions?.patients || [],
-                              'referral-program',
-                              'Launch referral program'
-                            );
-                          }}
-                          className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
-                        >
-                          Activate
-                        </button>
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openActionModal(
+                            'referrers',
+                            'Referral champions',
+                            analysisData?.patient_segments?.referral_champions?.count || 0,
+                            analysisData?.patient_segments?.referral_champions?.patients || [],
+                            'referral-program',
+                            'Launch referral program'
+                          );
+                        }}
+                        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
+                      >
+                        Trigger referral offer
+                      </button>
                     </div>
                   </div>
 
@@ -1900,9 +1942,15 @@ ${clinicName} Team`
 
                 </div>
 
-                <p className="text-center text-xs text-gray-400 mt-6">
-                  Click a row to see patients and next steps
-                </p>
+                {/* Footer Text */}
+                <div className="mt-6 space-y-2">
+                  <p className="text-center text-xs text-gray-400">
+                    Click any card to see patients + templates
+                  </p>
+                  <p className="text-center text-xs text-gray-400">
+                    Order based on urgency and dollar impact · Projections improve with your actual results
+                  </p>
+                </div>
               </div>
             </section>
           )}
@@ -2437,115 +2485,6 @@ ${clinicName} Team`
                 </div>
               )}
             </section>
-          )}
-
-          {/* ================================================================ */}
-          {/* KPI BAND - The payoff (moved to end)                            */}
-          {/* Dark band feels like a natural conclusion                        */}
-          {/* ================================================================ */}
-          {!isMortgage && (
-          <section className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                What this campaign could deliver
-              </h2>
-              <span className="text-[11px] text-[#9CA3AF]">
-                30-day retention campaign projections
-              </span>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200">
-              {(() => {
-                // Calculate segment-specific ROI projections
-                const oneAndDone = analysisData?.patient_segments?.one_and_done;
-                const lapsedRegulars = analysisData?.patient_segments?.lapsed_regulars;
-                const highFrequency = analysisData?.patient_segments?.high_frequency;
-                const referralChampions = analysisData?.patient_segments?.referral_champions;
-
-                // Assumptions based on industry benchmarks
-                const winBackRate = 0.15; // 15% win-back rate for one-and-done
-                const retentionSaveRate = 0.60; // 60% of at-risk can be saved with outreach
-                const referralActivationRate = 0.30; // 30% of champions will refer if asked
-                const avgReferralValue = 450; // Average value of a referred patient
-
-                // Calculate projected impacts
-                const oneAndDoneRecovery = Math.round((oneAndDone?.count || 0) * winBackRate * (oneAndDone?.avg_spend || 0));
-                const lapsedProtected = Math.round((lapsedRegulars?.count || 0) * retentionSaveRate * (lapsedRegulars?.avg_ltv || 0));
-                const referralRevenue = Math.round((referralChampions?.count || 0) * referralActivationRate * avgReferralValue);
-                const totalPotential = oneAndDoneRecovery + lapsedProtected + referralRevenue;
-
-                const projections = [
-                  {
-                    action: `Win back ${Math.round((oneAndDone?.count || 0) * winBackRate)} of ${oneAndDone?.count || 0} one-and-done patients`,
-                    assumption: '15% win-back rate',
-                    impact: oneAndDoneRecovery,
-                    type: 'recovered',
-                    color: 'text-rose-600',
-                    bgColor: 'bg-rose-50',
-                  },
-                  {
-                    action: `Retain ${Math.round((lapsedRegulars?.count || 0) * retentionSaveRate)} of ${lapsedRegulars?.count || 0} lapsed regulars`,
-                    assumption: '60% save rate with outreach',
-                    impact: lapsedProtected,
-                    type: 'protected',
-                    color: 'text-orange-600',
-                    bgColor: 'bg-orange-50',
-                  },
-                  {
-                    action: `Activate ${Math.round((referralChampions?.count || 0) * referralActivationRate)} referrals from ${referralChampions?.count || 0} champions`,
-                    assumption: '30% activation rate',
-                    impact: referralRevenue,
-                    type: 'new revenue',
-                    color: 'text-blue-600',
-                    bgColor: 'bg-blue-50',
-                  },
-                ];
-
-                return (
-                  <div className="space-y-4">
-                    {/* Projection rows */}
-                    <div className="space-y-3">
-                      {projections.map((proj, index) => (
-                        <div key={index} className={`${proj.bgColor} rounded-xl p-4 flex items-center justify-between`}>
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{proj.action}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">Based on {proj.assumption}</p>
-                          </div>
-                          <div className="text-right ml-4">
-                            <p className={`text-lg font-bold ${proj.color}`}>
-                              +${proj.impact.toLocaleString()}
-                            </p>
-                            <p className="text-xs text-gray-500">{proj.type}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Total */}
-                    <div className="border-t-2 border-gray-200 pt-4 mt-4">
-                      <div className="bg-gray-900 rounded-xl p-5 flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-gray-300">Total potential if you execute this campaign</p>
-                          <p className="text-xs text-gray-500 mt-1">Projections based on industry benchmarks, not guarantees</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-white">
-                            ${totalPotential.toLocaleString()}
-                          </p>
-                          <p className="text-xs text-emerald-400">annual impact</p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Disclaimer */}
-                    <p className="text-xs text-gray-400 text-center mt-4">
-                      Projections improve as we learn from your actual campaign results
-                    </p>
-                  </div>
-                );
-              })()}
-            </div>
-          </section>
           )}
 
           {/* FINAL CTA BAR */}
