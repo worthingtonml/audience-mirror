@@ -169,20 +169,47 @@ function RevenueProjectionSecondary({ projection, vipCount }: RevenueProjectionS
     return `$${value.toLocaleString()}`;
   };
 
+  const formatCurrencyRange = (value: number) => {
+    const low = Math.floor(value * 0.6 / 1000);
+    const high = Math.ceil(value * 1.1 / 1000);
+    return `$${low}-${high}K`;
+  };
+
+  const formatMultipleRange = (value: number) => {
+    const low = Math.floor(value * 0.5);
+    const high = Math.ceil(value * 1.0);
+    return `${low}-${high}×`;
+  };
+
   const newVIPs = vipCount ? Math.ceil(vipCount * 0.14) : projection.projectedNewPatientsMonthly;
+  const newVIPsLow = Math.max(1, Math.floor(newVIPs * 0.6));
+  const newVIPsHigh = Math.ceil(newVIPs * 1.2);
 
   return (
     <div className="bg-gray-50 rounded-xl border border-gray-200 p-6">
-      <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-4">
-        What this campaign can add each month
-      </p>
+      <div className="flex items-center gap-2 mb-4">
+        <p className="text-gray-400 text-xs font-medium uppercase tracking-wider">
+          Estimated Monthly Impact
+        </p>
+        <div className="relative group">
+          <button className="p-0.5 text-gray-400 hover:text-gray-600 transition-colors">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+            </svg>
+          </button>
+          <div className="absolute left-0 top-full mt-2 w-80 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+            <p className="leading-relaxed">Based on avg. acquisition costs and patient LTV from similar practices. Your results will vary based on market, creative, and offer.</p>
+            <div className="absolute -top-1.5 left-4 w-3 h-3 bg-gray-900 rotate-45" />
+          </div>
+        </div>
+      </div>
 
       <div className="flex items-center gap-8">
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold text-gray-900">
-            {formatCurrency(projection.projectedRevenueMonthly)}
+            {formatCurrencyRange(projection.projectedRevenueMonthly)}
           </span>
-          <span className="text-gray-400 text-sm">revenue</span>
+          <span className="text-gray-400 text-sm">potential revenue</span>
         </div>
         <div className="w-px h-5 bg-gray-300" />
         <div className="flex items-baseline gap-2">
@@ -194,14 +221,14 @@ function RevenueProjectionSecondary({ projection, vipCount }: RevenueProjectionS
         <div className="w-px h-5 bg-gray-300" />
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold text-emerald-600">
-            {projection.projectedReturnMultiple.toFixed(1)}×
+            {formatMultipleRange(projection.projectedReturnMultiple)}
           </span>
-          <span className="text-gray-400 text-sm">return</span>
+          <span className="text-gray-400 text-sm">expected return</span>
         </div>
       </div>
 
       <p className="text-gray-400 text-sm mt-4">
-        From {newVIPs} new VIP patients · Based on similar medspas
+        From {newVIPsLow}-{newVIPsHigh} new VIP patients · Based on similar medspas
       </p>
     </div>
   );
@@ -725,16 +752,140 @@ function ChannelCard({ channel, segmentId }: ChannelCardProps) {
 type AdCampaignsSectionProps = {
   channels: ChannelRecommendation[];
   segmentId: string;
+  summary: AcquisitionSegmentSummary | null;
+  projection: AcquisitionProjection | null;
+  vipCount?: number;
 };
 
-function AdCampaignsSection({ channels, segmentId }: AdCampaignsSectionProps) {
-  return (
-    <div className="space-y-3">
-      <h3 className="font-semibold text-gray-900">Ready-to-use campaigns</h3>
+function AdCampaignsSection({ channels, segmentId, summary, projection, vipCount }: AdCampaignsSectionProps) {
+  const totalBudget = projection?.projectedAdSpendMonthly || 840;
+  const dailyBudget = Math.round(totalBudget / 30);
+  const newVIPsLow = vipCount ? Math.max(1, Math.floor(vipCount * 0.14 * 0.6)) : 3;
+  const newVIPsHigh = vipCount ? Math.ceil(vipCount * 0.14 * 1.2) : 6;
+  const profileLabel = summary?.profileLabel || "high-value patients";
+  const neighborhoods = summary?.neighborhoods?.slice(0, 2).join(", ") || "your area";
 
-      {channels.map((channel) => (
-        <ChannelCard key={channel.id} channel={channel} segmentId={segmentId} />
-      ))}
+  return (
+    <div className="space-y-6">
+      {/* Campaign Header */}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          Your VIP Acquisition Campaign
+        </h2>
+        <p className="text-gray-600">
+          Find more {profileLabel} in {neighborhoods}
+        </p>
+      </div>
+
+      {/* Campaign Strategy Card */}
+      <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-4">Campaign Strategy</h3>
+
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <p className="text-gray-500 text-sm mb-1">Budget</p>
+            <p className="text-gray-900 font-semibold">${dailyBudget}/day (${totalBudget.toLocaleString()}/mo)</p>
+            <p className="text-gray-500 text-xs mt-0.5">Split across {channels.length} channels</p>
+          </div>
+          <div>
+            <p className="text-gray-500 text-sm mb-1">Audience</p>
+            <p className="text-gray-900 font-semibold">Lookalikes of your top {vipCount || 50} VIPs</p>
+            <p className="text-gray-500 text-xs mt-0.5">Upload patient list to each platform</p>
+          </div>
+          <div>
+            <p className="text-gray-500 text-sm mb-1">Goal</p>
+            <p className="text-gray-900 font-semibold">{newVIPsLow}-{newVIPsHigh} new high-value patients/month</p>
+            <p className="text-gray-500 text-xs mt-0.5">Track consultations booked</p>
+          </div>
+          <div>
+            <p className="text-gray-500 text-sm mb-1">Timeline</p>
+            <p className="text-gray-900 font-semibold">30-day test recommended</p>
+            <p className="text-gray-500 text-xs mt-0.5">Optimize after week 2</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Channel Breakdown with Phases */}
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-gray-50 border-b border-gray-200 px-6 py-4">
+          <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Channel Breakdown</h3>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Week 1-2: Awareness */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold">1</div>
+              <h4 className="font-semibold text-gray-900">Week 1-2: Awareness</h4>
+            </div>
+            <div className="ml-8 space-y-3">
+              {channels.filter(c => c.id === 'facebook' || c.id === 'instagram').map(channel => {
+                const config = {
+                  facebook: { bg: 'bg-blue-50', border: 'border-blue-200', icon: <Facebook className="h-4 w-4 text-blue-600" />, label: 'Facebook' },
+                  instagram: { bg: 'bg-pink-50', border: 'border-pink-200', icon: <Instagram className="h-4 w-4 text-pink-600" />, label: 'Instagram' },
+                }[channel.id];
+                if (!config) return null;
+
+                return (
+                  <div key={channel.id} className={`${config.bg} ${config.border} border rounded-lg p-4`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        {config.icon}
+                        <span className="font-medium text-gray-900">{config.label}</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-gray-900">{channel.budgetSharePercent}% · ${channel.dailyBudget}/day</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {channel.id === 'facebook' && 'Lookalike audience building + educational content'}
+                      {channel.id === 'instagram' && 'Visual proof + social proof via Stories and Reels'}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Week 3-4: Capture */}
+          {channels.some(c => c.id === 'google') && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold">2</div>
+                <h4 className="font-semibold text-gray-900">Week 3-4: Capture</h4>
+              </div>
+              <div className="ml-8">
+                {channels.filter(c => c.id === 'google').map(channel => (
+                  <div key={channel.id} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Search className="h-4 w-4 text-gray-700" />
+                        <span className="font-medium text-gray-900">Google Search</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-gray-900">{channel.budgetSharePercent}% · ${channel.dailyBudget}/day</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Catch high-intent searches from people who saw your social ads
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Ready-to-use Creative */}
+      <div className="space-y-3">
+        <h3 className="font-semibold text-gray-900">Ready-to-use creative</h3>
+        <p className="text-sm text-gray-500 -mt-2">Click each channel to generate ad copy and tactical guidance</p>
+
+        {channels.map((channel) => (
+          <ChannelCard key={channel.id} channel={channel} segmentId={segmentId} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -898,7 +1049,13 @@ function AcquisitionCampaignPageContent() {
 
           {/* Ad Campaigns - Collapsed by default */}
           {!loading && channels.length > 0 && (
-            <AdCampaignsSection channels={channels} segmentId={segmentId} />
+            <AdCampaignsSection
+              channels={channels}
+              segmentId={segmentId}
+              summary={summary}
+              projection={projection}
+              vipCount={vipData?.summary?.bestPatientCount}
+            />
           )}
         </div>
 
