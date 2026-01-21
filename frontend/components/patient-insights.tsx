@@ -1360,51 +1360,44 @@ ${clinicName} Team`
           )}
 
           {/* ================================================================ */}
-          {/* MEDSPA: DECISION QUEUE SECTION                                */}
-          {/* Clean, calm aesthetic matching landing page                   */}
+          {/* MEDSPA: 30-DAY RETENTION CAMPAIGN                             */}
+          {/* Reframed as phased campaign, not flat task list               */}
           {/* ================================================================ */}
           {!isMortgage && (
             <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-10">
               <div className="max-w-2xl mx-auto">
 
-                {/* Section header */}
-                <div className="mb-5">
-                  <h2 className="font-semibold text-gray-900">What to do now</h2>
-                  <p className="text-sm text-gray-500">Prioritized by impact</p>
+                {/* Campaign Header */}
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">Your 30-Day Retention Campaign</h2>
+                  <p className="text-gray-600 mb-4">Turn one-time visitors into regulars and regulars into advocates</p>
+
+                  {/* Campaign Goals Summary */}
+                  <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-4">
+                    <p className="text-sm font-semibold text-gray-900 mb-2">Campaign Targets</p>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <p>• Recover ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} from one-and-done patients</p>
+                      <p>• Protect ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} in at-risk recurring revenue</p>
+                      <p>• Activate {analysisData?.patient_segments?.referral_champions?.count || 0} referral sources</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-3">
-                  
-                  {/* 1. One-and-done patients */}
-                  <div
-                    id="one-and-done-section"
-                    onClick={() => {
-                      openActionModal(
-                        'one-and-done',
-                        'One-and-done patients',
-                        analysisData?.patient_segments?.one_and_done?.count || 0,
-                        analysisData?.patient_segments?.one_and_done?.patients || [],
-                        'win-back',
-                        'Send win-back text'
-                      );
-                    }}
-                    className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all duration-300 cursor-pointer flex items-center gap-4"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <AlertCircle className="w-5 h-5 text-gray-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900">One-and-done patients</span>
-                        <span className="px-2 py-0.5 bg-rose-100 text-rose-700 text-xs font-medium rounded-full">Act first</span>
+                <div className="space-y-6">
+
+                  {/* WEEK 1: RESCUE */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-rose-100 text-rose-700 text-sm font-bold flex-shrink-0">1</div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">Week 1: RESCUE</h3>
+                        <p className="text-sm text-gray-500">One-and-done patients (highest recoverable value)</p>
                       </div>
-                      <p className="text-sm text-gray-500">
-                        {analysisData?.patient_segments?.one_and_done?.count || 0} patients · ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable
-                      </p>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+
+                    <div
+                      id="one-and-done-section"
+                      onClick={() => {
                         openActionModal(
                           'one-and-done',
                           'One-and-done patients',
@@ -1414,41 +1407,55 @@ ${clinicName} Team`
                           'Send win-back text'
                         );
                       }}
-                      className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                      className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all duration-300 cursor-pointer ml-11"
                     >
-                      Send check-in
-                    </button>
+                      <div className="flex items-center gap-4">
+                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <AlertCircle className="w-5 h-5 text-gray-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900">One-and-done patients</span>
+                          </div>
+                          <p className="text-sm text-gray-500 mb-2">
+                            {analysisData?.patient_segments?.one_and_done?.count || 0} patients · ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable
+                          </p>
+                          <p className="text-xs text-emerald-600 font-medium">
+                            Expected: Win back 1 patient (+${Math.round((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) * 0.15).toLocaleString()} based on 15% rate)
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openActionModal(
+                              'one-and-done',
+                              'One-and-done patients',
+                              analysisData?.patient_segments?.one_and_done?.count || 0,
+                              analysisData?.patient_segments?.one_and_done?.patients || [],
+                              'win-back',
+                              'Send win-back text'
+                            );
+                          }}
+                          className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                        >
+                          Send check-in
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* 2. Lapsed regulars */}
-                  <div
-                    onClick={() => {
-                      openActionModal(
-                        'lapsed-regulars',
-                        'Lapsed regulars',
-                        analysisData?.patient_segments?.lapsed_regulars?.count || 0,
-                        analysisData?.patient_segments?.lapsed_regulars?.patients || [],
-                        'personal-outreach',
-                        'Start personal outreach'
-                      );
-                    }}
-                    className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Clock className="w-5 h-5 text-gray-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900">Lapsed regulars</span>
-                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">At risk</span>
+                  {/* WEEK 2: RECOVER */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-amber-700 text-sm font-bold flex-shrink-0">2</div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">Week 2: RECOVER</h3>
+                        <p className="text-sm text-gray-500">Lapsed regulars (protect recurring revenue)</p>
                       </div>
-                      <p className="text-sm text-gray-500">
-                        {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients · ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk
-                      </p>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+
+                    <div
+                      onClick={() => {
                         openActionModal(
                           'lapsed-regulars',
                           'Lapsed regulars',
@@ -1458,41 +1465,55 @@ ${clinicName} Team`
                           'Start personal outreach'
                         );
                       }}
-                      className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                      className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer ml-11"
                     >
-                      Reopen
-                    </button>
+                      <div className="flex items-center gap-4">
+                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <Clock className="w-5 h-5 text-gray-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900">Lapsed regulars</span>
+                          </div>
+                          <p className="text-sm text-gray-500 mb-2">
+                            {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients · ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk
+                          </p>
+                          <p className="text-xs text-emerald-600 font-medium">
+                            Expected: Retain 2 patients (+${Math.round((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) * 0.60).toLocaleString()} based on 60% rate)
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openActionModal(
+                              'lapsed-regulars',
+                              'Lapsed regulars',
+                              analysisData?.patient_segments?.lapsed_regulars?.count || 0,
+                              analysisData?.patient_segments?.lapsed_regulars?.patients || [],
+                              'personal-outreach',
+                              'Start personal outreach'
+                            );
+                          }}
+                          className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                        >
+                          Reopen
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* 3. High-frequency patients */}
-                  <div
-                    onClick={() => {
-                      openActionModal(
-                        'high-frequency',
-                        'High-frequency patients',
-                        analysisData?.patient_segments?.high_frequency?.count || 0,
-                        analysisData?.patient_segments?.high_frequency?.patients || [],
-                        'vip-reward',
-                        'Send VIP reward'
-                      );
-                    }}
-                    className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Star className="w-5 h-5 text-gray-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900">High-frequency patients</span>
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">Protect</span>
+                  {/* WEEK 3: NURTURE */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 text-sm font-bold flex-shrink-0">3</div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">Week 3: NURTURE</h3>
+                        <p className="text-sm text-gray-500">High-frequency patients (deepen loyalty)</p>
                       </div>
-                      <p className="text-sm text-gray-500">
-                        {analysisData?.patient_segments?.high_frequency?.count || 0} patients · ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV
-                      </p>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+
+                    <div
+                      onClick={() => {
                         openActionModal(
                           'high-frequency',
                           'High-frequency patients',
@@ -1502,41 +1523,55 @@ ${clinicName} Team`
                           'Send VIP reward'
                         );
                       }}
-                      className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                      className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer ml-11"
                     >
-                      VIP touchpoint
-                    </button>
+                      <div className="flex items-center gap-4">
+                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <Star className="w-5 h-5 text-gray-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900">High-frequency patients</span>
+                          </div>
+                          <p className="text-sm text-gray-500 mb-2">
+                            {analysisData?.patient_segments?.high_frequency?.count || 0} patients · ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV
+                          </p>
+                          <p className="text-xs text-emerald-600 font-medium">
+                            Expected: Increase retention rate, protect ${Math.round((analysisData?.patient_segments?.high_frequency?.avg_ltv || 0) * (analysisData?.patient_segments?.high_frequency?.count || 0)).toLocaleString()}+ LTV
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openActionModal(
+                              'high-frequency',
+                              'High-frequency patients',
+                              analysisData?.patient_segments?.high_frequency?.count || 0,
+                              analysisData?.patient_segments?.high_frequency?.patients || [],
+                              'vip-reward',
+                              'Send VIP reward'
+                            );
+                          }}
+                          className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                        >
+                          VIP touchpoint
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  {/* 4. Referral champions */}
-                  <div
-                    onClick={() => {
-                      openActionModal(
-                        'referrers',
-                        'Referral champions',
-                        analysisData?.patient_segments?.referral_champions?.count || 0,
-                        analysisData?.patient_segments?.referral_champions?.patients || [],
-                        'referral-program',
-                        'Launch referral program'
-                      );
-                    }}
-                    className="bg-white border border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer flex items-center gap-4"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                      <Users className="w-5 h-5 text-gray-500" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-medium text-gray-900">Referral champions</span>
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">Growth</span>
+                  {/* WEEK 4: MULTIPLY */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-sm font-bold flex-shrink-0">4</div>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">Week 4: MULTIPLY</h3>
+                        <p className="text-sm text-gray-500">Referral champions (turn loyalty into growth)</p>
                       </div>
-                      <p className="text-sm text-gray-500">
-                        {analysisData?.patient_segments?.referral_champions?.count || 0} patients · {analysisData?.patient_segments?.referral_champions?.conversion_rate || 68}% conversion
-                      </p>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
+
+                    <div
+                      onClick={() => {
                         openActionModal(
                           'referrers',
                           'Referral champions',
@@ -1546,10 +1581,41 @@ ${clinicName} Team`
                           'Launch referral program'
                         );
                       }}
-                      className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                      className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-gray-300 hover:shadow-sm transition-all cursor-pointer ml-11"
                     >
-                      Activate
-                    </button>
+                      <div className="flex items-center gap-4">
+                        <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                          <Users className="w-5 h-5 text-gray-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900">Referral champions</span>
+                          </div>
+                          <p className="text-sm text-gray-500 mb-2">
+                            {analysisData?.patient_segments?.referral_champions?.count || 0} patients · {analysisData?.patient_segments?.referral_champions?.conversion_rate || 68}% conversion
+                          </p>
+                          <p className="text-xs text-emerald-600 font-medium">
+                            Expected: 1 new referral (+$405 based on 30% activation rate)
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openActionModal(
+                              'referrers',
+                              'Referral champions',
+                              analysisData?.patient_segments?.referral_champions?.count || 0,
+                              analysisData?.patient_segments?.referral_champions?.patients || [],
+                              'referral-program',
+                              'Launch referral program'
+                            );
+                          }}
+                          className="w-32 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                        >
+                          Activate
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   {/* 5. Cross-sell / Bundle opportunity */}
@@ -2348,10 +2414,10 @@ ${clinicName} Team`
           <section className="space-y-3">
             <div className="flex items-center justify-between">
               <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                What this plan could deliver
+                What this campaign could deliver
               </h2>
               <span className="text-[11px] text-[#9CA3AF]">
-                Segment-specific ROI projections
+                30-day retention campaign projections
               </span>
             </div>
 
@@ -2426,8 +2492,8 @@ ${clinicName} Team`
                     <div className="border-t-2 border-gray-200 pt-4 mt-4">
                       <div className="bg-gray-900 rounded-xl p-5 flex items-center justify-between">
                         <div>
-                          <p className="text-sm font-medium text-gray-300">Total potential if you execute all three</p>
-                          <p className="text-xs text-gray-500 mt-1">These are projections based on industry benchmarks, not guarantees</p>
+                          <p className="text-sm font-medium text-gray-300">Total potential if you execute this campaign</p>
+                          <p className="text-xs text-gray-500 mt-1">Projections based on industry benchmarks, not guarantees</p>
                         </div>
                         <div className="text-right">
                           <p className="text-2xl font-bold text-white">
