@@ -820,18 +820,19 @@ function AdCampaignsSection({ channels, segmentId, summary, projection, vipCount
             </div>
             <div className="ml-8 space-y-3">
               {channels.filter(c => c.id === 'facebook' || c.id === 'instagram').map(channel => {
-                const config = {
+                const config: Record<string, { bg: string; border: string; icon: React.ReactElement; label: string }> = {
                   facebook: { bg: 'bg-blue-50', border: 'border-blue-200', icon: <Facebook className="h-4 w-4 text-blue-600" />, label: 'Facebook' },
                   instagram: { bg: 'bg-pink-50', border: 'border-pink-200', icon: <Instagram className="h-4 w-4 text-pink-600" />, label: 'Instagram' },
-                }[channel.id];
-                if (!config) return null;
+                };
+                const channelConfig = config[channel.id];
+                if (!channelConfig) return null;
 
                 return (
-                  <div key={channel.id} className={`${config.bg} ${config.border} border rounded-lg p-4`}>
+                  <div key={channel.id} className={`${channelConfig.bg} ${channelConfig.border} border rounded-lg p-4`}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        {config.icon}
-                        <span className="font-medium text-gray-900">{config.label}</span>
+                        {channelConfig.icon}
+                        <span className="font-medium text-gray-900">{channelConfig.label}</span>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-gray-900">{channel.budgetSharePercent}% · ${channel.dailyBudget}/day</p>

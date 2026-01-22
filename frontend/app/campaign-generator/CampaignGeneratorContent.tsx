@@ -820,7 +820,7 @@ export function CampaignGeneratorContent() {
                     <div>
                       <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Campaign Types</div>
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p>• <span className="font-medium">Search Ads:</span> Target high-intent keywords ("{campaignData?.overview?.procedure || 'botox'} near me", "best medspa {city || 'local'}")</p>
+                        <p>• <span className="font-medium">Search Ads:</span> Target high-intent keywords ("{campaignData?.overview?.procedure || 'botox'} near me", "best medspa local")</p>
                         <p>• <span className="font-medium">Local Services Ads:</span> Google-guaranteed badge for trust + top placement</p>
                         <p>• <span className="font-medium">Performance Max:</span> AI-optimized across Search, Display, YouTube, Gmail</p>
                       </div>
@@ -828,7 +828,7 @@ export function CampaignGeneratorContent() {
                     <div>
                       <div className="text-xs font-semibold text-gray-700 uppercase mb-1">Keyword Strategy</div>
                       <div className="text-sm text-gray-600 space-y-1">
-                        <p>• <span className="font-medium">Exact Match:</span> "[{campaignData?.overview?.procedure || 'botox'}]", "[medspa {city || 'near me'}]"</p>
+                        <p>• <span className="font-medium">Exact Match:</span> "[{campaignData?.overview?.procedure || 'botox'}]", "[medspa near me]"</p>
                         <p>• <span className="font-medium">Phrase Match:</span> "{campaignData?.overview?.procedure || 'botox'} near me", "best medspa"</p>
                         <p>• <span className="font-medium">Negative Keywords:</span> -free, -cheap, -DIY, -school, -training</p>
                       </div>
