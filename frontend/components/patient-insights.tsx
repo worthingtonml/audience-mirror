@@ -1344,6 +1344,7 @@ ${clinicName} Team`
           {analysisData?.journeyComparison && (
             <JourneyComparison
               journeyData={analysisData.journeyComparison}
+              oneAndDoneData={analysisData?.patient_segments?.one_and_done}
               onSendFollowUp={() => {
                 const element = document.getElementById('one-and-done-section');
                 if (element) {
