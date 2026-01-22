@@ -268,7 +268,14 @@ def aggregate_visits_to_patients(df: pd.DataFrame) -> pd.DataFrame:
     if 'first_visit' in grouped.columns and 'last_visit' in grouped.columns and 'visit_count' in grouped.columns:
         grouped['tenure_days'] = (grouped['last_visit'] - grouped['first_visit']).dt.days
         grouped['visits_per_year'] = grouped['visit_count'] / (grouped['tenure_days'] / 365.25).clip(lower=0.1)
-    
+
+    # Calculate days_since_last_visit for churn analysis
+    if 'last_visit' in grouped.columns:
+        grouped['days_since_last_visit'] = (pd.Timestamp.now() - grouped['last_visit']).dt.days
+        # Also create visit_number alias for churn interval calculation
+        if 'visit_count' in grouped.columns and 'visit_number' not in grouped.columns:
+            grouped['visit_number'] = grouped['visit_count']
+
     dob_col = 'dob' if 'dob' in grouped.columns else 'date_of_birth' if 'date_of_birth' in grouped.columns else None
     if dob_col:
         grouped['age'] = (pd.Timestamp.now() - pd.to_datetime(grouped[dob_col], errors='coerce')).dt.days // 365
