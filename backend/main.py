@@ -2185,7 +2185,13 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
             journey_comparison = analyze_patient_journey(patients_df, vip_patient_ids=vip_patient_ids, min_patients=10, min_vips=2)
             print(f"[JOURNEY] ========== JOURNEY ANALYSIS COMPLETE ==========")
             print(f"[JOURNEY] Result: {'Calculated' if journey_comparison else 'Insufficient data'}")
-            print(f"[JOURNEY] Full data: {journey_comparison}")
+            if journey_comparison:
+                print(f"[JOURNEY] VIP retention: {journey_comparison.get('vip', {}).get('retention', 'MISSING')}")
+                print(f"[JOURNEY] All retention: {journey_comparison.get('all', {}).get('retention', 'MISSING')}")
+                print(f"[JOURNEY] VIP patient count: {journey_comparison.get('vip', {}).get('patientCount', 'MISSING')}")
+                print(f"[JOURNEY] All patient count: {journey_comparison.get('all', {}).get('patientCount', 'MISSING')}")
+            else:
+                print(f"[JOURNEY] Journey comparison is None - insufficient data")
         except Exception as e:
             print(f"[JOURNEY] ========== JOURNEY ANALYSIS CRASHED ==========")
             print(f"[JOURNEY] Error: {e}")
@@ -4035,7 +4041,18 @@ async def analyze_segment_churn(
     # Run churn analysis on top 20% only
     print(f"[CHURN DEBUG] Columns: {df.columns.tolist()}")
     print(f"[CHURN DEBUG] Sample patient_id: {df['patient_id'].head(3).tolist() if 'patient_id' in df.columns else 'NO PATIENT_ID COL'}")
+    print(f"[CHURN DEBUG] Has days_since_last_visit: {'days_since_last_visit' in df.columns}")
+    print(f"[CHURN DEBUG] Has visit_number: {'visit_number' in df.columns}")
+    print(f"[CHURN DEBUG] Has visit_count: {'visit_count' in df.columns}")
+    if 'days_since_last_visit' in df.columns:
+        print(f"[CHURN DEBUG] days_since_last_visit sample: {df['days_since_last_visit'].head(5).tolist()}")
+        print(f"[CHURN DEBUG] days_since_last_visit stats: min={df['days_since_last_visit'].min()}, max={df['days_since_last_visit'].max()}, mean={df['days_since_last_visit'].mean():.1f}")
+    if 'last_visit' in df.columns:
+        print(f"[CHURN DEBUG] last_visit sample: {df['last_visit'].head(3).tolist()}")
+
     summary = get_churn_summary(df)
+    print(f"[CHURN DEBUG] Churn summary result: at_risk_percent={summary.get('at_risk_percent', 'MISSING')}, total_patients={summary.get('total_patients', 'MISSING')}")
+    print(f"[CHURN DEBUG] Risk counts: critical={summary.get('critical_count', 0)}, high={summary.get('high_count', 0)}, medium={summary.get('medium_count', 0)}")
     
     return {
         "success": True,
