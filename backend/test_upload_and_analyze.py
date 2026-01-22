@@ -8,7 +8,7 @@ import requests
 import time
 
 API_URL = "http://localhost:8000"
-TEST_FILE = "test_medspa_visits_with_patient_ids.csv"
+TEST_FILE = "patients_with_ids.csv"
 
 print("="*80)
 print("TESTING: Journey Comparison + Churn Fix")
