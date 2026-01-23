@@ -199,15 +199,28 @@ def normalize_patients_dataframe(df):
 def aggregate_visits_to_patients(df: pd.DataFrame) -> pd.DataFrame:
     """
     Collapse visit-level rows into patient-level rows.
-    
+
     Input: One row per visit
     Output: One row per patient with aggregated metrics
     """
-    patient_id_col = 'patient_id' if 'patient_id' in df.columns else None
+    # First, log what columns we have
+    print(f"[AGGREGATE DEBUG] Available columns: {df.columns.tolist()}")
+
+    # Find patient_id column with common variations (case-insensitive)
+    patient_id_col = None
+    patient_id_variations = ['patient_id', 'patientid', 'patient_number', 'patientnumber', 'client_id', 'clientid', 'id']
+
+    for col in df.columns:
+        col_normalized = col.lower().replace('_', '').replace(' ', '')
+        if col_normalized in patient_id_variations:
+            patient_id_col = col
+            print(f"[AGGREGATE DEBUG] Found patient_id column: '{col}'")
+            break
+
     amount_col = next((c for c in ['amount', 'revenue', 'total'] if c in df.columns), None)
     date_col = next((c for c in ['visit_date', 'date', 'appointment_date'] if c in df.columns), None)
     treatment_col = next((c for c in ['treatment', 'procedure', 'service'] if c in df.columns), None)
-    
+
     if not patient_id_col:
         print("[AGGREGATE] No patient_id column found - assuming rows are already patient-level")
         return df

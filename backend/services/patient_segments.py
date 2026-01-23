@@ -173,13 +173,33 @@ def calculate_patient_segments(patients_df, top_patients, revenue_col='revenue')
     }
     
     # 3. ONE-AND-DONE / DANGER ZONE (1 visit, 30-60 days ago)
+    print(f"\n[ONE-AND-DONE DEBUG] ========================================")
+    print(f"[ONE-AND-DONE DEBUG] Total patients: {total_patients}")
+    print(f"[ONE-AND-DONE DEBUG] visit_col: {visit_col}")
+    print(f"[ONE-AND-DONE DEBUG] Has days_since_last_visit: {'days_since_last_visit' in patients_df.columns}")
+
     if visit_col and 'days_since_last_visit' in patients_df.columns:
+        # Debug: Check each filter step
+        single_visit = patients_df[patients_df[visit_col] == 1]
+        print(f"[ONE-AND-DONE DEBUG] Patients with exactly 1 visit: {len(single_visit)}")
+
+        if len(single_visit) > 0:
+            print(f"[ONE-AND-DONE DEBUG] days_since_last_visit range for single-visit patients: {single_visit['days_since_last_visit'].min()}-{single_visit['days_since_last_visit'].max()}")
+            print(f"[ONE-AND-DONE DEBUG] days_since_last_visit sample: {single_visit['days_since_last_visit'].head(10).tolist()}")
+
+        in_30_60_window = single_visit[
+            (single_visit['days_since_last_visit'] >= 30) &
+            (single_visit['days_since_last_visit'] <= 60)
+        ]
+        print(f"[ONE-AND-DONE DEBUG] Patients in 30-60 day window: {len(in_30_60_window)}")
+
         one_and_done = patients_df[
             (patients_df[visit_col] == 1) &
             (patients_df['days_since_last_visit'] >= 30) &
             (patients_df['days_since_last_visit'] <= 60)
         ].copy()
         one_done_count = int(len(one_and_done))
+        print(f"[ONE-AND-DONE DEBUG] Final one_and_done count: {one_done_count}")
 
         if one_done_count > 0:
             one_done_avg_spend = float(one_and_done[revenue_col].mean())
