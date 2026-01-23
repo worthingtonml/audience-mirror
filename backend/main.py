@@ -4032,27 +4032,31 @@ async def analyze_segment_churn(
     df = pd.read_csv(dataset.patients_path)
     df = normalize_patients_dataframe(df)
     df = aggregate_visits_to_patients(df)
-    
-    # Score and filter to top 20%
+
+    # Score patients but analyze ALL for churn (not just top 20%)
     df = segment_patients_by_behavior(df)
-    top_count = max(1, int(len(df) * 0.2))
-    df = df.sort_values('value_score', ascending=False).head(top_count)
-    
-    # Run churn analysis on top 20% only
+
+    # Enhanced debug logging
+    print(f"\n[CHURN DEBUG] ========== BEFORE CHURN CALCULATION ==========")
+    print(f"[CHURN DEBUG] Total patients: {len(df)}")
     print(f"[CHURN DEBUG] Columns: {df.columns.tolist()}")
     print(f"[CHURN DEBUG] Sample patient_id: {df['patient_id'].head(3).tolist() if 'patient_id' in df.columns else 'NO PATIENT_ID COL'}")
     print(f"[CHURN DEBUG] Has days_since_last_visit: {'days_since_last_visit' in df.columns}")
     print(f"[CHURN DEBUG] Has visit_number: {'visit_number' in df.columns}")
     print(f"[CHURN DEBUG] Has visit_count: {'visit_count' in df.columns}")
     if 'days_since_last_visit' in df.columns:
-        print(f"[CHURN DEBUG] days_since_last_visit sample: {df['days_since_last_visit'].head(5).tolist()}")
+        print(f"[CHURN DEBUG] days_since_last_visit sample: {df['days_since_last_visit'].head(10).tolist()}")
+        print(f"[CHURN DEBUG] days_since_last_visit distribution:\n{df['days_since_last_visit'].describe()}")
         print(f"[CHURN DEBUG] days_since_last_visit stats: min={df['days_since_last_visit'].min()}, max={df['days_since_last_visit'].max()}, mean={df['days_since_last_visit'].mean():.1f}")
     if 'last_visit' in df.columns:
         print(f"[CHURN DEBUG] last_visit sample: {df['last_visit'].head(3).tolist()}")
 
     summary = get_churn_summary(df)
+    print(f"\n[CHURN DEBUG] ========== AFTER CHURN CALCULATION ==========")
     print(f"[CHURN DEBUG] Churn summary result: at_risk_percent={summary.get('at_risk_percent', 'MISSING')}, total_patients={summary.get('total_patients', 'MISSING')}")
-    print(f"[CHURN DEBUG] Risk counts: critical={summary.get('critical_count', 0)}, high={summary.get('high_count', 0)}, medium={summary.get('medium_count', 0)}")
+    print(f"[CHURN DEBUG] Risk counts: critical={summary.get('critical_count', 0)}, high={summary.get('high_count', 0)}, medium={summary.get('medium_count', 0)}, low={summary.get('low_count', 0)}, on_schedule={summary.get('on_schedule_count', 0)}")
+    print(f"[CHURN DEBUG] At risk count: {summary.get('at_risk_count', 0)}")
+    print(f"[CHURN DEBUG] ================================================\n")
     
     return {
         "success": True,
