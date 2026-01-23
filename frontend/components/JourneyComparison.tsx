@@ -39,6 +39,7 @@ export default function JourneyComparison({
   onViewPatients,
   onSendFollowUp
 }: JourneyComparisonProps) {
+  const [showWhyLeaving, setShowWhyLeaving] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
 
   if (!journeyData) return null;
@@ -128,10 +129,40 @@ export default function JourneyComparison({
           </div>
         )}
 
+        {/* Expander: "Why are they leaving?" */}
+        <button
+          onClick={() => setShowWhyLeaving(!showWhyLeaving)}
+          className="mt-5 text-gray-500 text-sm flex items-center gap-1 hover:text-gray-700 transition-colors"
+        >
+          <span>{showWhyLeaving ? 'Hide' : 'Why are they leaving?'}</span>
+          <svg
+            className={`w-4 h-4 transition-transform ${showWhyLeaving ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        {/* Expanded "Why are they leaving?" Section */}
+        {showWhyLeaving && (
+          <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-900 font-medium mb-2">Most common reason</p>
+            <p className="text-sm text-amber-800">
+              Patients who don't rebook within 30 days are <strong>3× less likely</strong> to return.
+            </p>
+            <p className="text-xs text-amber-700 mt-2">
+              A simple follow-up text or email at the 30-day mark increases rebooking by 40-60%.
+            </p>
+          </div>
+        )}
+
         {/* Expander: "See breakdown" */}
         <button
           onClick={() => setShowBreakdown(!showBreakdown)}
-          className="mt-5 text-gray-500 text-sm flex items-center gap-1 hover:text-gray-700 transition-colors"
+          className="mt-3 text-gray-500 text-sm flex items-center gap-1 hover:text-gray-700 transition-colors"
         >
           <span>{showBreakdown ? 'Hide' : 'See'} breakdown</span>
           <svg
@@ -148,7 +179,7 @@ export default function JourneyComparison({
 
       {/* Expanded Breakdown Section */}
       {showBreakdown && (
-        <div className="mt-3 p-4 bg-gray-50 border-t border-gray-200 rounded-b-xl">
+        <div className="p-4 bg-gray-50 border-t border-gray-200">
           <div className="space-y-3">
             {/* Row headers */}
             <div className="grid grid-cols-3 text-xs text-gray-400">
