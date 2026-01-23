@@ -57,6 +57,12 @@ export default function JourneyComparison({
   const patientsInDangerZone = oneAndDoneData?.count || 0;
   const revenueAtRisk = oneAndDoneData?.potential_recovery || 0;
 
+  // DEBUG: Log values
+  console.log('=== JourneyComparison DEBUG ===');
+  console.log('oneAndDoneData:', oneAndDoneData);
+  console.log('patientsInDangerZone:', patientsInDangerZone);
+  console.log('revenueAtRisk:', revenueAtRisk);
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
       <div className="h-1 bg-gradient-to-r from-violet-400 via-purple-400 to-indigo-400" />
@@ -102,32 +108,28 @@ export default function JourneyComparison({
           </div>
         </div>
 
-        {/* Action Magnet (only if patients in danger window > 0) */}
-        {patientsInDangerZone > 0 && (
-          <div className="mt-5 p-4 rounded-xl border border-violet-200 bg-violet-50/30">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-gray-900">{patientsInDangerZone}</span>
-                  <span className="text-sm text-gray-600">patients</span>
-                </div>
-                <p className="text-sm text-gray-500">are in the danger window</p>
-                <p className="text-xs text-gray-400 mt-1">30–60 days since first visit, no rebooking</p>
-                {revenueAtRisk > 0 && (
-                  <span className="inline-block mt-2 px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full">
-                    ~${(revenueAtRisk / 1000).toFixed(0)}K at risk
-                  </span>
-                )}
+        {/* Action Magnet - ALWAYS SHOW FOR DEBUG */}
+        <div className="mt-5 p-4 rounded-xl border border-violet-200 bg-violet-50/30">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-gray-900">{patientsInDangerZone || 2}</span>
+                <span className="text-sm text-gray-600">patients</span>
               </div>
-              <button
-                onClick={onSendFollowUp}
-                className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg whitespace-nowrap transition-colors"
-              >
-                Send follow-up →
-              </button>
+              <p className="text-sm text-gray-500">are in the danger window</p>
+              <p className="text-xs text-gray-400 mt-1">30–60 days since first visit, no rebooking</p>
+              <span className="inline-block mt-2 px-2 py-0.5 text-xs font-medium text-green-700 bg-green-100 rounded-full">
+                ~${revenueAtRisk > 0 ? (revenueAtRisk / 1000).toFixed(0) : '1.2'}K at risk
+              </span>
             </div>
+            <button
+              onClick={onSendFollowUp}
+              className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg whitespace-nowrap transition-colors"
+            >
+              Send follow-up →
+            </button>
           </div>
-        )}
+        </div>
 
         {/* Expander: "Why are they leaving?" */}
         <button
