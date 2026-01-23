@@ -23,6 +23,7 @@ import { CampaignWorkflowModal } from './campaign-workflow-modal';
 import { useInsight } from './insights/InsightProvider';
 import { DISC_TYPES } from '@/lib/industryConfig';
 import JourneyComparison from './JourneyComparison';
+import GatewayServiceCard from './GatewayServiceCard';
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
@@ -1314,28 +1315,19 @@ ${clinicName} Team`
           </section>
 
           {/* ================================================================ */}
-          {/* GATEWAY SERVICE INSIGHT                                        */}
+          {/* GATEWAY SERVICE CARD (Compact)                                 */}
           {/* Only show if gateway service exists (multiplier >= 1.5)       */}
           {/* ================================================================ */}
           {analysisData?.gatewayServices && (
-            <section className="bg-gradient-to-br from-emerald-50 to-white rounded-2xl border border-emerald-200 p-6 shadow-sm mb-10">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                  <TrendingUp className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900 mb-1">Gateway Service</h3>
-                  <p className="text-gray-700">
-                    Patients who start with {analysisData.gatewayServices.service} spend {analysisData.gatewayServices.multiplier}× more over their lifetime.
-                  </p>
-                  <div className="mt-3 flex items-center gap-4 text-sm text-gray-600">
-                    <span>${analysisData.gatewayServices.avg_ltv.toLocaleString()} avg LTV</span>
-                    <span>·</span>
-                    <span>{analysisData.gatewayServices.patient_count} patients</span>
-                  </div>
-                </div>
-              </div>
-            </section>
+            <div className="mb-6">
+              <GatewayServiceCard
+                gatewayData={analysisData.gatewayServices}
+                onPromote={() => {
+                  // TODO: Wire up to campaign creation or promotion modal
+                  console.log('Promote gateway service:', analysisData.gatewayServices.service);
+                }}
+              />
+            </div>
           )}
 
           {/* ================================================================ */}
