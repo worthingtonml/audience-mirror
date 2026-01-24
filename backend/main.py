@@ -1956,6 +1956,7 @@ def identify_dominant_profile(
     # Calculate service analysis for bundle/cross-sell opportunities
     service_analysis = analyze_services(patients_df)
     print(f"[PROFILE] Service analysis: {service_analysis.get('primary_opportunity', 'None')}")
+    print(f"[PROFILE] Top services: {service_analysis.get('top_services', [])}")
     
     return {
         "segment_patient_count": len(top_patients),

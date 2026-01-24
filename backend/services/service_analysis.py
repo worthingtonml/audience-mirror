@@ -24,10 +24,13 @@ def analyze_services(df, treatment_col='treatment', revenue_col='revenue', patie
         'primary_opportunity': None
     }
     
-    # Find treatment column
-    treatment_col = next((c for c in ['treatment', 'procedure', 'service'] if c in df.columns), None)
+    # Find treatment column (check aggregated column name first)
+    treatment_col = next((c for c in ['treatments_received', 'treatment', 'procedure', 'service'] if c in df.columns), None)
     if not treatment_col:
+        print(f"[SERVICE ANALYSIS] No treatment column found. Available columns: {df.columns.tolist()}")
         return result
+
+    print(f"[SERVICE ANALYSIS] Using treatment column: {treatment_col}")
     
     # Find revenue column
     revenue_col = next((c for c in ['revenue', 'amount', 'total'] if c in df.columns), None)
@@ -61,10 +64,13 @@ def analyze_services(df, treatment_col='treatment', revenue_col='revenue', patie
     
     sorted_services = sorted(service_revenue.items(), key=lambda x: x[1], reverse=True)
     top_services = [s[0] for s in sorted_services[:5]]
-    
+
     result['top_services'] = top_services
     result['service_revenue'] = dict(service_revenue)
     result['service_patient_count'] = service_patient_count
+
+    print(f"[SERVICE ANALYSIS] Top 5 services by revenue: {top_services}")
+    print(f"[SERVICE ANALYSIS] Service revenue breakdown: {dict(sorted_services[:5])}")
     
     # Helper function to extract patient info
     def extract_patient_info(patient_ids, df, patient_id_col, limit=500):
