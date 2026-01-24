@@ -1131,7 +1131,8 @@ async def create_run(
                     print(f"[FILTER] Filtered to clusters: {clusters}, rows: {len(df_grouped)}")
 
                     if df_grouped.empty:
-                        raise HTTPException(status_code=400, detail=f"No data found for clusters: {clusters}")
+                        print(f"[FILTER] No patients match clusters: {clusters} - continuing with empty results")
+                        # Allow empty results - UI will show "0 patients in this segment"
                 else:
                     raise HTTPException(status_code=400, detail="ZIP code column required for cluster filtering")
             except Exception as e:
@@ -1172,7 +1173,7 @@ async def create_run(
                 df_grouped = df_grouped[df_grouped["__procedure_match"]]
                 print(f"[FILTER] Filtered to procedures: {procedure}, rows: {len(df_grouped)}")
                 if df_grouped.empty:
-                    raise HTTPException(status_code=400, detail=f"No data found for procedures: {procedure}")
+                    print(f"[FILTER] No patients match procedures: {procedure} - continuing with empty results")
 
         # Save filtered dataset if filters were applied
         filtered_dataset_path = dataset.patients_path
@@ -2230,10 +2231,23 @@ def execute_advanced_analysis(dataset: Dict[str, Any], request: RunCreateRequest
         print("[ANALYSIS] Loaded vertical config")
 
         # Use grouped patient data if provided
-        
+
         if df_grouped is not None:
             patients_df = normalize_patients_dataframe(df_grouped.copy())
             print(f"[ANALYSIS] Using FILTERED patient data: {len(patients_df)} rows")
+
+            # Handle empty filtered data gracefully
+            if len(patients_df) == 0:
+                print("[ANALYSIS] Empty filtered dataset - returning minimal analysis")
+                return {
+                    "headline_metrics": {"total_patients": 0, "total_revenue": 0, "avg_ltv": 0},
+                    "top_segments": [],
+                    "map_points": [],
+                    "confidence_info": {"level": "low", "score": 0},
+                    "patient_count": 0,
+                    "dominant_profile": {},
+                    "strategic_insights": []
+                }
         else:
             _, _, raw_patients = validate_and_load_patients(dataset["patients_path"])
             patients_df = normalize_patients_dataframe(raw_patients)

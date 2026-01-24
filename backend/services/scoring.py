@@ -245,6 +245,11 @@ def calculate_psychographic_scores(
     - Returns a Series whose index matches zip_demographics.index
     """
 
+    # Handle empty inputs - return neutral scores for all ZIPs
+    if len(patients_df) == 0 or len(zip_demographics) == 0:
+        print("[SCORING] Empty patient or ZIP data - returning neutral scores (0.5)")
+        return pd.Series([0.5] * len(zip_demographics), index=zip_demographics.index)
+
     # ---------- Prepare patient data ----------
     df = patients_df.copy()
     df["zip_code"] = df.get("zip_code", "").astype(str).str.zfill(5)
