@@ -1405,15 +1405,18 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
         cohort_label=dominant_cohort
     )
     mortgage_data = {}
-   
+
+    # Get the dataset for this run and determine which path to use (filtered or original)
+    dataset = db.query(Dataset).filter(Dataset.id == analysis_run.dataset_id).first()
+    patients_path_to_use = getattr(analysis_run, 'filtered_dataset_path', None) or (dataset.patients_path if dataset else None)
+    print(f"[DATA PATH] Using: {patients_path_to_use} (filtered={bool(getattr(analysis_run, 'filtered_dataset_path', None))})")
+
    # Get available procedures from the dataset
     available_procedures = []
     try:
-        # Get the dataset for this run
-        dataset = db.query(Dataset).filter(Dataset.id == analysis_run.dataset_id).first()
-        if dataset and dataset.patients_path:
+        if dataset and patients_path_to_use:
             import pandas as pd
-            df = pd.read_csv(dataset.patients_path)
+            df = pd.read_csv(patients_path_to_use)
             
             # Check multiple possible column names for procedures
             possible_columns = ['procedure_norm', 'procedure', 'treatment', 'service', 'treatments_received']
@@ -1450,7 +1453,7 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
     if dataset and dataset.detected_vertical == 'real_estate_mortgage':
         try:
             from services.mortgage_metrics import get_mortgage_analysis
-            mortgage_df = pd.read_csv(dataset.patients_path)
+            mortgage_df = pd.read_csv(patients_path_to_use)
             mortgage_data = get_mortgage_analysis(mortgage_df)
             print(f"[DEBUG] Mortgage analysis complete: {mortgage_data.get('preapproval_metrics', {}).get('stale_count', 0)} stale preapprovals")
         except Exception as e:
@@ -1461,9 +1464,6 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
     filtered_patient_count = getattr(analysis_run, 'patient_count', 0)
     filtered_revenue = 0
     actual_total_revenue = 0
-
-    # Use filtered dataset path if available, otherwise use original
-    patients_path_to_use = getattr(analysis_run, 'filtered_dataset_path', None) or dataset.patients_path
 
     # Reload patient data to calculate actual revenue
     if dataset and patients_path_to_use:
@@ -4134,9 +4134,13 @@ async def analyze_segment_churn(
     dataset = db.query(Dataset).filter(Dataset.id == analysis_run.dataset_id).first()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
-    
+
+    # Use filtered dataset path if available, otherwise use original
+    patients_path_to_use = getattr(analysis_run, 'filtered_dataset_path', None) or dataset.patients_path
+    print(f"[CHURN] Using dataset path: {patients_path_to_use}")
+
     # Load patient data
-    df = pd.read_csv(dataset.patients_path)
+    df = pd.read_csv(patients_path_to_use)
     df = normalize_patients_dataframe(df)
     df = aggregate_visits_to_patients(df)
 
