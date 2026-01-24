@@ -1150,14 +1150,27 @@ async def create_run(
                 if df_grouped.empty:
                     raise HTTPException(status_code=400, detail=f"No data found for procedures: {procedure}")
 
+        # Save filtered dataset if filters were applied
+        filtered_dataset_path = dataset.patients_path
+        if (clusters or (procedure and procedure != "all")):
+            # Save filtered dataframe to a temporary file
+            import tempfile
+            import os
+
+            filtered_dir = os.path.join(os.path.dirname(dataset.patients_path), 'filtered_runs')
+            os.makedirs(filtered_dir, exist_ok=True)
+            filtered_dataset_path = os.path.join(filtered_dir, f'{run_id}_filtered.csv')
+            df_grouped.to_csv(filtered_dataset_path, index=False)
+            print(f"[FILTER] Saved filtered dataset to {filtered_dataset_path}")
+
         # Convert dataset to dict for compatibility with existing analysis function (DEDENTED)
         dataset_dict = {
-            "patients_path": dataset.patients_path,
+            "patients_path": filtered_dataset_path,
             "competitors_path": dataset.competitors_path,
             "practice_zip": dataset.practice_zip,
             "vertical": dataset.vertical
         }
-        
+
         # Now call the analysis
         result = execute_advanced_analysis(dataset_dict, request, df_grouped=df_grouped)
         
@@ -1195,10 +1208,12 @@ async def create_run(
         analysis_run.top_segments = result["top_segments"]
         analysis_run.map_points = result["map_points"]
         analysis_run.confidence_info = result["confidence_info"]
-        analysis_run.patient_count = result.get("patient_count", 0) 
+        analysis_run.patient_count = result.get("patient_count", 0)
         analysis_run.dominant_profile = result.get("dominant_profile", {})
         analysis_run.strategic_insights = result.get("strategic_insights", [])
-        
+        if filtered_dataset_path != dataset.patients_path:
+            analysis_run.filtered_dataset_path = filtered_dataset_path
+
         db.commit()
         
         # Auto-reconcile any contacted patients who returned
@@ -1404,11 +1419,14 @@ async def get_run_results(run_id: str, db: Session = Depends(get_db)):
     filtered_revenue = 0
     actual_total_revenue = 0
 
+    # Use filtered dataset path if available, otherwise use original
+    patients_path_to_use = getattr(analysis_run, 'filtered_dataset_path', None) or dataset.patients_path
+
     # Reload patient data to calculate actual revenue
-    if dataset and dataset.patients_path:
+    if dataset and patients_path_to_use:
         try:
-            # Read the raw visit-level data
-            df_visits = pd.read_csv(dataset.patients_path)
+            # Read the visit-level data (filtered or original)
+            df_visits = pd.read_csv(patients_path_to_use)
 
             # Aggregate visits to patient level (this sums revenue per patient)
             df_patients = aggregate_visits_to_patients(df_visits)

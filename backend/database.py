@@ -59,7 +59,8 @@ class AnalysisRun(Base):
     procedure = Column(String, nullable=True)
     patient_count = Column(Integer, nullable=True)
     dominant_profile = Column(JSON, nullable=True)
-    strategic_insights = Column(JSON, nullable=True) 
+    strategic_insights = Column(JSON, nullable=True)
+    filtered_dataset_path = Column(String, nullable=True) 
 
 
 class PatientOutreach(Base):
@@ -151,6 +152,8 @@ def create_tables():
     from sqlalchemy import inspect, text
 
     inspector = inspect(engine)
+
+    # Check patient_outreach table
     existing_columns = [col['name'] for col in inspector.get_columns('patient_outreach')]
 
     with engine.connect() as conn:
@@ -162,3 +165,12 @@ def create_tables():
             conn.execute(text('ALTER TABLE patient_outreach ADD COLUMN campaign_name VARCHAR'))
             conn.commit()
             print("[DB] Added campaign_name column to patient_outreach")
+
+    # Check analysis_runs table
+    existing_run_columns = [col['name'] for col in inspector.get_columns('analysis_runs')]
+
+    with engine.connect() as conn:
+        if 'filtered_dataset_path' not in existing_run_columns:
+            conn.execute(text('ALTER TABLE analysis_runs ADD COLUMN filtered_dataset_path VARCHAR'))
+            conn.commit()
+            print("[DB] Added filtered_dataset_path column to analysis_runs")
