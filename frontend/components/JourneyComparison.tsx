@@ -61,17 +61,17 @@ export default function JourneyComparison({
     : '$1.2K';
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
       {/* Header */}
       <div className="px-6 pt-6 pb-5">
         <p className="text-xs font-medium tracking-wider text-gray-400 uppercase mb-4">
           Patient Retention
         </p>
 
-        <h1 className="text-3xl font-semibold leading-tight">
-          <span className="text-gray-900">{dropoffPct}% of new patients</span><br />
-          <span className="text-gray-400">never come back</span>
-        </h1>
+        <h2 className="text-2xl font-bold leading-tight text-gray-900">
+          {dropoffPct}% of new patients
+          <span className="text-gray-300"> never come back</span>
+        </h2>
 
         <p className="text-sm text-gray-500 mt-3">
           Your VIPs return {vipRate} of 10 times — because you follow up within 30 days.
@@ -83,24 +83,24 @@ export default function JourneyComparison({
         <div className="flex rounded-xl overflow-hidden border border-gray-100">
           <div className="flex-1 py-5 text-center bg-gray-50/80">
             <p className="text-xs text-gray-400 mb-1">Average patient</p>
-            <p className="text-2xl font-semibold text-gray-400">{avgRate} of 10</p>
+            <p className="text-xl font-bold text-gray-400">{avgRate} of 10</p>
             <p className="text-xs text-gray-400">come back</p>
           </div>
           <div className="w-px bg-gray-200" />
-          <div className="flex-1 py-5 text-center bg-violet-50/50">
+          <div className="flex-1 py-5 text-center bg-violet-50/60">
             <p className="text-xs text-violet-500 mb-1">Your VIPs</p>
-            <p className="text-2xl font-semibold text-violet-600">{vipRate} of 10</p>
+            <p className="text-xl font-bold text-violet-600">{vipRate} of 10</p>
             <p className="text-xs text-violet-500">come back</p>
           </div>
         </div>
       </div>
 
       {/* Action Strip */}
-      <div className="mx-6 mb-6 p-4 rounded-xl bg-violet-50/40 border border-violet-100">
+      <div className="mx-6 mb-6 p-4 rounded-xl bg-violet-50/50 border border-violet-200">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
               <p className="text-sm font-semibold text-gray-900">
                 {dangerCount > 0 ? dangerCount : 2} patients are about to leave
               </p>
@@ -115,7 +115,7 @@ export default function JourneyComparison({
           <div className="flex flex-col items-end gap-2">
             <button
               onClick={onSendFollowUp}
-              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+              className="px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
             >
               Follow up with these {dangerCount > 0 ? dangerCount : 2} →
             </button>
@@ -133,7 +133,7 @@ export default function JourneyComparison({
       <div className="border-t border-gray-100">
         <button
           onClick={() => setShowWhy(!showWhy)}
-          className="w-full px-6 py-3 flex items-center justify-between text-sm text-gray-500 hover:bg-gray-50 transition-colors"
+          className="w-full px-6 py-3 flex items-center justify-between text-xs text-gray-500 hover:bg-gray-50 transition-colors"
         >
           <span>Why patients leave</span>
           <span className={`transition-transform ${showWhy ? 'rotate-180' : ''}`}>▾</span>
@@ -154,7 +154,7 @@ export default function JourneyComparison({
 
         <button
           onClick={() => setShowServices(!showServices)}
-          className="w-full px-6 py-3 flex items-center justify-between text-sm text-gray-500 hover:bg-gray-50 border-t border-gray-100 transition-colors"
+          className="w-full px-6 py-3 flex items-center justify-between text-xs text-gray-500 hover:bg-gray-50 border-t border-gray-100 transition-colors"
         >
           <span>Which services lose patients</span>
           <span className={`transition-transform ${showServices ? 'rotate-180' : ''}`}>▾</span>
@@ -170,8 +170,8 @@ export default function JourneyComparison({
                   <span className="text-xs text-gray-600">Laser Treatment</span>
                   <span className="text-xs text-gray-400">45% drop-off</span>
                 </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-rose-300 rounded-full" style={{ width: '45%' }} />
+                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-violet-400 rounded-full" style={{ width: '45%' }} />
                 </div>
               </div>
               <div>
@@ -179,8 +179,8 @@ export default function JourneyComparison({
                   <span className="text-xs text-gray-600">Chemical Peel</span>
                   <span className="text-xs text-gray-400">38% drop-off</span>
                 </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-300 rounded-full" style={{ width: '38%' }} />
+                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-violet-400 rounded-full" style={{ width: '38%' }} />
                 </div>
               </div>
               <div>
@@ -188,8 +188,8 @@ export default function JourneyComparison({
                   <span className="text-xs text-gray-600">Botox</span>
                   <span className="text-xs text-gray-400">22% drop-off</span>
                 </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-300 rounded-full" style={{ width: '22%' }} />
+                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-violet-400 rounded-full" style={{ width: '22%' }} />
                 </div>
               </div>
             </div>

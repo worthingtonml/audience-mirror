@@ -1105,25 +1105,20 @@ ${clinicName} Team`
     <>
     <div className="min-h-screen bg-[#F4F5FB]">
       {/* HEADER */}
-      <div className="bg-white border-b border-[#E2E8F0]">
+      <div className="bg-white border-b border-gray-200">
         <div
           className="mx-auto w-full px-6 md:px-10"
           style={{ maxWidth: 1400 }}
         >
-          <div className="py-6 flex items-start justify-between gap-4">
+          <div className="py-4 flex items-start justify-between gap-4">
             {/* Left side - Title */}
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-lg font-semibold text-gray-900">
                 {terms.planTitle}
               </h1>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-gray-500 text-sm">{patientCount} {terms.customers} analyzed</span>
-                <span className="text-gray-300">•</span>
-                <span className="inline-flex items-center gap-1.5 text-emerald-600 text-sm font-medium">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                  Ready to act
-                </span>
-              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {patientCount} {terms.customers} analyzed · <span className="text-emerald-600 font-medium">Ready to act</span>
+              </p>
             </div>
 
             {/* Right side - Dropdowns */}
@@ -1220,25 +1215,22 @@ ${clinicName} Team`
       >
         <div className="pt-8 md:pt-10 space-y-8 md:space-y-10">
           {/* PATIENT HEALTH CHECK HERO */}
-          <section className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-            {/* Gradient accent bar */}
-            <div className="h-1 bg-gradient-to-r from-violet-500 via-blue-500 to-emerald-500" />
-
+          <section className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             {/* Inner padding */}
-            <div className="p-8">
+            <div className="p-5">
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <p className="text-gray-400 text-xs font-medium uppercase tracking-wider mb-1">
                     Patient Health Check
                   </p>
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-lg font-semibold text-gray-900">
                     {patientCount} patients analyzed
                   </h2>
                 </div>
                 <button
                   onClick={() => {/* export handler */}}
-                  className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                  className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Download className="w-4 h-4" />
                   Export
@@ -1248,22 +1240,22 @@ ${clinicName} Team`
               {/* Stats row */}
               <div className="flex items-center gap-6 pb-6 mb-6 border-b border-gray-100">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-gray-900">${(totalRevenue / 1000).toFixed(0)}K</span>
+                  <span className="text-2xl font-bold text-gray-900">${(totalRevenue / 1000).toFixed(0)}K</span>
                   <span className="text-gray-400 text-sm">revenue</span>
                 </div>
                 <div className="w-px h-6 bg-gray-200" />
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-gray-900">${Math.round(totalRevenue / patientCount)}</span>
+                  <span className="text-lg font-semibold text-gray-700">${Math.round(totalRevenue / patientCount)}</span>
                   <span className="text-gray-400 text-sm">avg LTV</span>
                 </div>
                 <div className="w-px h-6 bg-gray-200" />
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-gray-900">{(analysisData?.behavior_patterns?.avg_visits_per_patient || 2.1).toFixed(1)}×</span>
+                  <span className="text-lg font-semibold text-gray-700">{(analysisData?.behavior_patterns?.avg_visits_per_patient || 2.1).toFixed(1)}×</span>
                   <span className="text-gray-400 text-sm">visits/yr</span>
                 </div>
                 <div className="w-px h-6 bg-gray-200" />
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-rose-500">{churnData?.at_risk_percent || 0}%</span>
+                  <span className="text-lg font-semibold text-violet-600">{churnData?.at_risk_percent || 0}%</span>
                   <span className="text-gray-400 text-sm">churn</span>
                 </div>
               </div>
@@ -1282,17 +1274,17 @@ ${clinicName} Team`
 
               {/* Services with separate Opportunity label */}
               <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                {/* Top Services - Green (strengths) */}
+                {/* Top Services - Violet (strengths) */}
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400 text-sm">Top services:</span>
                   {analysisData?.service_analysis?.top_services?.slice(0, 2).map((service: string, idx: number) => (
-                    <span key={idx} className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">
+                    <span key={idx} className="px-2 py-0.5 bg-violet-50 text-violet-700 text-xs rounded">
                       {service}
                     </span>
                   )) || (
                     <>
-                      <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">Botox</span>
-                      <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-sm font-medium rounded-full">Filler</span>
+                      <span className="px-2 py-0.5 bg-violet-50 text-violet-700 text-xs rounded">Botox</span>
+                      <span className="px-2 py-0.5 bg-violet-50 text-violet-700 text-xs rounded">Filler</span>
                     </>
                   )}
                 </div>
@@ -1301,11 +1293,11 @@ ${clinicName} Team`
                 <div className="flex items-center gap-2">
                   <span className="text-gray-400 text-sm">Opportunity:</span>
                   {analysisData?.serviceRebooking ? (
-                    <span className="px-3 py-1 bg-amber-50 text-amber-600 text-sm font-medium rounded-full border border-amber-200">
+                    <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-xs rounded">
                       {analysisData.serviceRebooking.service} rebooking {analysisData.serviceRebooking.rebooking_rate}%
                     </span>
                   ) : (
-                    <span className="px-3 py-1 bg-amber-50 text-amber-600 text-sm font-medium rounded-full border border-amber-200">
+                    <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-xs rounded">
                       No skincare uptake
                     </span>
                   )}
@@ -1357,57 +1349,49 @@ ${clinicName} Team`
           {/* Prioritized by impact design                                  */}
           {/* ================================================================ */}
           {!isMortgage && (
-            <section className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm mb-10">
+            <section className="bg-white rounded-xl border border-gray-200 p-5 mb-10">
               <div className="max-w-2xl mx-auto">
 
                 {/* Campaign Header Card */}
-                <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-xs font-medium uppercase tracking-wider text-gray-400">
-                      YOUR 30-DAY RETENTION CAMPAIGN
-                    </h2>
-                    <span className="text-xs text-gray-400">This is your next 30 days</span>
-                  </div>
-
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Turn one-time visitors into regulars
-                  </h3>
-
-                  <p className="text-sm text-gray-600 mb-4">
-                    Your most urgent priority is <span className="font-semibold text-gray-900">protecting ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk</span> from lapsed regulars — they're about to churn. After that, focus on one-and-done patients (${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable). Your high-frequency patients and referral champions are healthy — nurture them once the urgent items are handled.
+                <div className="mb-6">
+                  <p className="text-xs font-medium tracking-wider text-gray-400 uppercase">Your 30-Day Retention Campaign</p>
+                  <h3 className="text-base font-semibold text-gray-900 mt-2">Turn one-time visitors into regulars</h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Urgent: protect <span className="font-semibold text-gray-900">${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk</span> from lapsed regulars.
                   </p>
 
-                  <div className="border-t border-gray-200 pt-4 mt-4">
-                    <div className="grid grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Recover</p>
-                        <p className="text-base font-bold text-gray-900">
-                          ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Protect</p>
-                        <p className="text-base font-bold text-gray-900">
-                          ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 mb-1">Activate</p>
-                        <p className="text-base font-bold text-gray-900">
-                          {analysisData?.patient_segments?.referral_champions?.count || 0} referrals
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500 mb-1">Total potential</p>
-                        <p className="text-base font-bold text-emerald-600">
-                          ${(() => {
-                            const oneAndDone = Math.round((analysisData?.patient_segments?.one_and_done?.count || 0) * 0.15 * (analysisData?.patient_segments?.one_and_done?.avg_spend || 0));
-                            const lapsed = Math.round((analysisData?.patient_segments?.lapsed_regulars?.count || 0) * 0.60 * (analysisData?.patient_segments?.lapsed_regulars?.avg_ltv || 0));
-                            const referral = Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450);
-                            return (oneAndDone + lapsed + referral).toLocaleString();
-                          })()}/yr
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-6 mt-4">
+                    <div>
+                      <p className="text-xs text-gray-500">Recover</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="w-px h-8 bg-gray-200" />
+                    <div>
+                      <p className="text-xs text-gray-500">Protect</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="w-px h-8 bg-gray-200" />
+                    <div>
+                      <p className="text-xs text-gray-500">Activate</p>
+                      <p className="text-base font-semibold text-gray-900">
+                        {analysisData?.patient_segments?.referral_champions?.count || 0} referrals
+                      </p>
+                    </div>
+                    <div className="w-px h-8 bg-gray-200" />
+                    <div>
+                      <p className="text-xs text-gray-500">Total potential</p>
+                      <p className="text-base font-semibold text-emerald-600">
+                        ${(() => {
+                          const oneAndDone = Math.round((analysisData?.patient_segments?.one_and_done?.count || 0) * 0.15 * (analysisData?.patient_segments?.one_and_done?.avg_spend || 0));
+                          const lapsed = Math.round((analysisData?.patient_segments?.lapsed_regulars?.count || 0) * 0.60 * (analysisData?.patient_segments?.lapsed_regulars?.avg_ltv || 0));
+                          const referral = Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450);
+                          return (oneAndDone + lapsed + referral).toLocaleString();
+                        })()}/yr
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1433,37 +1417,22 @@ ${clinicName} Team`
                         'Start personal outreach'
                       );
                     }}
-                    className="bg-orange-50/50 border border-orange-100 rounded-xl p-4 hover:shadow-sm transition-all cursor-pointer"
+                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-all cursor-pointer"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-orange-500 text-white text-sm font-bold flex-shrink-0">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-sm font-bold flex-shrink-0">
                         1
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-semibold text-gray-900">RECOVER</span>
-                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
-                            At risk
-                          </span>
-                          <span className="text-xs text-gray-400">Week 1-2</span>
-                        </div>
-                        <div className="group relative inline-block mb-1">
-                          <span className="text-sm text-gray-700 cursor-help border-b border-dotted border-gray-400">
-                            Lapsed regulars
-                          </span>
-                          <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
-                            2+ visits, no visit in 90+ days
-                            <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
-                          </div>
-                        </div>
+                        <p className="text-sm font-semibold text-gray-900 mb-1">Lapsed regulars</p>
                         <p className="text-sm text-gray-500 mb-3">
                           {analysisData?.patient_segments?.lapsed_regulars?.count || 0} patients · ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()} at risk
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
-                            Likely: Keep {Math.round((analysisData?.patient_segments?.lapsed_regulars?.count || 0) * 0.60)} of {analysisData?.patient_segments?.lapsed_regulars?.count || 0} <span className="text-gray-400">(60% save)</span>
+                            Likely: Keep {Math.round((analysisData?.patient_segments?.lapsed_regulars?.count || 0) * 0.60)} of {analysisData?.patient_segments?.lapsed_regulars?.count || 0}
                           </p>
-                          <p className="text-sm font-semibold text-green-600">
+                          <p className="text-sm font-semibold text-emerald-600">
                             +${Math.round((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) * 0.60).toLocaleString()}
                           </p>
                         </div>
@@ -1480,7 +1449,7 @@ ${clinicName} Team`
                             'Start personal outreach'
                           );
                         }}
-                        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
+                        className="px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
                       >
                         Launch reactivation email
                       </button>
@@ -1500,37 +1469,22 @@ ${clinicName} Team`
                         'Send win-back text'
                       );
                     }}
-                    className="bg-red-50/50 border border-red-100 rounded-xl p-4 hover:shadow-sm transition-all cursor-pointer"
+                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-all cursor-pointer"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500 text-white text-sm font-bold flex-shrink-0">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-rose-500 text-white text-sm font-bold flex-shrink-0">
                         2
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-semibold text-gray-900">RESCUE</span>
-                          <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-medium rounded-full">
-                            Act first
-                          </span>
-                          <span className="text-xs text-gray-400">Week 1</span>
-                        </div>
-                        <div className="group relative inline-block mb-1">
-                          <span className="text-sm text-gray-700 cursor-help border-b border-dotted border-gray-400">
-                            One-and-done patients
-                          </span>
-                          <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
-                            1 visit only, 30-60 days ago
-                            <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
-                          </div>
-                        </div>
+                        <p className="text-sm font-semibold text-gray-900 mb-1">One-and-done patients</p>
                         <p className="text-sm text-gray-500 mb-3">
                           {analysisData?.patient_segments?.one_and_done?.count || 0} patients · ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()} recoverable
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
-                            Likely: Win back {Math.round((analysisData?.patient_segments?.one_and_done?.count || 0) * 0.15)} of {analysisData?.patient_segments?.one_and_done?.count || 0} <span className="text-gray-400">(15% avg)</span>
+                            Likely: Win back {Math.round((analysisData?.patient_segments?.one_and_done?.count || 0) * 0.15)} of {analysisData?.patient_segments?.one_and_done?.count || 0}
                           </p>
-                          <p className="text-sm font-semibold text-green-600">
+                          <p className="text-sm font-semibold text-emerald-600">
                             +${Math.round((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) * 0.15).toLocaleString()}
                           </p>
                         </div>
@@ -1547,7 +1501,7 @@ ${clinicName} Team`
                             'Send win-back text'
                           );
                         }}
-                        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
+                        className="px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
                       >
                         Send check-in SMS
                       </button>
@@ -1566,37 +1520,22 @@ ${clinicName} Team`
                         'Send VIP reward'
                       );
                     }}
-                    className="bg-blue-50/50 border border-blue-100 rounded-xl p-4 hover:shadow-sm transition-all cursor-pointer"
+                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-all cursor-pointer"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white text-sm font-bold flex-shrink-0">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-violet-500 text-white text-sm font-bold flex-shrink-0">
                         3
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-semibold text-gray-900">NURTURE</span>
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                            Protect
-                          </span>
-                          <span className="text-xs text-gray-400">Week 2-3</span>
-                        </div>
-                        <div className="group relative inline-block mb-1">
-                          <span className="text-sm text-gray-700 cursor-help border-b border-dotted border-gray-400">
-                            High-frequency patients
-                          </span>
-                          <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
-                            4+ visits per year
-                            <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
-                          </div>
-                        </div>
+                        <p className="text-sm font-semibold text-gray-900 mb-1">High-frequency patients</p>
                         <p className="text-sm text-gray-500 mb-3">
                           {analysisData?.patient_segments?.high_frequency?.count || 0} patients · ${(analysisData?.patient_segments?.high_frequency?.avg_ltv || 0).toLocaleString()} avg LTV
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
-                            Likely: Deepen {analysisData?.patient_segments?.high_frequency?.count || 0} relationships <span className="text-gray-400">(loyalty boost)</span>
+                            Likely: Deepen {analysisData?.patient_segments?.high_frequency?.count || 0} relationships
                           </p>
-                          <p className="text-sm font-semibold text-green-600">
+                          <p className="text-sm font-semibold text-emerald-600">
                             +${Math.round((analysisData?.patient_segments?.high_frequency?.avg_ltv || 0) * (analysisData?.patient_segments?.high_frequency?.count || 0)).toLocaleString()} protected
                           </p>
                         </div>
@@ -1613,7 +1552,7 @@ ${clinicName} Team`
                             'Send VIP reward'
                           );
                         }}
-                        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
+                        className="px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
                       >
                         Schedule VIP call
                       </button>
@@ -1632,37 +1571,22 @@ ${clinicName} Team`
                         'Launch referral program'
                       );
                     }}
-                    className="bg-green-50/50 border border-green-100 rounded-xl p-4 hover:shadow-sm transition-all cursor-pointer"
+                    className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-all cursor-pointer"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="flex items-center justify-center w-8 h-8 rounded-full bg-green-500 text-white text-sm font-bold flex-shrink-0">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-sm font-bold flex-shrink-0">
                         4
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-semibold text-gray-900">MULTIPLY</span>
-                          <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                            Growth
-                          </span>
-                          <span className="text-xs text-gray-400">Week 3-4</span>
-                        </div>
-                        <div className="group relative inline-block mb-1">
-                          <span className="text-sm text-gray-700 cursor-help border-b border-dotted border-gray-400">
-                            Referral champions
-                          </span>
-                          <div className="invisible group-hover:visible absolute z-10 bottom-full left-0 mb-2 px-3 py-2 text-xs text-white bg-gray-900 rounded-lg whitespace-nowrap shadow-lg">
-                            Came via referral or word of mouth
-                            <div className="absolute top-full left-4 -mt-1 w-2 h-2 bg-gray-900 rotate-45" />
-                          </div>
-                        </div>
+                        <p className="text-sm font-semibold text-gray-900 mb-1">Referral champions</p>
                         <p className="text-sm text-gray-500 mb-3">
                           {analysisData?.patient_segments?.referral_champions?.count || 0} patients · {analysisData?.patient_segments?.referral_champions?.conversion_rate || 68}% conversion
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
-                            Likely: {Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30)} new patient <span className="text-gray-400">(30% activate)</span>
+                            Likely: {Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30)} new patients
                           </p>
-                          <p className="text-sm font-semibold text-green-600">
+                          <p className="text-sm font-semibold text-emerald-600">
                             +${Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450).toLocaleString()}
                           </p>
                         </div>
@@ -1679,7 +1603,7 @@ ${clinicName} Team`
                             'Launch referral program'
                           );
                         }}
-                        className="px-4 py-2 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
+                        className="px-3 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition-colors flex-shrink-0"
                       >
                         Trigger referral offer
                       </button>
