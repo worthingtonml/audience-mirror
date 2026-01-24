@@ -25,10 +25,17 @@ import { DISC_TYPES } from '@/lib/industryConfig';
 import JourneyComparison from './JourneyComparison';
 import GatewayServiceCard from './GatewayServiceCard';
 import ClusterBadge from './ClusterBadge';
-import ClusterFilter from './ClusterFilter';
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+
+const CLUSTERS = [
+  'Luxury Seekers',
+  'Affluent Wellness',
+  'Young Professionals',
+  'Budget Conscious',
+  'Premium Lifestyle',
+];
 
 // ================================================================
 // HELPER FUNCTIONS
@@ -217,8 +224,10 @@ export default function PatientInsights() {
   const [selectedClusters, setSelectedClusters] = useState<string[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [showProcedureDropdown, setShowProcedureDropdown] = useState(false);
+  const [showClusterDropdown, setShowClusterDropdown] = useState(false);
   const [openAccordions, setOpenAccordions] = useState<Record<string, boolean>>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const clusterDropdownRef = useRef<HTMLDivElement>(null);
   const [season] = useState(getCurrentSeason());
   const [churnData, setChurnData] = useState<any>(null);
   const [churnLoading, setChurnLoading] = useState(false);
@@ -418,6 +427,12 @@ export default function PatientInsights() {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setShowProcedureDropdown(false);
+      }
+      if (
+        clusterDropdownRef.current &&
+        !clusterDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowClusterDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -740,6 +755,15 @@ export default function PatientInsights() {
     });
   };
 
+  const toggleCluster = (cluster: string) => {
+    setSelectedClusters((prev) => {
+      if (prev.includes(cluster)) {
+        return prev.filter((c) => c !== cluster);
+      }
+      return [...prev, cluster];
+    });
+  };
+
   const applyProcedureFilter = async () => {
     setIsFiltering(true);
     setShowProcedureDropdown(false);
@@ -775,13 +799,6 @@ export default function PatientInsights() {
       setIsFiltering(false);
     }
   };
-
-  // Auto-apply filter when clusters change
-  useEffect(() => {
-    if (selectedClusters.length > 0 && !loading) {
-      applyProcedureFilter();
-    }
-  }, [selectedClusters]);
 
   const generateCampaign = () => {
     const selected = Object.keys(selectedZips).filter((zip) => selectedZips[zip]);
@@ -889,6 +906,12 @@ export default function PatientInsights() {
     : selectedProcedures.length === 1
     ? selectedProcedures[0]
     : `${selectedProcedures.length} procedures`;
+
+  const clusterDisplayText = selectedClusters.length === 0
+    ? 'All Segments'
+    : selectedClusters.length === 1
+    ? selectedClusters[0]
+    : `${selectedClusters.length} segments`;
 
   const heroCopy = generateHeroCopy(analysisData, season, isRealEstate);
 
@@ -1217,15 +1240,73 @@ ${clinicName} Team`
                 )}
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Cluster Filter */}
-          <div className="mt-4">
-            <ClusterFilter
-              selected={selectedClusters}
-              onChange={setSelectedClusters}
-            />
+              {/* Cluster filter */}
+              <div className="relative" ref={clusterDropdownRef}>
+                <button
+                  onClick={() => setShowClusterDropdown((open) => !open)}
+                  disabled={isFiltering}
+                  className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent disabled:opacity-50 cursor-pointer min-w-[140px] flex items-center justify-between gap-2"
+                >
+                  <span>{clusterDisplayText}</span>
+                  <ChevronDown className="h-4 w-4 text-gray-400" />
+                </button>
+
+                {showClusterDropdown && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-10 overflow-hidden">
+                    <div className="p-3 border-b border-gray-100 bg-gray-50">
+                      <div className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                        Filter by segment
+                      </div>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Narrow to specific psychographic profiles.
+                      </p>
+                    </div>
+                    <div className="p-2 max-h-64 overflow-y-auto">
+                      {CLUSTERS.map((cluster) => (
+                        <label
+                          key={cluster}
+                          className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 rounded cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedClusters.includes(cluster)}
+                            onChange={() => toggleCluster(cluster)}
+                            className="rounded border-gray-300 text-gray-900 focus:ring-gray-900"
+                          />
+                          <span className="text-sm text-gray-700">
+                            {cluster}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <div className="p-3 border-t border-gray-100 flex justify-between items-center gap-2 bg-gray-50">
+                      <button
+                        onClick={() => {
+                          setSelectedClusters([]);
+                          setShowClusterDropdown(false);
+                        }}
+                        className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:text-gray-900"
+                      >
+                        Clear
+                      </button>
+                      <button
+                        onClick={() => {
+                          setShowClusterDropdown(false);
+                          if (selectedClusters.length > 0) {
+                            applyProcedureFilter();
+                          }
+                        }}
+                        disabled={isFiltering}
+                        className="px-3 py-1.5 text-xs font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                      >
+                        {isFiltering ? 'Applying…' : 'Apply filter'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
