@@ -1255,7 +1255,11 @@ ${clinicName} Team`
                 </div>
                 <div className="w-px h-6 bg-gray-200" />
                 <div className="flex items-baseline gap-2">
-                  <span className="text-lg font-semibold text-violet-600">{churnData?.at_risk_percent || 0}%</span>
+                  <span className={`text-lg font-semibold ${
+                    (churnData?.at_risk_percent || 0) > 30 ? 'text-red-500' :
+                    (churnData?.at_risk_percent || 0) > 20 ? 'text-amber-500' :
+                    'text-emerald-600'
+                  }`}>{churnData?.at_risk_percent || 0}%</span>
                   <span className="text-gray-400 text-sm">churn</span>
                 </div>
               </div>
