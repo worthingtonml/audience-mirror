@@ -24,6 +24,8 @@ import { useInsight } from './insights/InsightProvider';
 import { DISC_TYPES } from '@/lib/industryConfig';
 import JourneyComparison from './JourneyComparison';
 import GatewayServiceCard from './GatewayServiceCard';
+import ClusterBadge from './ClusterBadge';
+import ClusterFilter from './ClusterFilter';
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
@@ -212,6 +214,7 @@ export default function PatientInsights() {
     'all',
   ]);
   const [availableProcedures, setAvailableProcedures] = useState<string[]>([]);
+  const [selectedClusters, setSelectedClusters] = useState<string[]>([]);
   const [isFiltering, setIsFiltering] = useState(false);
   const [showProcedureDropdown, setShowProcedureDropdown] = useState(false);
   const [openAccordions, setOpenAccordions] = useState<Record<string, boolean>>({});
@@ -748,14 +751,18 @@ export default function PatientInsights() {
         ? 'all'
         : selectedProcedures.join(',');
 
-      const response = await fetch(
-        `${API_URL}/api/v1/runs?procedure=${procedureParam}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dataset_id: datasetId, focus: 'non_inv' }),
-        }
-      );
+      let url = `${API_URL}/api/v1/runs?procedure=${procedureParam}`;
+
+      // Add cluster filter if any clusters are selected
+      if (selectedClusters.length > 0) {
+        url += `&clusters=${selectedClusters.join(',')}`
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataset_id: datasetId, focus: 'non_inv' }),
+      });
 
       if (!response.ok) throw new Error('Failed to create filtered run');
 
@@ -768,6 +775,13 @@ export default function PatientInsights() {
       setIsFiltering(false);
     }
   };
+
+  // Auto-apply filter when clusters change
+  useEffect(() => {
+    if (selectedClusters.length > 0 && !loading) {
+      applyProcedureFilter();
+    }
+  }, [selectedClusters]);
 
   const generateCampaign = () => {
     const selected = Object.keys(selectedZips).filter((zip) => selectedZips[zip]);
@@ -1204,6 +1218,14 @@ ${clinicName} Team`
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Cluster Filter */}
+          <div className="mt-4">
+            <ClusterFilter
+              selected={selectedClusters}
+              onChange={setSelectedClusters}
+            />
           </div>
         </div>
       </div>
@@ -2599,6 +2621,9 @@ ${clinicName} Team`
                               p.disc_type === 'S' ? 'bg-green-100 text-green-700' :
                               'bg-indigo-100 text-indigo-700'
                             }`}>{p.disc_type}</span>
+                          )}
+                          {p.psychographic_cluster && (
+                            <ClusterBadge cluster={p.psychographic_cluster} size="sm" />
                           )}
                         </div>
                         <div className="flex items-center gap-3">

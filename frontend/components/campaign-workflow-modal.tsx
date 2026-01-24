@@ -16,6 +16,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { useState } from 'react';
+import ClusterBadge from './ClusterBadge';
 
 interface Patient {
   patient_id: string;
@@ -26,6 +27,7 @@ interface Patient {
   lastVisit?: string;
   spent?: string;
   treatment?: string;
+  psychographic_cluster?: string;
 }
 
 interface CampaignWorkflowModalProps {
@@ -750,8 +752,13 @@ export function CampaignWorkflowModal({
                 className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-gray-900">{patient.name || patient.patient_id}</span>
-                <span className="text-sm text-gray-500 ml-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">{patient.name || patient.patient_id}</span>
+                  {patient.psychographic_cluster && (
+                    <ClusterBadge cluster={patient.psychographic_cluster} size="sm" />
+                  )}
+                </div>
+                <span className="text-sm text-gray-500">
                   {showField === 'phone' ? patient.phone : patient.email}
                 </span>
               </div>
@@ -978,7 +985,12 @@ export function CampaignWorkflowModal({
                                         />
                                         <div className="flex-1 min-w-0">
                                           <div className="flex items-center justify-between mb-1">
-                                            <span className="font-medium text-gray-900">{patient.name || patient.patient_id}</span>
+                                            <div className="flex items-center gap-2">
+                                              <span className="font-medium text-gray-900">{patient.name || patient.patient_id}</span>
+                                              {patient.psychographic_cluster && (
+                                                <ClusterBadge cluster={patient.psychographic_cluster} size="sm" />
+                                              )}
+                                            </div>
                                             {patient.lastVisit && (
                                               <span className="text-xs text-gray-400 flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />

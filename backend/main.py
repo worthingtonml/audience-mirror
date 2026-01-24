@@ -1064,6 +1064,7 @@ async def create_dataset(
 async def create_run(
     request: RunCreateRequest,
     procedure: Optional[str] = None,
+    clusters: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     """Start analysis run with sophisticated ML algorithm"""
@@ -1071,9 +1072,9 @@ async def create_run(
     dataset = db.query(Dataset).filter(Dataset.id == request.dataset_id).first()
     if not dataset:
         raise HTTPException(status_code=404, detail="Dataset not found")
-    
+
     run_id = str(uuid.uuid4())
-    
+
     # Create database record instead of memory storage
     analysis_run = AnalysisRun(
         id=run_id,
@@ -1082,7 +1083,7 @@ async def create_run(
         status="running",
         procedure=procedure
     )
-    
+
     db.add(analysis_run)
     db.commit()
 
@@ -1093,11 +1094,30 @@ async def create_run(
         is_valid, _, df_grouped = validate_and_load_patients(dataset.patients_path)
         if not is_valid or df_grouped is None:
             raise HTTPException(status_code=400, detail="Patient data validation failed")
-        
+
         df_grouped = df_grouped.reset_index(drop=True)
-        
+
+        # Add cluster filtering if specified
+        if clusters:
+            from data.lifestyle_profiles import get_cluster_for_zip
+
+            if 'zip_code' in df_grouped.columns:
+                # Enrich with psychographic cluster
+                df_grouped['psychographic_cluster'] = df_grouped['zip_code'].apply(get_cluster_for_zip)
+
+                # Filter to selected clusters
+                selected_clusters = [c.strip() for c in clusters.split(',')]
+                print(f"[FILTER] Filtering for clusters: {selected_clusters}")
+                df_grouped = df_grouped[df_grouped['psychographic_cluster'].isin(selected_clusters)]
+                print(f"[FILTER] Filtered to clusters: {clusters}, rows: {len(df_grouped)}")
+
+                if df_grouped.empty:
+                    raise HTTPException(status_code=400, detail=f"No data found for clusters: {clusters}")
+            else:
+                raise HTTPException(status_code=400, detail="ZIP code column required for cluster filtering")
+
         # Add procedure filtering if specified
-            
+
         if procedure and procedure != "all":
             # Use the SAME column that was found during extraction
             # Priority: procedure > procedure_norm > treatment > service > treatments_received
