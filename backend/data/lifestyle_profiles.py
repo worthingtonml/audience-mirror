@@ -128,15 +128,21 @@ def get_cluster_for_zip(zip_code: str) -> str:
         # Simplified assignment based primarily on income
         # (In production, could enhance with full demographic data)
         if median_income >= 150000:
-            return "Luxury Seekers"
+            cluster = "Luxury Seekers"
         elif median_income >= 120000:
-            return "Premium Lifestyle"
+            cluster = "Premium Lifestyle"
         elif median_income >= 90000:
-            return "Affluent Wellness"
+            cluster = "Affluent Wellness"
         elif median_income >= 60000:
-            return "Young Professionals"
+            cluster = "Young Professionals"
         else:
-            return "Budget Conscious"
+            cluster = "Budget Conscious"
+
+        # Log the mapping for debugging
+        print(f"[CLUSTER] ZIP {zip_code} (income ${median_income:,}) → {cluster}")
+        return cluster
+
     except Exception as e:
         # Fallback on any error
+        print(f"[CLUSTER ERROR] ZIP {zip_code} failed: {e} → Budget Conscious")
         return "Budget Conscious"
