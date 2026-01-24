@@ -107,3 +107,36 @@ def assign_lifestyle_segment(median_income: float, college_pct: float,
 def get_segment_details(segment_name: str) -> dict:
     """Get full profile details for a segment"""
     return LIFESTYLE_SEGMENTS.get(segment_name, LIFESTYLE_SEGMENTS["Budget Conscious"])
+
+def get_cluster_for_zip(zip_code: str) -> str:
+    """
+    Get psychographic cluster for a ZIP code based on income data.
+    Uses simplified logic based on median income from zip_income.csv.
+    Returns cluster name or "Budget Conscious" as fallback.
+    """
+    if not zip_code or zip_code == "00000":
+        return "Budget Conscious"
+
+    try:
+        # Import here to avoid circular dependency
+        from services.zip_income import get_zip_income_data
+
+        # Get income data for this ZIP
+        income_data = get_zip_income_data([zip_code])
+        median_income = income_data.get(str(zip_code), 67000)
+
+        # Simplified assignment based primarily on income
+        # (In production, could enhance with full demographic data)
+        if median_income >= 150000:
+            return "Luxury Seekers"
+        elif median_income >= 120000:
+            return "Premium Lifestyle"
+        elif median_income >= 90000:
+            return "Affluent Wellness"
+        elif median_income >= 60000:
+            return "Young Professionals"
+        else:
+            return "Budget Conscious"
+    except Exception as e:
+        # Fallback on any error
+        return "Budget Conscious"

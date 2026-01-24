@@ -654,3 +654,90 @@ async def analyze_patient_intel_from_df(patients_df: pd.DataFrame) -> Dict[str, 
 
     return response
 
+
+# -----------------------------
+# Patient Filtering by Psychographic Cluster
+# -----------------------------
+class PatientFilterRequest(BaseModel):
+    clusters: Optional[List[str]] = None
+    zip_codes: Optional[List[str]] = None
+    procedures: Optional[List[str]] = None
+    min_revenue: Optional[float] = None
+
+
+@router.post("/v1/datasets/{dataset_id}/filter-patients")
+async def filter_patients_by_criteria(
+    dataset_id: str,
+    filter_request: PatientFilterRequest
+) -> Dict[str, Any]:
+    """
+    Filter patients by psychographic cluster, ZIP code, procedure, or revenue.
+    Returns list of patients matching ANY of the specified criteria (OR logic).
+    """
+    from main import get_db
+    from database import Dataset
+    from services.data_loaders import validate_and_load_patients
+    from services.patient_segments import extract_patient_list
+    from data.lifestyle_profiles import get_cluster_for_zip
+    from sqlalchemy.orm import Session
+
+    # Get database session
+    db: Session = next(get_db())
+
+    try:
+        # Find dataset in database
+        dataset = db.query(Dataset).filter(Dataset.id == dataset_id).first()
+        if not dataset:
+            raise HTTPException(status_code=404, detail=f"Dataset {dataset_id} not found")
+
+        # Load patient data from saved file
+        is_valid, errors, patients_df = validate_and_load_patients(dataset.patients_path)
+        if not is_valid or patients_df is None:
+            raise HTTPException(status_code=400, detail={"errors": errors})
+
+        # Start with all patients
+        filtered_df = patients_df.copy()
+
+        # Enrich with psychographic cluster if filtering by cluster
+        if filter_request.clusters:
+            if 'zip_code' in filtered_df.columns:
+                filtered_df['psychographic_cluster'] = filtered_df['zip_code'].apply(get_cluster_for_zip)
+                filtered_df = filtered_df[filtered_df['psychographic_cluster'].isin(filter_request.clusters)]
+            else:
+                raise HTTPException(status_code=400, detail="ZIP code column required for cluster filtering")
+
+        # Filter by ZIP codes
+        if filter_request.zip_codes:
+            if 'zip_code' in filtered_df.columns:
+                filtered_df = filtered_df[filtered_df['zip_code'].isin(filter_request.zip_codes)]
+
+        # Filter by procedures
+        if filter_request.procedures:
+            # Handle multiple possible column names
+            proc_col = next((c for c in ['procedure', 'service', 'treatment', 'procedure_type']
+                           if c in filtered_df.columns), None)
+            if proc_col:
+                filtered_df = filtered_df[filtered_df[proc_col].isin(filter_request.procedures)]
+
+        # Filter by minimum revenue
+        if filter_request.min_revenue is not None:
+            if 'revenue' in filtered_df.columns:
+                filtered_df = filtered_df[filtered_df['revenue'] >= filter_request.min_revenue]
+
+        # Extract patient list with enriched data
+        patients = extract_patient_list(filtered_df, max_patients=1000)
+
+        return {
+            "total_patients": len(patients),
+            "patients": patients,
+            "filters_applied": {
+                "clusters": filter_request.clusters or [],
+                "zip_codes": filter_request.zip_codes or [],
+                "procedures": filter_request.procedures or [],
+                "min_revenue": filter_request.min_revenue
+            }
+        }
+
+    finally:
+        db.close()
+

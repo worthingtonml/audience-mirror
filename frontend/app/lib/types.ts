@@ -37,3 +37,16 @@ export interface Procedure {
 
 export type FocusType = 'non_inv' | 'surgical';
 export type ThemeType = 'light' | 'dark';
+
+export interface Patient {
+  patient_id: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+  instagram?: string;
+  zip_code?: string;
+  psychographic_cluster?: string;
+  lastVisit?: string;
+  spent?: string;
+  treatment?: string;
+}

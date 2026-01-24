@@ -3,6 +3,8 @@ Patient Segmentation Logic for Audience Mirror
 Calculates real metrics for each patient segment from CSV data
 """
 
+from data.lifestyle_profiles import get_cluster_for_zip
+
 def extract_patient_list(df, max_patients=100):
     """
     Extract patient details from a dataframe for the modal.
@@ -19,7 +21,13 @@ def extract_patient_list(df, max_patients=100):
         patient = {
             'patient_id': str(row.get('patient_id', row.name)),
         }
-        
+
+        # Add ZIP code and psychographic cluster
+        zip_code = str(row.get('zip_code', '')) if 'zip_code' in row else ''
+        if zip_code:
+            patient['zip_code'] = zip_code
+            patient['psychographic_cluster'] = get_cluster_for_zip(zip_code)
+
         # Add name if available
         if 'patient_name' in row:
             patient['name'] = str(row['patient_name'])
