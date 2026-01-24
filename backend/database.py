@@ -167,10 +167,19 @@ def create_tables():
             print("[DB] Added campaign_name column to patient_outreach")
 
     # Check analysis_runs table
-    existing_run_columns = [col['name'] for col in inspector.get_columns('analysis_runs')]
+    try:
+        existing_run_columns = [col['name'] for col in inspector.get_columns('analysis_runs')]
+        print(f"[DB] Existing analysis_runs columns: {existing_run_columns}")
 
-    with engine.connect() as conn:
-        if 'filtered_dataset_path' not in existing_run_columns:
-            conn.execute(text('ALTER TABLE analysis_runs ADD COLUMN filtered_dataset_path VARCHAR'))
-            conn.commit()
-            print("[DB] Added filtered_dataset_path column to analysis_runs")
+        with engine.connect() as conn:
+            if 'filtered_dataset_path' not in existing_run_columns:
+                print("[DB] Adding filtered_dataset_path column to analysis_runs")
+                conn.execute(text('ALTER TABLE analysis_runs ADD COLUMN filtered_dataset_path VARCHAR'))
+                conn.commit()
+                print("[DB] Successfully added filtered_dataset_path column to analysis_runs")
+            else:
+                print("[DB] filtered_dataset_path column already exists")
+    except Exception as e:
+        print(f"[DB ERROR] Failed to migrate analysis_runs table: {e}")
+        import traceback
+        traceback.print_exc()

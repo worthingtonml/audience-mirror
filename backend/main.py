@@ -1097,24 +1097,48 @@ async def create_run(
 
         df_grouped = df_grouped.reset_index(drop=True)
 
+        # Ensure zip_code column exists and is properly formatted
+        if 'zip_code' not in df_grouped.columns:
+            # Try to find alternative column names
+            for col in ['zip', 'zipcode', 'postal_code', 'ZIP', 'Zip']:
+                if col in df_grouped.columns:
+                    print(f"[FILTER] Renaming {col} to zip_code")
+                    df_grouped['zip_code'] = df_grouped[col]
+                    break
+
         # Add cluster filtering if specified
         if clusters:
-            from data.lifestyle_profiles import get_cluster_for_zip
+            print(f"[FILTER] Starting cluster filtering with clusters: {clusters}")
+            print(f"[FILTER] DataFrame shape before filtering: {df_grouped.shape}")
+            print(f"[FILTER] DataFrame columns: {df_grouped.columns.tolist()}")
 
-            if 'zip_code' in df_grouped.columns:
-                # Enrich with psychographic cluster
-                df_grouped['psychographic_cluster'] = df_grouped['zip_code'].apply(get_cluster_for_zip)
+            try:
+                from data.lifestyle_profiles import get_cluster_for_zip
 
-                # Filter to selected clusters
-                selected_clusters = [c.strip() for c in clusters.split(',')]
-                print(f"[FILTER] Filtering for clusters: {selected_clusters}")
-                df_grouped = df_grouped[df_grouped['psychographic_cluster'].isin(selected_clusters)]
-                print(f"[FILTER] Filtered to clusters: {clusters}, rows: {len(df_grouped)}")
+                if 'zip_code' in df_grouped.columns:
+                    # Enrich with psychographic cluster
+                    print(f"[FILTER] Applying cluster enrichment to {len(df_grouped)} rows")
+                    df_grouped['psychographic_cluster'] = df_grouped['zip_code'].apply(get_cluster_for_zip)
 
-                if df_grouped.empty:
-                    raise HTTPException(status_code=400, detail=f"No data found for clusters: {clusters}")
-            else:
-                raise HTTPException(status_code=400, detail="ZIP code column required for cluster filtering")
+                    # Show distribution of clusters
+                    cluster_counts = df_grouped['psychographic_cluster'].value_counts()
+                    print(f"[FILTER] Cluster distribution: {cluster_counts.to_dict()}")
+
+                    # Filter to selected clusters
+                    selected_clusters = [c.strip() for c in clusters.split(',')]
+                    print(f"[FILTER] Filtering for clusters: {selected_clusters}")
+                    df_grouped = df_grouped[df_grouped['psychographic_cluster'].isin(selected_clusters)]
+                    print(f"[FILTER] Filtered to clusters: {clusters}, rows: {len(df_grouped)}")
+
+                    if df_grouped.empty:
+                        raise HTTPException(status_code=400, detail=f"No data found for clusters: {clusters}")
+                else:
+                    raise HTTPException(status_code=400, detail="ZIP code column required for cluster filtering")
+            except Exception as e:
+                print(f"[FILTER ERROR] Cluster filtering failed: {e}")
+                import traceback
+                traceback.print_exc()
+                raise
 
         # Add procedure filtering if specified
 
@@ -1153,15 +1177,24 @@ async def create_run(
         # Save filtered dataset if filters were applied
         filtered_dataset_path = dataset.patients_path
         if (clusters or (procedure and procedure != "all")):
-            # Save filtered dataframe to a temporary file
-            import tempfile
-            import os
+            try:
+                # Save filtered dataframe to a temporary file
+                import os
 
-            filtered_dir = os.path.join(os.path.dirname(dataset.patients_path), 'filtered_runs')
-            os.makedirs(filtered_dir, exist_ok=True)
-            filtered_dataset_path = os.path.join(filtered_dir, f'{run_id}_filtered.csv')
-            df_grouped.to_csv(filtered_dataset_path, index=False)
-            print(f"[FILTER] Saved filtered dataset to {filtered_dataset_path}")
+                filtered_dir = os.path.join(os.path.dirname(dataset.patients_path), 'filtered_runs')
+                print(f"[FILTER] Creating filtered directory: {filtered_dir}")
+                os.makedirs(filtered_dir, exist_ok=True)
+
+                filtered_dataset_path = os.path.join(filtered_dir, f'{run_id}_filtered.csv')
+                print(f"[FILTER] Saving {len(df_grouped)} rows to {filtered_dataset_path}")
+                df_grouped.to_csv(filtered_dataset_path, index=False)
+                print(f"[FILTER] Successfully saved filtered dataset to {filtered_dataset_path}")
+            except Exception as e:
+                print(f"[FILTER ERROR] Failed to save filtered dataset: {e}")
+                import traceback
+                traceback.print_exc()
+                # Continue with original path if save fails
+                filtered_dataset_path = dataset.patients_path
 
         # Convert dataset to dict for compatibility with existing analysis function (DEDENTED)
         dataset_dict = {
@@ -1211,10 +1244,19 @@ async def create_run(
         analysis_run.patient_count = result.get("patient_count", 0)
         analysis_run.dominant_profile = result.get("dominant_profile", {})
         analysis_run.strategic_insights = result.get("strategic_insights", [])
+
+        # Store filtered dataset path if different from original
         if filtered_dataset_path != dataset.patients_path:
-            analysis_run.filtered_dataset_path = filtered_dataset_path
+            print(f"[FILTER] Setting filtered_dataset_path: {filtered_dataset_path}")
+            try:
+                analysis_run.filtered_dataset_path = filtered_dataset_path
+            except Exception as e:
+                print(f"[FILTER ERROR] Failed to set filtered_dataset_path: {e}")
+                import traceback
+                traceback.print_exc()
 
         db.commit()
+        print(f"[DB] Committed run {run_id} with status done")
         
         # Auto-reconcile any contacted patients who returned
         print(f"[DEBUG] About to reconcile for run_id: {run_id}")
