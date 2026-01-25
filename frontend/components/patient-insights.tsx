@@ -1471,32 +1471,45 @@ ${clinicName} Team`
                     <div>
                       <p className="text-xs text-gray-500">Recover</p>
                       <p className="text-base font-semibold text-gray-900">
-                        ${(analysisData?.patient_segments?.one_and_done?.potential_recovery || 0).toLocaleString()}
+                        {/* FORMULA: One-and-done potential_recovery (count × avg_spend × 2.5) × 15% win-back rate */}
+                        ${(() => {
+                          const potentialRecovery = analysisData?.patient_segments?.one_and_done?.potential_recovery || 0;
+                          return Math.round(potentialRecovery * 0.15).toLocaleString();
+                        })()}
                       </p>
                     </div>
                     <div className="w-px h-8 bg-gray-200" />
                     <div>
                       <p className="text-xs text-gray-500">Protect</p>
                       <p className="text-base font-semibold text-gray-900">
-                        ${(analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0).toLocaleString()}
+                        {/* FORMULA: Lapsed regulars revenue_at_risk (count × avg_ltv) × 60% retention rate */}
+                        ${(() => {
+                          const revenueAtRisk = analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0;
+                          return Math.round(revenueAtRisk * 0.60).toLocaleString();
+                        })()}
                       </p>
                     </div>
                     <div className="w-px h-8 bg-gray-200" />
                     <div>
                       <p className="text-xs text-gray-500">Activate</p>
                       <p className="text-base font-semibold text-gray-900">
-                        {analysisData?.patient_segments?.referral_champions?.count || 0} referrals
+                        {/* FORMULA: Referral champions count × 30% activation rate */}
+                        {Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30)} referrals
                       </p>
                     </div>
                     <div className="w-px h-8 bg-gray-200" />
                     <div>
                       <p className="text-xs text-gray-500">Total potential</p>
                       <p className="text-base font-semibold text-emerald-600">
+                        {/* FORMULA: Sum of all realistic expected revenue with win-back rates applied
+                            - Recover: one-and-done potential_recovery × 15%
+                            - Protect: lapsed revenue_at_risk × 60%
+                            - Activate: referral champions × 30% × $450 avg new patient value */}
                         ${(() => {
-                          const oneAndDone = Math.round((analysisData?.patient_segments?.one_and_done?.count || 0) * 0.15 * (analysisData?.patient_segments?.one_and_done?.avg_spend || 0));
-                          const lapsed = Math.round((analysisData?.patient_segments?.lapsed_regulars?.count || 0) * 0.60 * (analysisData?.patient_segments?.lapsed_regulars?.avg_ltv || 0));
-                          const referral = Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450);
-                          return (oneAndDone + lapsed + referral).toLocaleString();
+                          const oneAndDoneRecovery = Math.round((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) * 0.15);
+                          const lapsedProtection = Math.round((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) * 0.60);
+                          const referralValue = Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450);
+                          return (oneAndDoneRecovery + lapsedProtection + referralValue).toLocaleString();
                         })()}/yr
                       </p>
                     </div>
@@ -1537,9 +1550,11 @@ ${clinicName} Team`
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
+                            {/* FORMULA: 60% retention rate applied to count */}
                             Likely: Keep {Math.round((analysisData?.patient_segments?.lapsed_regulars?.count || 0) * 0.60)} of {analysisData?.patient_segments?.lapsed_regulars?.count || 0}
                           </p>
                           <p className="text-sm font-semibold text-emerald-600">
+                            {/* FORMULA: revenue_at_risk × 60% retention rate */}
                             +${Math.round((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) * 0.60).toLocaleString()}
                           </p>
                         </div>
@@ -1589,9 +1604,11 @@ ${clinicName} Team`
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
+                            {/* FORMULA: 15% win-back rate applied to count */}
                             Likely: Win back {Math.round((analysisData?.patient_segments?.one_and_done?.count || 0) * 0.15)} of {analysisData?.patient_segments?.one_and_done?.count || 0}
                           </p>
                           <p className="text-sm font-semibold text-emerald-600">
+                            {/* FORMULA: potential_recovery (count × avg_spend × 2.5) × 15% win-back rate */}
                             +${Math.round((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) * 0.15).toLocaleString()}
                           </p>
                         </div>
@@ -1640,9 +1657,11 @@ ${clinicName} Team`
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
+                            {/* High-frequency patients - relationship deepening (NOT included in Total potential) */}
                             Likely: Deepen {analysisData?.patient_segments?.high_frequency?.count || 0} relationships
                           </p>
                           <p className="text-sm font-semibold text-emerald-600">
+                            {/* FORMULA: count × avg_ltv (PROTECTED value, not added to Total) */}
                             +${Math.round((analysisData?.patient_segments?.high_frequency?.avg_ltv || 0) * (analysisData?.patient_segments?.high_frequency?.count || 0)).toLocaleString()} protected
                           </p>
                         </div>
@@ -1691,9 +1710,11 @@ ${clinicName} Team`
                         </p>
                         <div className="flex items-center justify-between">
                           <p className="text-sm text-gray-500">
+                            {/* FORMULA: 30% activation rate applied to referral champion count */}
                             Likely: {Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30)} new patients
                           </p>
                           <p className="text-sm font-semibold text-emerald-600">
+                            {/* FORMULA: count × 30% activation × $450 avg new patient value */}
                             +${Math.round((analysisData?.patient_segments?.referral_champions?.count || 0) * 0.30 * 450).toLocaleString()}
                           </p>
                         </div>
@@ -1982,6 +2003,13 @@ ${clinicName} Team`
                     </div>
                     <div className="text-right">
                       <span className="text-xl font-semibold text-white">
+                        {/* CAMPAIGN TOTAL FORMULA:
+                            Sum of all line items with realistic win-back rates:
+                            1. Lapsed regulars: revenue_at_risk × 60% = Protect value
+                            2. One-and-done: potential_recovery × 15% = Recover value
+                            3. Referrals: count × 30% × $450 = Activate value
+                            NOTE: High-frequency "protected" value NOT included (it's retention, not new revenue)
+                            NOTE: Cross-sell opportunities shown separately below */}
                         ${(() => {
                           const oneAndDone = Math.round((analysisData?.patient_segments?.one_and_done?.potential_recovery || 0) * 0.15);
                           const lapsed = Math.round((analysisData?.patient_segments?.lapsed_regulars?.revenue_at_risk || 0) * 0.60);

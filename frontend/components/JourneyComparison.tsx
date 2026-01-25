@@ -47,11 +47,15 @@ export default function JourneyComparison({
   const { vip, all } = journeyData;
 
   // Calculate retention metrics
+  // FORMULA: If X% return, then (100-X)% never come back, and X/10 out of 10 return
   const allReturnRate = all.retention[1]; // % who return after visit 1
   const vipReturnRate = vip.retention[1]; // % of VIPs who return after visit 1
-  const dropoffPct = Math.round(100 - allReturnRate);
+  const dropoffPct = Math.round(100 - allReturnRate); // % who DON'T return
   const avgRate = Math.round(allReturnRate / 10); // How many avg patients out of 10 return
   const vipRate = Math.round(vipReturnRate / 10); // How many VIPs out of 10 return
+
+  // MATH CHECK: If allReturnRate=43%, then dropoffPct=57% and avgRate=4
+  // This means: "57% never come back" AND "4 of 10 come back" are CONSISTENT
 
   // Danger window data
   const dangerCount = oneAndDoneData?.count || 0;
